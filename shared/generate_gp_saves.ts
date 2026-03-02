@@ -1,9 +1,9 @@
 /**
  * Generate save files for the GP benchmark task.
- * Creates 15 bot saves (3 bots x 5 loops) with level 50 in all skills
+ * Creates 10 bot saves (2 bots x 5 loops) with level 50 in all skills
  * (55 Magic for High Level Alchemy), starting in Lumbridge with tools and runes.
  *
- * Naming: l{loop}a{bot} — e.g. l1a1, l1a2, l1a3
+ * Naming: l{loop}a{bot} — e.g. l1a1, l1a2
  * Each loop gets fresh usernames to avoid server caching issues.
  *
  * Usage: bun run benchmark/shared/generate_gp_saves.ts
@@ -48,7 +48,7 @@ const STARTING_EQUIPMENT = [
 ];
 
 const LOOPS = 5;
-const BOTS_PER_LOOP = 3;
+const BOTS_PER_LOOP = 2;
 
 async function main() {
   let count = 0;
