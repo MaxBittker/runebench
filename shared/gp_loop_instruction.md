@@ -8,20 +8,20 @@ This is a local RuneScape private server running on localhost for AI agent bench
 2. **Read `/app/learnings.md`** for what previous agents learned (empty on loop 1).
 3. **Read the SDK docs** at `/app/sdk/API.md` and files in `/app/learnings/` to understand available game APIs. On loop 1 especially, spend time here.
 4. **Write one money-making script** — a single block of TypeScript code that earns as much GP as possible within 10,000 game ticks (~9 minutes at 50ms/tick).
-5. **Run it on all 5 bots at once** — send all 5 `execute_code(bot_name, code, timeout=9)` calls in a **SINGLE assistant message** so they execute in parallel. Do NOT run them one at a time.
+5. **Run it on 3 bots sequentially** — call `execute_code(bot_name, code, timeout=9)` for each of your 3 bots one at a time.
 6. **Record results** to `/app/gp_results.json` (read existing file first, append your entry).
 7. **Update `/app/learnings.md`** with what you learned for the next agent.
 
-**TIME BUDGET: You have at most 30 minutes. Aim for 15.** Read docs (3 min) → Write script (5 min) → Run on all 5 bots in parallel (9 min) → Record results and learnings (3 min).
+**TIME BUDGET: You have at most 60 minutes.** Read docs (5 min) → Write script (10 min) → Run on 3 bots sequentially (27 min) → Record results and learnings (5 min).
 
 ## Your Bots
 
-Each loop uses a unique set of 5 bots. Bot names follow the pattern `l{loop}a{1-5}`:
-- Loop 1: `l1a1`, `l1a2`, `l1a3`, `l1a4`, `l1a5`
-- Loop 2: `l2a1`, `l2a2`, `l2a3`, `l2a4`, `l2a5`
-- Loop 3: `l3a1`, `l3a2`, `l3a3`, `l3a4`, `l3a5`
-- Loop 4: `l4a1`, `l4a2`, `l4a3`, `l4a4`, `l4a5`
-- Loop 5: `l5a1`, `l5a2`, `l5a3`, `l5a4`, `l5a5`
+Each loop uses a unique set of 3 bots. Bot names follow the pattern `l{loop}a{1-3}`:
+- Loop 1: `l1a1`, `l1a2`, `l1a3`
+- Loop 2: `l2a1`, `l2a2`, `l2a3`
+- Loop 3: `l3a1`, `l3a2`, `l3a3`
+- Loop 4: `l4a1`, `l4a2`, `l4a3`
+- Loop 5: `l5a1`, `l5a2`, `l5a3`
 
 **Bots are pre-connected and ready to use.** Just call `execute_code(bot_name, code)` directly — no browser launch needed.
 
@@ -40,8 +40,8 @@ You do NOT need to bootstrap (earn money for tools, etc.) — bots start fully e
 - **No pickpocketing** — any other money-making method is fair game
 - **10,000 tick limit** — the game runs at 50ms/tick, so 10,000 ticks ≈ 8.3 minutes. Set execute_code timeout to **9** (minutes).
 - **GP is measured from inventory** — coins must be in inventory at the end
-- **Same script on all 5 bots** — write ONE script, run it 5 times in parallel
-- **All 5 execute_code calls in ONE tool response** — this ensures parallel execution
+- **Same script on all 3 bots** — write ONE script, run it 3 times sequentially
+- **`sdk` is NOT available outside execute_code** — do not try to run scripts with `bun run`, they will fail. The only way to execute bot code is via `execute_code(bot_name, code)`.
 
 ## Notes
 
@@ -93,7 +93,7 @@ After all 5 bots finish, write to `/app/gp_results.json`:
     {
       "loop": 1,
       "totalGp": 12500,
-      "perBot": { "l1a1": 2500, "l1a2": 2500, "l1a3": 2500, "l1a4": 2500, "l1a5": 2500 },
+      "perBot": { "l1a1": 2500, "l1a2": 2500, "l1a3": 2500 },
       "method": "description of strategy used",
       "gpPerTick": 1.25
     }
