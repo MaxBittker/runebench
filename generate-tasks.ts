@@ -116,6 +116,10 @@ const checkGpB64 = Buffer.from(
   readFileSync(join(SHARED_DIR, 'check_gp.ts'), 'utf-8')
 ).toString('base64');
 
+const gpFreshStartB64 = Buffer.from(
+  readFileSync(join(SHARED_DIR, 'gp_fresh_start.ts'), 'utf-8')
+).toString('base64');
+
 const GP_INSTRUCTION = `You are running a 5-loop iterative GP-earning benchmark. Each loop, you spawn a sub-agent that writes ONE money-making script and runs it on 2 bots sequentially.
 
 ## Setup (do this ONCE before any loops)
@@ -166,11 +170,12 @@ RUN for loop in \$(seq 1 5); do \\
   done; \\
 done
 
-# Inject loop instruction, save generator, and verifier (base64-encoded)
+# Inject loop instruction, save generator, verifier, and fresh-start utility (base64-encoded)
 RUN mkdir -p /app/benchmark/shared && \\
     echo '${gpLoopInstructionB64}' | base64 -d > /app/gp_loop_instruction.md && \\
     echo '${generateGpSavesB64}' | base64 -d > /app/benchmark/shared/generate_gp_saves.ts && \\
-    echo '${checkGpB64}' | base64 -d > /app/benchmark/shared/check_gp.ts
+    echo '${checkGpB64}' | base64 -d > /app/benchmark/shared/check_gp.ts && \\
+    echo '${gpFreshStartB64}' | base64 -d > /app/benchmark/shared/gp_fresh_start.ts
 
 # Create empty learnings file for loop 1
 RUN touch /app/learnings.md

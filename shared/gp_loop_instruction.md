@@ -9,6 +9,8 @@ This is a local RuneScape private server running on localhost for AI agent bench
 3. **Read the SDK docs** at `/app/sdk/API.md` and files in `/app/learnings/` to understand available game APIs. On loop 1 especially, spend time here.
 4. **Write one money-making script** — a single block of TypeScript code that earns as much GP as possible within 10,000 game ticks (~9 minutes at 50ms/tick).
 5. **Run it on 2 bots sequentially** — call `execute_code(bot_name, code, timeout=9)` for each of your 2 bots one at a time.
+
+**Always call `freshStart()` at the top of your script** to guarantee the bot has the correct starting state (level 50 skills, starting items, Lumbridge position). This takes ~10 seconds.
 6. **Record results** to `/app/gp_results.json` (read existing file first, append your entry).
 7. **Update `/app/learnings.md`** with what you learned for the next agent.
 
@@ -51,7 +53,17 @@ You do NOT need to bootstrap (earn money for tools, etc.) — bots start fully e
 
 ## Script Template
 
-Use **game ticks** for timing, not wall-clock time:
+Always start with `freshStart()` to reset the bot to the correct state:
+
+```typescript
+const { freshStart } = await import('/app/benchmark/shared/gp_fresh_start.ts');
+await freshStart();
+// Bot is now at Lumbridge, level 50 all skills (55 Magic), holding:
+//   rune_axe, knife, tinderbox, fishing net, hammer, 1000 nature runes
+//   staff of fire equipped (unlimited fire runes for alchemy)
+```
+
+Then use **game ticks** for timing:
 
 ```typescript
 const COINS_ID = 995;
