@@ -112,14 +112,6 @@ After all 5 bots finish, write to `/app/gp_results.json`:
 - **The FULL working script** — include the complete script that worked best so the next agent can copy-paste and improve it
 - **Shop stock levels** — if you sold to shops, note how many items are now in stock
 
-## Key Coordinates
-
-- Lumbridge General Store: (3212, 3247) — shopkeeper + shop assistant
-- Bob's Axes (Lumbridge): (3230, 3203)
-- Oak trees near Lumbridge store: (3203, 3246) — 6 tiles from general store
-- Varrock General Store: (3219, 3415) — may have fresh stock if Lumbridge is overstocked
-- Draynor fishing: (3087, 3230) — **DANGEROUS: dark wizards nearby, avoid at low combat**
-
 ## Reference
 
 - SDK API docs: `/app/sdk/API.md`
