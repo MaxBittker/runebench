@@ -199,11 +199,20 @@ RUN touch /app/learnings.md
 # Generate 10 save files with level 50 skills, starting items, and equipment
 RUN cd /app && bun run benchmark/shared/generate_gp_saves.ts
 
+# Back up build-time saves so we can restore them at runtime with a simple cp
+# (avoids depending on bun at container startup).
+RUN mkdir -p /app/saves-backup && \\
+    cp /app/server/engine/data/players/main/*.sav /app/saves-backup/ && \\
+    ls -la /app/saves-backup/
+
 # Initialize SQLite database and create bot accounts.
 # Without this, bots log in as new characters on Tutorial Island instead of
 # loading the pre-generated level-50 save files.
 RUN echo '${gpCreateAccountsB64}' | base64 -d > /app/server/engine/create_gp_accounts.ts && \\
     cd /app/server/engine && bun run sqlite:migrate && bun create_gp_accounts.ts
+
+# Back up the SQLite database too (accounts)
+RUN cp /app/server/engine/db.sqlite /app/saves-backup/db.sqlite
 
 # Replace Docker ENTRYPOINT with a keep-alive — Harbor runs both ENTRYPOINT
 # and /start-services.sh, causing port conflicts when both start the engine.
@@ -211,10 +220,55 @@ RUN echo '${gpCreateAccountsB64}' | base64 -d > /app/server/engine/create_gp_acc
 # (called by Harbor) handles all service startup.
 RUN printf '#!/bin/bash\\nexec tail -f /dev/null\\n' > /entrypoint.sh && chmod +x /entrypoint.sh
 
-# Wrap /start-services.sh to regenerate saves BEFORE the engine starts.
-# Docker build-time saves don't persist in Modal's container runtime.
+# Wrap /start-services.sh to restore saves BEFORE the engine starts.
+# Includes diagnostics to debug any startup issues.
 RUN mv /start-services.sh /start-services-base.sh && \\
-    printf '#!/bin/bash\\nset -e\\necho "[start-services] Generating bot saves..."\\ncd /app && bun run benchmark/shared/generate_gp_saves.ts\\ncd /app/server/engine && bun run sqlite:migrate 2>/dev/null || true\\ncd /app/server/engine && bun create_gp_accounts.ts 2>/dev/null || true\\necho "[start-services] Saves ready"\\nexec /start-services-base.sh\\n' > /start-services.sh && \\
+    cat > /start-services.sh << 'WRAPPER_EOF'
+#!/bin/bash
+LOG=/tmp/savegen-diag.log
+exec > >(tee -a "$LOG") 2>&1
+echo "=== start-services wrapper $(date) ==="
+
+# Diagnostic: check what exists at startup
+echo "[diag] saves-backup contents:"
+ls -la /app/saves-backup/ 2>&1 || echo "[diag] NO saves-backup dir"
+echo "[diag] players/main contents BEFORE restore:"
+ls -la /app/server/engine/data/players/main/ 2>&1 || echo "[diag] NO players/main dir"
+echo "[diag] db.sqlite exists: $(ls -la /app/server/engine/db.sqlite 2>&1)"
+
+# Strategy 1: cp from backup (fast, no bun dependency)
+mkdir -p /app/server/engine/data/players/main
+if ls /app/saves-backup/*.sav 1>/dev/null 2>&1; then
+    echo "[restore] Copying saves from backup..."
+    cp /app/saves-backup/*.sav /app/server/engine/data/players/main/
+    echo "[restore] Copied $(ls /app/server/engine/data/players/main/*.sav 2>/dev/null | wc -l) saves"
+else
+    echo "[restore] No backup saves found, running generator..."
+    cd /app && bun run benchmark/shared/generate_gp_saves.ts 2>&1 || echo "[restore] GENERATOR FAILED: $?"
+fi
+
+# Restore database backup if needed
+if [ ! -f /app/server/engine/db.sqlite ] && [ -f /app/saves-backup/db.sqlite ]; then
+    echo "[restore] Restoring db.sqlite from backup"
+    cp /app/saves-backup/db.sqlite /app/server/engine/db.sqlite
+fi
+
+# Run migrations + account creation as safety net
+cd /app/server/engine && bun run sqlite:migrate 2>/dev/null || true
+cd /app/server/engine && bun create_gp_accounts.ts 2>/dev/null || true
+
+# Verify
+echo "[diag] players/main contents AFTER restore:"
+ls -la /app/server/engine/data/players/main/ 2>&1
+SAVE_COUNT=$(ls /app/server/engine/data/players/main/*.sav 2>/dev/null | wc -l)
+echo "[diag] Save count: $SAVE_COUNT"
+if [ "$SAVE_COUNT" -lt 10 ]; then
+    echo "[WARN] Expected 10 saves, got $SAVE_COUNT!"
+fi
+
+echo "=== wrapper done, starting services ==="
+exec /start-services-base.sh
+WRAPPER_EOF
     chmod +x /start-services.sh
 `;
 
