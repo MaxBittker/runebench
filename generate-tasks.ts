@@ -108,6 +108,54 @@ RUN sed -i 's/Environment.NODE_DEBUG_SOCKET ? 60000 : 500;/Environment.NODE_DEBU
 
 // ── GP iterative benchmark ──────────────────────────────────────
 
+// start-services.sh wrapper script — restores saves before engine starts
+const GP_WRAPPER_SCRIPT = `#!/bin/bash
+LOG=/tmp/savegen-diag.log
+exec > >(tee -a "\$LOG") 2>&1
+echo "=== start-services wrapper \$(date) ==="
+
+# Diagnostic: check what exists at startup
+echo "[diag] saves-backup contents:"
+ls -la /app/saves-backup/ 2>&1 || echo "[diag] NO saves-backup dir"
+echo "[diag] players/main contents BEFORE restore:"
+ls -la /app/server/engine/data/players/main/ 2>&1 || echo "[diag] NO players/main dir"
+echo "[diag] db.sqlite exists:" && ls -la /app/server/engine/db.sqlite 2>&1 || true
+
+# Strategy 1: cp from backup (fast, no bun dependency)
+mkdir -p /app/server/engine/data/players/main
+if ls /app/saves-backup/*.sav 1>/dev/null 2>&1; then
+    echo "[restore] Copying saves from backup..."
+    cp /app/saves-backup/*.sav /app/server/engine/data/players/main/
+    echo "[restore] Copied \$(ls /app/server/engine/data/players/main/*.sav 2>/dev/null | wc -l) saves"
+else
+    echo "[restore] No backup saves found, running generator..."
+    cd /app && bun run benchmark/shared/generate_gp_saves.ts 2>&1 || echo "[restore] GENERATOR FAILED: \$?"
+fi
+
+# Restore database backup if needed
+if [ ! -f /app/server/engine/db.sqlite ] && [ -f /app/saves-backup/db.sqlite ]; then
+    echo "[restore] Restoring db.sqlite from backup"
+    cp /app/saves-backup/db.sqlite /app/server/engine/db.sqlite
+fi
+
+# Run migrations + account creation as safety net
+cd /app/server/engine && bun run sqlite:migrate 2>/dev/null || true
+cd /app/server/engine && bun create_gp_accounts.ts 2>/dev/null || true
+
+# Verify
+echo "[diag] players/main contents AFTER restore:"
+ls -la /app/server/engine/data/players/main/ 2>&1
+SAVE_COUNT=\$(ls /app/server/engine/data/players/main/*.sav 2>/dev/null | wc -l)
+echo "[diag] Save count: \$SAVE_COUNT"
+if [ "\$SAVE_COUNT" -lt 10 ]; then
+    echo "[WARN] Expected 10 saves, got \$SAVE_COUNT!"
+fi
+
+echo "=== wrapper done, starting services ==="
+exec /start-services-base.sh
+`;
+const GP_WRAPPER_B64 = Buffer.from(GP_WRAPPER_SCRIPT).toString('base64');
+
 // Base64-encode GP files at generation time (injected into Dockerfile)
 const gpLoopInstructionB64 = Buffer.from(
   readFileSync(join(SHARED_DIR, 'gp_loop_instruction.md'), 'utf-8')
@@ -222,53 +270,9 @@ RUN printf '#!/bin/bash\\nexec tail -f /dev/null\\n' > /entrypoint.sh && chmod +
 
 # Wrap /start-services.sh to restore saves BEFORE the engine starts.
 # Includes diagnostics to debug any startup issues.
+# Script is base64-encoded to avoid Dockerfile heredoc/escaping issues.
 RUN mv /start-services.sh /start-services-base.sh && \\
-    cat > /start-services.sh << 'WRAPPER_EOF'
-#!/bin/bash
-LOG=/tmp/savegen-diag.log
-exec > >(tee -a "$LOG") 2>&1
-echo "=== start-services wrapper $(date) ==="
-
-# Diagnostic: check what exists at startup
-echo "[diag] saves-backup contents:"
-ls -la /app/saves-backup/ 2>&1 || echo "[diag] NO saves-backup dir"
-echo "[diag] players/main contents BEFORE restore:"
-ls -la /app/server/engine/data/players/main/ 2>&1 || echo "[diag] NO players/main dir"
-echo "[diag] db.sqlite exists: $(ls -la /app/server/engine/db.sqlite 2>&1)"
-
-# Strategy 1: cp from backup (fast, no bun dependency)
-mkdir -p /app/server/engine/data/players/main
-if ls /app/saves-backup/*.sav 1>/dev/null 2>&1; then
-    echo "[restore] Copying saves from backup..."
-    cp /app/saves-backup/*.sav /app/server/engine/data/players/main/
-    echo "[restore] Copied $(ls /app/server/engine/data/players/main/*.sav 2>/dev/null | wc -l) saves"
-else
-    echo "[restore] No backup saves found, running generator..."
-    cd /app && bun run benchmark/shared/generate_gp_saves.ts 2>&1 || echo "[restore] GENERATOR FAILED: $?"
-fi
-
-# Restore database backup if needed
-if [ ! -f /app/server/engine/db.sqlite ] && [ -f /app/saves-backup/db.sqlite ]; then
-    echo "[restore] Restoring db.sqlite from backup"
-    cp /app/saves-backup/db.sqlite /app/server/engine/db.sqlite
-fi
-
-# Run migrations + account creation as safety net
-cd /app/server/engine && bun run sqlite:migrate 2>/dev/null || true
-cd /app/server/engine && bun create_gp_accounts.ts 2>/dev/null || true
-
-# Verify
-echo "[diag] players/main contents AFTER restore:"
-ls -la /app/server/engine/data/players/main/ 2>&1
-SAVE_COUNT=$(ls /app/server/engine/data/players/main/*.sav 2>/dev/null | wc -l)
-echo "[diag] Save count: $SAVE_COUNT"
-if [ "$SAVE_COUNT" -lt 10 ]; then
-    echo "[WARN] Expected 10 saves, got $SAVE_COUNT!"
-fi
-
-echo "=== wrapper done, starting services ==="
-exec /start-services-base.sh
-WRAPPER_EOF
+    echo '${GP_WRAPPER_B64}' | base64 -d > /start-services.sh && \\
     chmod +x /start-services.sh
 `;
 
