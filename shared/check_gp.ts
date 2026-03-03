@@ -3,7 +3,7 @@
  * Reads per-loop GP results from /app/gp_results.json (written by the agent).
  * Also connects to bots from the last completed loop to verify inventory coins.
  *
- * Bot naming: l{loop}a{1-5} — e.g. l1a1, l1a2, ..., l5a5
+ * Bot naming: l{loop}a{1-2} — e.g. l1a1, l1a2, ..., l5a2
  *
  * Writes best loop GP to reward.txt for Harbor compatibility.
  * Writes full per-loop breakdown to reward.json for charting.
@@ -84,8 +84,8 @@ async function main() {
 
     if (lastLoop) {
         const loopNum = lastLoop.loop;
-        console.log(`\nVerifying loop ${loopNum} bots (l${loopNum}a1 - l${loopNum}a5)...`);
-        for (let i = 1; i <= 5; i++) {
+        console.log(`\nVerifying loop ${loopNum} bots (l${loopNum}a1 - l${loopNum}a2)...`);
+        for (let i = 1; i <= 2; i++) {
             const botName = `l${loopNum}a${i}`;
             const coins = await getCoinsForBot(botName);
             verifiedGp[botName] = coins;
