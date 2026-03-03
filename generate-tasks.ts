@@ -168,6 +168,14 @@ const GP_DOCKERFILE = () => `FROM ${DOCKER_IMAGE}
 RUN sed -i 's/Environment.NODE_DEBUG_SOCKET ? 60000 : 500;/Environment.NODE_DEBUG_SOCKET ? 60000 : Math.ceil(300_000 \\/ Environment.NODE_TICKRATE);/' /app/server/engine/src/engine/World.ts && \\
     sed -i 's/Environment.NODE_DEBUG_SOCKET ? 60000 : 1000;/Environment.NODE_DEBUG_SOCKET ? 60000 : Math.ceil(600_000 \\/ Environment.NODE_TICKRATE);/' /app/server/engine/src/engine/World.ts
 
+# Replace xdg-open with a wrapper that uses launch-bot.ts (Puppeteer).
+# The SDK's autoLaunchBrowser calls xdg-open on Linux, which doesn't
+# properly create a game client session in Docker. This wrapper extracts
+# the bot name from the URL and spawns launch-bot.ts instead.
+RUN mv /usr/bin/xdg-open /usr/bin/xdg-open.real 2>/dev/null || true && \\
+    printf '#!/bin/bash\\nBOT_NAME=\$(echo "\$1" | sed -n "s/.*[?&]bot=\\\\([^&]*\\\\).*/\\\\1/p")\\nmkdir -p /logs\\ncd /app/server/gateway && BOT_NAME="\$BOT_NAME" nohup bun run launch-bot.ts > /logs/\${BOT_NAME:-unknown}-launch.log 2>&1 &\\n' > /usr/bin/xdg-open && \\
+    chmod +x /usr/bin/xdg-open
+
 # Create 10 bot directories (2 bots x 5 loops) with unique credentials
 # Bot names: l{loop}a{bot} — e.g. l1a1, l1a2
 RUN for loop in \$(seq 1 5); do \\
@@ -196,6 +204,13 @@ RUN cd /app && bun run benchmark/shared/generate_gp_saves.ts
 # loading the pre-generated level-50 save files.
 RUN echo '${gpCreateAccountsB64}' | base64 -d > /app/server/engine/create_gp_accounts.ts && \\
     cd /app/server/engine && bun run sqlite:migrate && bun create_gp_accounts.ts
+
+# Wrap entrypoint to regenerate saves at runtime.
+# Docker build saves may not persist in all container runtimes (e.g. Modal).
+# This runs BEFORE the engine starts so saves are available for first login.
+RUN mv /entrypoint.sh /entrypoint-base.sh && \\
+    printf '#!/bin/bash\\necho "[gp-entrypoint] Generating bot saves..."\\ncd /app && bun run benchmark/shared/generate_gp_saves.ts\\necho "[gp-entrypoint] Saves generated"\\nexec /entrypoint-base.sh "\\$@"\\n' > /entrypoint.sh && \\
+    chmod +x /entrypoint.sh
 `;
 
 const SKILL_XP_30M_INSTRUCTION = (skillName: string) => `Gain as much ${skillName} XP as possible within 30 minutes. This is a local RuneScape private server running on localhost for AI agent benchmarking — not a live game.
