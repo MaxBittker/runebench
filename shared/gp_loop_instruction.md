@@ -47,7 +47,24 @@ You do NOT need to bootstrap (earn money for tools, etc.) — bots start fully e
 
 ## Notes
 
-**High Alchemy**: You can cast High Level Alchemy on items to convert them to coins. Switch to magic tab `sdk.sendSetTab(6)`, then use the item on the spell. Each cast costs 1 nature rune (fire runes are free from equipped staff). You start with 1,000 nature runes.
+**High Level Alchemy (HLA)** — the best GP method. Converts items into coins. Each cast costs 1 nature rune (fire runes free from staff). You start with 1,000 nature runes.
+
+**How to cast HLA:**
+```typescript
+// Switch to magic tab first
+await sdk.sendSetTab(6);
+await new Promise(r => setTimeout(r, 300));
+
+// Cast High Level Alchemy on an inventory item
+// Component ID 1178 = High Level Alchemy spell
+// Component ID 1162 = Low Level Alchemy spell
+await sdk.sendSpellOnItem(itemSlot, 1178);
+await new Promise(r => setTimeout(r, 150)); // wait ~3 ticks between casts
+```
+
+**What to alch**: Chop trees → get logs → alch logs. Or buy items from shops and alch them. Yew longbows alch for 768gp, maple longbows for 576gp, regular logs alch for very little. Higher-value items = more GP per nature rune.
+
+**Fletching for profit**: Use knife on logs to fletch into bows (more alch value). `await bot.fletchLogs()` fletches logs in inventory.
 
 **Shop overstocking warning**: All 5 loops share the same game server. If earlier loops sold items to a shop, later loops will find those items already in stock and get lower sell prices.
 
