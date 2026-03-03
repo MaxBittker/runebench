@@ -244,23 +244,19 @@ RUN mkdir -p /app/benchmark/shared && \\
 # Create empty learnings file for loop 1
 RUN touch /app/learnings.md
 
-# Generate 10 save files with level 50 skills, starting items, and equipment
-RUN cd /app && bun run benchmark/shared/generate_gp_saves.ts
-
-# Back up build-time saves so we can restore them at runtime with a simple cp
-# (avoids depending on bun at container startup).
+# Generate 10 save files and back up for runtime restore.
+# Best-effort at build time — the wrapper will regenerate at runtime if needed.
 RUN mkdir -p /app/saves-backup && \\
-    cp /app/server/engine/data/players/main/*.sav /app/saves-backup/ && \\
-    ls -la /app/saves-backup/
+    cd /app && bun run benchmark/shared/generate_gp_saves.ts 2>&1 && \\
+    cp /app/server/engine/data/players/main/*.sav /app/saves-backup/ 2>/dev/null && \\
+    echo "[build] Backed up $(ls /app/saves-backup/*.sav 2>/dev/null | wc -l) saves" || \\
+    echo "[build] WARNING: Save generation failed at build time, will retry at runtime"
 
 # Initialize SQLite database and create bot accounts.
-# Without this, bots log in as new characters on Tutorial Island instead of
-# loading the pre-generated level-50 save files.
 RUN echo '${gpCreateAccountsB64}' | base64 -d > /app/server/engine/create_gp_accounts.ts && \\
-    cd /app/server/engine && bun run sqlite:migrate && bun create_gp_accounts.ts
-
-# Back up the SQLite database too (accounts)
-RUN cp /app/server/engine/db.sqlite /app/saves-backup/db.sqlite
+    cd /app/server/engine && bun run sqlite:migrate && bun create_gp_accounts.ts && \\
+    cp /app/server/engine/db.sqlite /app/saves-backup/db.sqlite 2>/dev/null || \\
+    echo "[build] WARNING: Account creation failed at build time, will retry at runtime"
 
 # Replace Docker ENTRYPOINT with a keep-alive — Harbor runs both ENTRYPOINT
 # and /start-services.sh, causing port conflicts when both start the engine.
