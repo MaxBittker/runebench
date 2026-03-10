@@ -40,6 +40,7 @@ else
     # Copy shared scripts from shared/ (single source of truth)
     cp ../shared/skill_tracker.ts skill_tracker.ts
     cp ../shared/check_xp_rate.ts check_xp_rate.ts
+    cp ../shared/agents.md agents.md
 
     if [ "$PUSH" = "1" ] || [ "$PUSH" = "true" ]; then
         docker buildx build --platform "${PLATFORM}" -t "${FULL_IMAGE}" --push .
