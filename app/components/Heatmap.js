@@ -74,8 +74,6 @@ export function Heatmap({ data, activeModel, activeSkill }) {
     const sd = data[modelKey]?.[skill];
     if (sd?.trajectory?.length > 0) {
       navigate('trajectory/' + modelKey + '/' + skill);
-    } else {
-      navigate('model/' + modelKey);
     }
   }
 
@@ -116,9 +114,7 @@ export function Heatmap({ data, activeModel, activeSkill }) {
                 if (!cfg) return null;
                 return html`
                   <tr key=${m.key}>
-                    <td className="heatmap-model"
-                        onClick=${() => navigate('model/' + m.key)}
-                        style=${{ cursor: 'pointer' }}>
+                    <td className="heatmap-model">
                       <img src=${cfg.icon} alt="" />
                       <span>${cfg.shortName}</span>
                     </td>

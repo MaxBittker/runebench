@@ -49,7 +49,7 @@ export function CumulativeChart({ data }) {
           <div className="column">
             <h2 className="title is-3">Peak XP Rate Over Time</h2>
             <p className="subtitle is-6" style=${{ color: '#888' }}>
-              Peak XP/min across 16 skills over 30 minutes of playtime at 8x tick speed.   
+              Peak XP/min across 16 skills over 30 minutes of accelerated playtime, equivalent to 4 hours   
 
             </p>
           </div>

@@ -8,8 +8,9 @@ import { Heatmap } from './Heatmap.js';
 import { AgentInterface } from './AgentInterface.js';
 import { Footer } from './Footer.js';
 import { TrajectoryModal } from './TrajectoryModal.js';
-import { SkillPicker } from './SkillPicker.js';
+
 import { InterestingTrajectories } from './InterestingTrajectories.js';
+import { Discussion } from './Discussion.js';
 
 export function App() {
   const route = useRoute();
@@ -25,12 +26,11 @@ export function App() {
       <${Heatmap} data=${data} activeModel=${route.model} activeSkill=${route.skill} />
         <${TrajectoryModal} model=${route.model || 'opus'} skill=${route.skill || 'woodcutting'} data=${data} seekTs=${route.seekTs} />
       <${InterestingTrajectories} data=${data} />
+      <${Discussion} />
 
       <${Footer} />
 
-      ${route.page === 'model' && html`
-        <${SkillPicker} model=${route.model} data=${data} />
-      `}
+
     </${React.Fragment}>
   `;
 }

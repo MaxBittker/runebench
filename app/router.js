@@ -12,9 +12,7 @@ function parseHash(hash) {
     }
     return { page: 'trajectory', model: parts[1], skill: parts[2] };
   }
-  if (parts[0] === 'model' && parts[1]) {
-    return { page: 'model', model: parts[1] };
-  }
+
   return { page: 'home' };
 }
 

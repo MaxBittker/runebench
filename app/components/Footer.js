@@ -7,14 +7,6 @@ export function Footer() {
         <div className="columns is-centered">
           <div className="column is-8">
             <div className="content has-text-centered" style=${{ fontSize: '0.85em', color: '#888' }}>
-            <p style=${{ marginTop: '16px' }}>
-            Thanks to${' '}
-            Rob Haisfield,
-            Sean Lee,
-            Christopher Settles, Alex Duffy, and Erik Quintanilla
-            ${' '}for critical feedback and input
-
-          </p>
               <p>
                 rs-bench is built on${' '}
                 <a href="https://github.com/MaxBittker/rs-sdk">rs-sdk</a>,
@@ -36,10 +28,10 @@ export function Footer() {
             
             </div>
             <div className="content" style=${{ marginTop: '24px', background: '#f5f5f5', borderRadius: '8px', padding: '16px 20px', fontSize: '0.8em', fontFamily: 'monospace', color: '#555', whiteSpace: 'pre-wrap' }}>
-${`@misc{bittker2025rsbench,
-  title   = {rs-bench: AI Agent Benchmark for RuneScape Gameplay Tasks},
+${`@misc{bittker2026rsbench,
+  title   = {rs-bench: AI Agent Benchmark on RuneScape Gameplay Tasks},
   author  = {Max Bittker},
-  year    = {2025},
+  year    = {2026},
   note    = {Websim}
 }`}
             </div>

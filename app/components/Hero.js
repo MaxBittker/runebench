@@ -33,6 +33,15 @@ export function Hero() {
                       <span>rs-sdk</span>
                     </a>
                   </span>
+                  <span className="link-block">
+                    <a href="https://discord.com/invite/3DcuU5cMJN" target="_blank"
+                       className="external-link button is-normal is-rounded is-dark">
+                      <span className="icon">
+                        <i className="fab fa-discord"></i>
+                      </span>
+                      <span>Discord</span>
+                    </a>
+                  </span>
                 </div>
               </div>
             </div>

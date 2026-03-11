@@ -742,45 +742,6 @@ body {
   color: #555;
 }
 
-/* Skill picker */
-.skill-picker-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
-  padding: 20px 24px;
-}
-.skill-picker-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 10px;
-  border: 1px solid #e8e8e8;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  color: #333;
-  transition: border-color 0.15s, background 0.15s;
-}
-.skill-picker-item:hover {
-  border-color: #999;
-  background: #fafafa;
-}
-.skill-picker-item img {
-  width: 16px;
-  height: 16px;
-}
-.skill-picker-xp {
-  margin-left: auto;
-  font-size: 11px;
-  font-weight: 400;
-  color: #aaa;
-}
-.skill-picker-item.no-traj {
-  opacity: 0.4;
-  cursor: default;
-}
-
 /* Clickable heatmap cells */
 .heatmap-table tbody tr { cursor: pointer; }
 .heatmap-table tbody td:not(.heatmap-model):not(.heatmap-total):hover {
@@ -796,10 +757,6 @@ body {
   background: rgba(0,0,0,0.45);
   overflow: auto;
 }
-.modal-backdrop.skill-picker {
-  z-index: 999;
-}
-
 /* Inline trajectory viewer */
 .traj-inline {
   background: #fff;
@@ -929,18 +886,6 @@ body {
   cursor: pointer;
   color: #999;
   padding: 0 4px;
-}
-
-/* Skill picker modal inner */
-.skill-picker-inner {
-  max-width: 360px;
-  margin: 40px auto;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-  max-height: calc(100vh - 80px);
-  display: flex;
-  flex-direction: column;
 }
 
 /* Agent Interface section */
