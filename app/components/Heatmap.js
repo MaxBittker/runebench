@@ -26,7 +26,7 @@ function peakRateAtHorizon(skillData, skill) {
   return skillData.peakXpRate || 0;
 }
 
-export function Heatmap({ data }) {
+export function Heatmap({ data, activeModel, activeSkill }) {
   const { models, skillOrder, skillMax, skillPad } = useMemo(() => {
     if (!data) return { models: [], skillOrder: [], skillMax: {} };
 
@@ -125,9 +125,10 @@ export function Heatmap({ data }) {
                     ${skillOrder.map(skill => {
                       const rate = m.skills[skill];
                       const s = cellTier(rate, skillMax[skill]);
+                      const isActive = m.key === activeModel && skill === activeSkill;
                       return html`
                         <td key=${skill}
-                            style=${{ background: s.bg, color: s.color, fontVariantNumeric: 'tabular-nums', cursor: 'pointer', fontSize: '11px' }}
+                            style=${{ background: s.bg, color: s.color, fontVariantNumeric: 'tabular-nums', cursor: 'pointer', fontSize: '11px', ...(isActive ? { outline: '2px solid #5b8def', outlineOffset: '-2px', zIndex: 1, position: 'relative' } : {}) }}
                             onClick=${() => handleCellClick(m.key, skill)}>
                           ${formatNorm(rate, skillPad[skill])}
                         </td>

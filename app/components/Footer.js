@@ -13,6 +13,7 @@ export function Footer() {
             Sean Lee,
             Christopher Settles, and Alex Duffy
             ${' '}for critical feedback and input
+
           </p>
               <p>
                 rs-bench is built on${' '}
@@ -25,12 +26,12 @@ export function Footer() {
                 ${' '}by Jack Hopkins et al.
               </p>
               <p>
+                Benchmarks run using the <a href="https://harborframework.com/">Harbor</a> framework.
+              </p>
+              <p>
                 Website template borrowed from <a href="https://nerfies.github.io">Nerfies</a>
                 ${' '}licensed under${' '}
                 <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.
-              </p>
-              <p>
-                Benchmarks run using the <a href="https://harborframework.com/">Harbor</a> framework.
               </p>
             
             </div>

@@ -1,6 +1,21 @@
 import { html, useState, useEffect, useRef, useCallback, useMemo } from '../html.js';
 import { navigate } from '../router.js';
 
+const TIERS = {
+  zero: { bg: 'rgba(200,200,200,0.2)' },
+  low:  { bg: 'rgba(200,230,201,0.3)' },
+  mid:  { bg: 'rgba(129,199,132,0.3)' },
+  high: { bg: 'rgba(67,160,71,0.3)' },
+};
+
+function cellTier(rate, maxRate) {
+  if (rate <= 0 || maxRate <= 0) return TIERS.zero;
+  const t = rate / maxRate;
+  if (t >= 0.9) return TIERS.high;
+  if (t >= 0.5) return TIERS.mid;
+  return TIERS.low;
+}
+
 const SKILL_COLORS = {
   attack:'#e04040', defence:'#6090d0', strength:'#40a040', hitpoints:'#d04070',
   ranged:'#50b050', prayer:'#d0d060', magic:'#6060d0', woodcutting:'#8b6040',
@@ -179,6 +194,30 @@ export function TrajectoryModal({ model, skill, data }) {
     () => getNavLists(data, model, skill), [data, model, skill]
   );
 
+  // Compute heatmap-style tier colors for nav buttons
+  const { modelTiers, skillTiers } = useMemo(() => {
+    if (!data) return { modelTiers: {}, skillTiers: {} };
+    const allModels = Object.keys(data);
+
+    // Model chips: tier each model's rate for the current skill
+    const maxForSkill = Math.max(0, ...allModels.map(m => data[m]?.[skill]?.peakXpRate || 0));
+    const modelTiers = {};
+    for (const m of modelsForSkill) {
+      const rate = data[m]?.[skill]?.peakXpRate || 0;
+      modelTiers[m] = cellTier(rate, maxForSkill);
+    }
+
+    // Skill rail: tier current model's rate for each skill
+    const skillTiers = {};
+    for (const s of skillsForModel) {
+      const maxForS = Math.max(0, ...allModels.map(m => data[m]?.[s]?.peakXpRate || 0));
+      const rate = data[model]?.[s]?.peakXpRate || 0;
+      skillTiers[s] = cellTier(rate, maxForS);
+    }
+
+    return { modelTiers, skillTiers };
+  }, [data, model, skill, modelsForSkill, skillsForModel]);
+
   const [videoOffset, setVideoOffset] = useState(0);
 
   const containerRef = useRef(null);
@@ -192,6 +231,18 @@ export function TrajectoryModal({ model, skill, data }) {
   const maxVideoTimeRef = useRef(Infinity);
   const videoReadyRef = useRef(false);
   const chartDraggingRef = useRef(false);
+  const initialRenderRef = useRef(true);
+
+  // Scroll into view when user navigates (not on initial load)
+  useEffect(() => {
+    if (initialRenderRef.current) {
+      initialRenderRef.current = false;
+      return;
+    }
+    if (containerRef.current) {
+      containerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [model, skill]);
 
   // Seek video to a step timestamp
   const seekVideo = useCallback((stepTs) => {
@@ -636,15 +687,19 @@ export function TrajectoryModal({ model, skill, data }) {
 
   const skillRail = html`
     <aside className="traj-skill-rail" aria-label="Skill navigation">
-      ${skillsForModel.map(s => html`
-        <button key=${s}
-          type="button"
-          className=${`traj-skill-rail-btn${s === skill ? ' active' : ''}`}
-          title=${SKILL_DISPLAY[s] || s}
-          onClick=${() => navigate('trajectory/' + model + '/' + s)}>
-          <img src=${VIEWS_BASE + 'skill-icons/' + s + '.png'} alt=${SKILL_DISPLAY[s] || s} />
-        </button>
-      `)}
+      ${skillsForModel.map(s => {
+        const tier = skillTiers[s] || TIERS.zero;
+        return html`
+          <button key=${s}
+            type="button"
+            className=${`traj-skill-rail-btn${s === skill ? ' active' : ''}`}
+            style=${{ background: tier.bg }}
+            title=${SKILL_DISPLAY[s] || s}
+            onClick=${() => navigate('trajectory/' + model + '/' + s)}>
+            <img src=${VIEWS_BASE + 'skill-icons/' + s + '.png'} alt=${SKILL_DISPLAY[s] || s} />
+          </button>
+        `;
+      })}
     </aside>
   `;
 
@@ -653,9 +708,11 @@ export function TrajectoryModal({ model, skill, data }) {
       <div className="traj-nav-chips">
         ${modelsForSkill.map(m => {
           const mc = MODEL_CONFIG[m] || { shortName: m };
+          const tier = modelTiers[m] || TIERS.zero;
           return html`
             <button key=${m}
               className=${`traj-chip model${m === model ? ' active' : ''}`}
+              style=${{ background: tier.bg }}
               onClick=${() => navigate('trajectory/' + m + '/' + skill)}>
               ${mc.icon && html`<img src=${mc.icon} className="traj-chip-icon" />`}
               <span className="traj-chip-label">${mc.shortName || mc.displayName || m}</span>
