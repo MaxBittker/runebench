@@ -1,4 +1,4 @@
-// Standalone cumulative peak rate chart renderer for rs-bench
+// Standalone cumulative peak rate chart renderer for RuneBench
 // Requires: Chart.js, shared-constants.js
 
 (function() {

@@ -742,6 +742,16 @@ body {
   color: #555;
 }
 
+/* Sortable column headers */
+.sort-header {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.sort-header:hover {
+  background: #f0f0f0;
+}
+
 /* Clickable heatmap cells */
 .heatmap-table tbody tr { cursor: pointer; }
 .heatmap-table tbody td:not(.heatmap-model):not(.heatmap-total):hover {

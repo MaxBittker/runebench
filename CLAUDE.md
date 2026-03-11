@@ -1,4 +1,4 @@
-# rs-bench — Benchmark Tasks (Harbor)
+# RuneBench — Benchmark Tasks (Harbor)
 
 Benchmark suite for evaluating AI agents on RuneScape gameplay tasks.
 Uses [rs-sdk](https://github.com/MaxBittker/rs-sdk) as the game environment (cloned at Docker build time).
@@ -18,7 +18,7 @@ All task directories are **generated** — never edit them directly.
 ## Directory structure
 
 ```
-rs-bench/
+RuneBench/
 ├── scripts/              ← run.sh, run-skills-10m.sh, run-skills-30m.sh, run-common.sh
 ├── extractors/           ← extract-skill-results.ts, extract-gold-results.ts
 ├── agents/               ← kimi_adapter.py, qwen3_adapter.py, opencode_adapter.py, install-opencode.sh.j2

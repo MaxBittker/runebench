@@ -7,7 +7,7 @@ export function Hero() {
         <div className="container is-max-desktop">
           <div className="columns is-centered">
             <div className="column has-text-centered">
-              <h1 className="title is-1 publication-title">Runescape-Bench</h1>
+              <h1 className="title is-1 publication-title">RuneBench</h1>
               <p className="subtitle is-3" style=${{ marginTop: '-0.5rem', marginBottom: 0 }}>
                 Agent Benchmark on RuneScape Gameplay Tasks
               </p>
@@ -15,7 +15,7 @@ export function Hero() {
               <div className="column has-text-centered">
                 <div className="publication-links" style=${{ gap: '8px', display: 'flex', justifyContent: 'center' }}>
                   <span className="link-block">
-                    <a href="https://github.com/MaxBittker/runescape-bench" target="_blank"
+                    <a href="https://github.com/MaxBittker/RuneBench" target="_blank"
                        className="external-link button is-normal is-rounded is-dark">
                       <span className="icon">
                         <i className="fab fa-github"></i>

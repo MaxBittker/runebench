@@ -1,4 +1,4 @@
-// Shared constants and helpers for rs-bench views
+// Shared constants and helpers for RuneBench views
 // Used by graph-skills.html and index.html (via cumulative-chart.js)
 
 const VIEWS_BASE = window.VIEWS_BASE || '';

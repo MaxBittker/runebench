@@ -8,7 +8,7 @@ export function Footer() {
           <div className="column is-8">
             <div className="content has-text-centered" style=${{ fontSize: '0.85em', color: '#888' }}>
               <p>
-                rs-bench is built on${' '}
+                RuneBench is built on${' '}
                 <a href="https://github.com/MaxBittker/rs-sdk">rs-sdk</a>,
                 and <a href="https://github.com/LostCityRS/Server">LostCity</a> engine/client
               </p>
@@ -28,8 +28,8 @@ export function Footer() {
             
             </div>
             <div className="content" style=${{ marginTop: '24px', background: '#f5f5f5', borderRadius: '8px', padding: '16px 20px', fontSize: '0.8em', fontFamily: 'monospace', color: '#555', whiteSpace: 'pre-wrap' }}>
-${`@misc{bittker2026rsbench,
-  title   = {rs-bench: AI Agent Benchmark on RuneScape Gameplay Tasks},
+${`@misc{bittker2026runebench,
+  title   = {RuneBench: AI Agent Benchmark on RuneScape Gameplay Tasks},
   author  = {Max Bittker},
   year    = {2026},
   note    = {Websim}

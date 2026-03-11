@@ -5,6 +5,7 @@ import { PromoPlayer } from './PromoPlayer.js';
 import { Overview } from './Overview.js';
 import { CumulativeChart } from './CumulativeChart.js';
 import { Heatmap } from './Heatmap.js';
+import { CostTable } from './CostTable.js';
 import { AgentInterface } from './AgentInterface.js';
 import { Footer } from './Footer.js';
 import { TrajectoryModal } from './TrajectoryModal.js';
