@@ -13,7 +13,7 @@ jobs-v1/
 
 # Python
 __pycache__/
-
+node_modules/
 # Generated result artifacts (not the HTML viewers)
 results/_combined.json
 
