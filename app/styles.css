@@ -683,20 +683,6 @@ body {
   border-radius: 8px;
   overflow: hidden;
 }
-.traj-header-meta {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #555;
-}
-.traj-header-date {
-  color: #aaa;
-  font-weight: 400;
-  margin-left: 4px;
-}
 .traj-topbar {
   display: flex;
   flex-wrap: wrap;
