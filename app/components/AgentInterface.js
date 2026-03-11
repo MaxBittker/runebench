@@ -28,20 +28,25 @@ export function AgentInterface() {
         <div className="columns is-centered has-text-centered">
           <div className="column is-four-fifths">
             <h2 className="title is-3">How Agents See the World</h2>
-            <div className="content has-text-justified">
-              <p>
-                Off-the-shelf coding agents like Claude Code, Codex, and Gemini CLI play the game via TypeScript snippets executed against an emulated game server. They have access to a game knowledge folder and a full-featured TypeScript SDK.
-              </p>
-            </div>
           </div>
         </div>
-        <div className="columns" style=${{ marginTop: '2rem', gap: '1.5rem' }}>
-          <div className="column">
+
+        <div className="agent-row">
+          <div className="agent-row-text">
             <div className="agent-panel-label">TypeScript SDK</div>
+            <p>Agents play the game by writing and executing TypeScript snippets against an emulated game server. The SDK provides access to reading game state and performing actions.</p>
+          </div>
+          <div className="agent-row-example">
             <${CodeBlock} code=${EXAMPLE_CODE} lang="javascript" />
           </div>
-          <div className="column">
+        </div>
+
+        <div className="agent-row">
+          <div className="agent-row-text">
             <div className="agent-panel-label">Game Knowledge</div>
+            <p>Each agent is given a folder of markdown files extracted from the game wiki — skill guides, item stats, NPC locations, and quest walkthroughs. They can search the files to inform their strategy.</p>
+          </div>
+          <div className="agent-row-example">
             <${WikiBrowser} />
           </div>
         </div>

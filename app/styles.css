@@ -105,9 +105,45 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 @media (max-width: 640px) {
-  .promo-grid {
-    grid-template-columns: 1fr;
+  .teaser .container {
+    padding-left: 0;
+    padding-right: 0;
   }
+  .teaser .hero-body {
+    padding-left: 0;
+    padding-right: 0;
+  }
+  .promo-grid {
+    display: flex;
+    border-radius: 0;
+    overflow: hidden;
+    scroll-behavior: smooth;
+  }
+  .promo-cell {
+    flex: 0 0 100%;
+  }
+  .promo-dots {
+    display: flex;
+  }
+}
+.promo-dots {
+  display: none;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 0 4px;
+}
+.promo-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ccc;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.promo-dot.active {
+  background: #666;
 }
 
 /* Chart styles */
@@ -771,7 +807,7 @@ body {
   flex-direction: column;
   max-height: 80vh;
   min-height: 500px;
-  max-width: 1344px;
+  max-width: 1167px;
   margin: 0 auto;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
@@ -815,7 +851,7 @@ body {
   display: flex;
   align-items: center;
   gap: 3px;
-  padding: 3px 7px;
+  padding: 3px 3px;
   border: 1px solid #e0e0e0;
   border-radius: 5px;
   background: #fff;
@@ -914,6 +950,7 @@ body {
   overflow-x: auto;
   font-size: 13px;
   line-height: 1.55;
+  max-width: 100%;
 }
 .agent-code-pre code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -924,6 +961,30 @@ body {
   font-size: 13px;
   color: #999;
   margin-top: 1rem;
+}
+
+/* Agent two-column rows */
+.agent-row {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+.agent-row-text {
+  flex: 0 0 280px;
+  padding-top: 0.5rem;
+}
+.agent-row-text p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #555;
+  margin: 0;
+}
+.agent-row-example {
+  flex: 1;
+  min-width: 0;
+  width: 0;
+  overflow: hidden;
 }
 
 /* Agent panel labels */
@@ -1086,4 +1147,7 @@ body {
   .features-grid { grid-template-columns: 1fr !important; }
   .agent-code-pre { font-size: 11px; }
   .agent-code-pre code { font-size: 11px; }
+  .agent-row { flex-direction: column; gap: 0.75rem; }
+  .agent-row-text { flex: none; }
+  .agent-row-example { width: auto; }
 }

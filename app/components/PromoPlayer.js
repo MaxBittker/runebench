@@ -118,6 +118,32 @@ export function PromoPlayer({ data }) {
     });
   }, [data]);
 
+  const [mobileIndex, setMobileIndex] = useState(0);
+  const gridRef = useRef(null);
+
+  // Auto-cycle on mobile
+  useEffect(() => {
+    if (available.length <= 1) return;
+    const mq = window.matchMedia('(max-width: 640px)');
+    if (!mq.matches) return;
+    const id = setInterval(() => {
+      setMobileIndex(i => (i + 1) % available.length);
+    }, 6000);
+    return () => clearInterval(id);
+  }, [available.length]);
+
+  // Scroll to active cell on mobile
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    const mq = window.matchMedia('(max-width: 640px)');
+    if (!mq.matches) return;
+    const cell = el.children[mobileIndex];
+    if (cell) {
+      el.scrollTo({ left: cell.offsetLeft, behavior: 'smooth' });
+    }
+  }, [mobileIndex]);
+
   if (available.length === 0) {
     return html`
       <section className="hero teaser">
@@ -126,7 +152,7 @@ export function PromoPlayer({ data }) {
             <img className="teaser-img"
                  src="https://raw.githubusercontent.com/MaxBittker/rs-sdk/main/server/content/title/promo.gif"
                  alt="rs-sdk demo" />
-           
+
           </div>
         </div>
       </section>
@@ -137,7 +163,7 @@ export function PromoPlayer({ data }) {
     <section className="hero teaser">
       <div className="container is-fluid">
         <div className="hero-body">
-          <div className="promo-grid">
+          <div className="promo-grid" ref=${gridRef}>
             ${available.map((s, i) => html`
               <${PromoCell}
                 key=${s.model + '-' + s.skill}
@@ -146,7 +172,13 @@ export function PromoPlayer({ data }) {
                 skill=${s.skill} />
             `)}
           </div>
-   
+          <div className="promo-dots">
+            ${available.map((_, i) => html`
+              <button key=${i}
+                className=${'promo-dot' + (i === mobileIndex ? ' active' : '')}
+                onClick=${() => setMobileIndex(i)} />
+            `)}
+          </div>
         </div>
       </div>
     </section>
