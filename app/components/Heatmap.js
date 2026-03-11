@@ -89,7 +89,7 @@ export function Heatmap({ data, activeModel, activeSkill }) {
               Peak XP/min (real-game equivalent) per skill.  
               Skills are ordered by difficulty.
               <br />
-              <b>Best of 1.</b> Please treat these numbers with a wide error margin.
+              <b>Best of 1,</b> Please treat these numbers with a wide error margin.
             </p>
           </div>
         </div>

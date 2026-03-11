@@ -14,7 +14,7 @@ export function Overview() {
                 <a href="https://github.com/MaxBittker/rs-sdk">rs-sdk</a>
                 ${' '}and must write code to accomplish tasks in the game world.
                 The benchmark tests the agent's capabilities in a "observe, orient, decide, act loop" environment,
-                surfacing differences in their multi-step planning and problem solving capabilities.
+                surfacing differences in their multi-step planning and problem solving capabilities. It simulates 4 hour of playtime per skill.
               </p>
             </div>
           </div>

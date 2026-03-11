@@ -47,11 +47,12 @@ export function CumulativeChart({ data }) {
           <div className="column">
             <h2 className="title is-3">Peak XP Rate Over Time</h2>
             <p className="subtitle is-6" style=${{ color: '#888' }}>
-              Peak training rate (real-game XP/min) across 16 skills in 30 minutes wall clock (8x game speed). Best of 1.
+              Peak XP/min across 16 skills over 30 minutes of playtime at 8x tick speed.   
+
             </p>
           </div>
         </div>
-        <div className="benchmark-chart-wrap benchmark-chart-layout">
+        <div className="benchmark-chart-wrap benchmark-chart-layout" style=${{ paddingTop: '0px' }}>
           <aside className="skill-rail" aria-label="Skill chart filter">
             <div
               className="skill-rail-grid"
