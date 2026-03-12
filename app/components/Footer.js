@@ -30,7 +30,7 @@ export function Footer() {
             <div className="content" style=${{ marginTop: '24px', background: '#f5f5f5', borderRadius: '8px', padding: '16px 20px', fontSize: '0.8em', fontFamily: 'monospace', color: '#555', whiteSpace: 'pre-wrap' }}>
 ${`@misc{bittker2026runebench,
   title   = {RuneBench: AI Agent Benchmark on RuneScape Gameplay Tasks},
-  author  = {Max Bittker},
+  author  = {Max Bittker, Surya Narreddi, Rob Haisfield, Sean Lee},
   year    = {2026},
   note    = {Websim}
 }`}
