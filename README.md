@@ -1,6 +1,6 @@
 # runescape-bench
 
-[View results website](https://maxbittker.github.io/runescape-bench/)
+[View results website](https://maxbittker.github.io/runebench/)
 
 Benchmark suite for evaluating AI coding agents on RuneScape gameplay tasks via [rs-sdk](https://github.com/MaxBittker/rs-sdk).
 
