@@ -476,5 +476,21 @@
   "30m/sonnet45/woodcutting": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/sonnet45/woodcutting.mp4",
   "30m/opus/woodcutting": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/opus/woodcutting.mp4",
   "30m/opus45/woodcutting": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/opus45/woodcutting.mp4",
-  "30m/kimi/woodcutting": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/kimi/woodcutting.mp4"
+  "30m/kimi/woodcutting": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/kimi/woodcutting.mp4",
+  "30m/opus47/cooking": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/opus47/cooking.mp4",
+  "30m/opus47/fletching": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/opus47/fletching.mp4",
+  "30m/opus47/fishing": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/opus47/fishing.mp4",
+  "30m/opus47/defence": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/opus47/defence.mp4",
+  "30m/opus47/crafting": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/opus47/crafting.mp4",
+  "30m/opus47/hitpoints": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/opus47/hitpoints.mp4",
+  "30m/opus47/attack": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/opus47/attack.mp4",
+  "30m/opus47/firemaking": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/opus47/firemaking.mp4",
+  "30m/opus47/magic": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/opus47/magic.mp4",
+  "30m/opus47/mining": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/opus47/mining.mp4",
+  "30m/opus47/woodcutting": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/opus47/woodcutting.mp4",
+  "30m/opus47/smithing": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/opus47/smithing.mp4",
+  "30m/opus47/prayer": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/opus47/prayer.mp4",
+  "30m/opus47/ranged": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/opus47/ranged.mp4",
+  "30m/opus47/strength": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/opus47/strength.mp4",
+  "30m/opus47/thieving": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/opus47/thieving.mp4"
 }

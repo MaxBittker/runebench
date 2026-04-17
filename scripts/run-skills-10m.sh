@@ -17,6 +17,7 @@ source "$SCRIPT_DIR/run-common.sh"
 
 # ── Model definitions (agent|model-id|label) ────────────────────
 ALL_MODELS="
+claude-code|anthropic/claude-opus-4-7|opus47
 claude-code|anthropic/claude-opus-4-6|opus
 claude-code|anthropic/claude-opus-4-5|opus45
 claude-code|anthropic/claude-sonnet-4-6|sonnet46
@@ -52,7 +53,7 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
       echo "Usage: run-skills-10m.sh [-m model] [-s skill]"
       echo ""
-      echo "Models: opus, opus45, sonnet46, sonnet45, haiku, codex, codex53, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, glm, kimi, qwen3, qwen35 (default: all)"
+      echo "Models: opus47, opus, opus45, sonnet46, sonnet45, haiku, codex, codex53, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, glm, kimi, qwen3, qwen35 (default: all)"
       echo "Skills: attack, defence, strength, hitpoints, ranged, prayer, magic,"
       echo "        woodcutting, fishing, mining, cooking, fletching, crafting,"
       echo "        smithing, firemaking, thieving (default: all sixteen)"
@@ -65,7 +66,7 @@ done
 
 # Default to all if none specified
 if [ -z "$SELECTED_MODELS" ]; then
-  SELECTED_MODELS="opus opus45 sonnet46 sonnet45 haiku codex codex53 gpt54 gpt54mini gpt54nano gemini gemini31 geminiflash glm kimi qwen3 qwen35"
+  SELECTED_MODELS="opus47 opus opus45 sonnet46 sonnet45 haiku codex codex53 gpt54 gpt54mini gpt54nano gemini gemini31 geminiflash glm kimi qwen3 qwen35"
 fi
 if [ -z "$SELECTED_SKILLS" ]; then
   SELECTED_SKILLS="$ALL_SKILLS"
