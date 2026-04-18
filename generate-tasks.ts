@@ -66,8 +66,8 @@ interface VariantTask {
   environmentFiles?: Array<{ src: string; dst: string }>;
 }
 
-const GOLD_INSTRUCTION = (durationMinutes: number) => `Accumulate as much gold (coins) as possible within ${durationMinutes} minutes. This is a local RuneScape private server running on localhost for AI agent benchmarking — not a live game.
-
+const GOLD_INSTRUCTION = (durationMinutes: number, startingConditionHint?: string) => `Accumulate as much gold (coins) as possible within ${durationMinutes} minutes. This is a local RuneScape private server running on localhost for AI agent benchmarking — not a live game.
+${startingConditionHint ? `\nSTARTING CONDITION: ${startingConditionHint}\n` : ''}
 Your goal is to maximize the TOTAL COINS you have across both your inventory and bank combined. Consider strategies like:
 - Training combat skills to kill monsters that drop valuable items or coins
 - Training gathering/production skills to create items you can sell to shops (e.g. smithing bars/items, fletching bows, cooking fish)
@@ -94,9 +94,43 @@ Keep individual scripts SHORT (5-10 min max) so you can observe results and iter
 
 BANKING: Periodically deposit your coins and valuable items in the bank to avoid losing them. The verifier counts coins in BOTH inventory and bank.`;
 
-const GOLD_2H_INSTRUCTION = GOLD_INSTRUCTION(120);
-const GOLD_30M_INSTRUCTION = GOLD_INSTRUCTION(30);
-const GOLD_15M_INSTRUCTION = GOLD_INSTRUCTION(15);
+// ── Gold starting conditions ────────────────────────────────────
+
+interface GoldCondition {
+  /** Slug used in task directory name: gold-{slug}-{duration} */
+  slug: string;
+  /** Human-readable hint included in the agent instruction */
+  instructionHint?: string;
+  /** Save file (in shared/) to copy into the task's environment/ */
+  saveFile: string;
+}
+
+const GOLD_CONDITIONS: GoldCondition[] = [
+  {
+    slug: 'vanilla',
+    saveFile: 'agent-gold-vanilla.sav',
+  },
+  {
+    slug: 'smith-alch',
+    instructionHint: 'You start in Falador with 99 Mining, 99 Smithing, and 99 Magic. You have a bronze pickaxe, 100 nature runes, and 500 fire runes in your inventory. A strong strategy is: mine ore → smith bars/items → cast High Alchemy to convert them to gold.',
+    saveFile: 'agent-gold-smith-alch.sav',
+  },
+  {
+    slug: 'fish',
+    instructionHint: 'You start at the Catherby fishing spots with 50 Fishing and a small fishing net. You can fish and sell or cook your catches for gold.',
+    saveFile: 'agent-gold-fish.sav',
+  },
+  {
+    slug: 'fletch-alch',
+    instructionHint: 'You start in Seers Village with 50 Fletching, 50 Magic, a knife, and high alchemy runes (nature + fire). A strong strategy is: cut logs → fletch into bows → cast High Alchemy to convert them to gold.',
+    saveFile: 'agent-gold-fletch-alch.sav',
+  },
+];
+
+const GOLD_DURATIONS = [
+  { label: '15m', minutes: 15 },
+  { label: '30m', minutes: 30 },
+];
 
 // Stop ffmpeg and kill orphaned agent scripts before verifier runs.
 // This ensures the bot stops training before the verifier takes its final measurement,
@@ -183,58 +217,43 @@ cd /app && bun run /tests/check_skill_xp.ts
 const SKILL_XP_15M_VARIANTS = generateSkillXpVariants(15, 15000);
 const SKILL_XP_30M_VARIANTS = generateSkillXpVariants(30, 15000);
 
+function generateGoldVariants(): VariantTask[] {
+  const variants: VariantTask[] = [];
+  for (const condition of GOLD_CONDITIONS) {
+    for (const dur of GOLD_DURATIONS) {
+      const slug = `gold-${condition.slug}-${dur.label}`;
+      // 5s sampling for gold — we need tight resolution to capture transient
+      // peaks (sell-to-shop, drop pickups) before they're lost to death/etc.
+      // Peak-gold scoring (see shared/check_gold.ts) depends on this.
+      const sampleIntervalMs = 5000;
+      variants.push({
+        slug,
+        taskDescription: GOLD_INSTRUCTION(dur.minutes, condition.instructionHint),
+        agentTimeout: dur.minutes * 60 + 120,
+        verifier: 'check_gold.ts',
+        testSh: `#!/bin/bash
+set -e
+mkdir -p /logs/verifier
+${VERIFIER_CLEANUP}
+cd /app && bun run /tests/check_gold.ts
+`,
+        tags: ['game', 'runescape', 'automation', 'mcp', 'benchmark', 'gold', `gold-${condition.slug}`],
+        useTracker: true,
+        environmentDockerfile: TRACKER_DOCKERFILE(sampleIntervalMs, dur.minutes * 60),
+        environmentFiles: [{ src: condition.saveFile, dst: 'agent.sav' }],
+      });
+    }
+  }
+  return variants;
+}
+
+const GOLD_VARIANTS = generateGoldVariants();
+
 const VARIANTS: VariantTask[] = [
   ...SKILL_XP_15M_VARIANTS,
   ...SKILL_XP_30M_VARIANTS,
-  // ── Gold accumulation tasks ─────────────────────────────────────
-  {
-    slug: 'gold-15m',
-    taskDescription: GOLD_15M_INSTRUCTION,
-    agentTimeout: 900 + 120, // 15 min + 2 min buffer
-    verifier: 'check_gold.ts',
-    testSh: `#!/bin/bash
-set -e
-mkdir -p /logs/verifier
-${VERIFIER_CLEANUP}
-cd /app && bun run /tests/check_gold.ts
-`,
-    tags: ['game', 'runescape', 'automation', 'mcp', 'benchmark', 'gold'],
-    useTracker: true,
-    environmentDockerfile: TRACKER_DOCKERFILE(30000),
-    environmentFiles: [{ src: 'agent.sav', dst: 'agent.sav' }],
-  },
-  {
-    slug: 'gold-30m',
-    taskDescription: GOLD_30M_INSTRUCTION,
-    agentTimeout: 1800 + 120, // 30 min + 2 min buffer
-    verifier: 'check_gold.ts',
-    testSh: `#!/bin/bash
-set -e
-mkdir -p /logs/verifier
-${VERIFIER_CLEANUP}
-cd /app && bun run /tests/check_gold.ts
-`,
-    tags: ['game', 'runescape', 'automation', 'mcp', 'benchmark', 'gold'],
-    useTracker: true,
-    environmentDockerfile: TRACKER_DOCKERFILE(30000),
-    environmentFiles: [{ src: 'agent.sav', dst: 'agent.sav' }],
-  },
-  {
-    slug: 'gold-2h',
-    taskDescription: GOLD_2H_INSTRUCTION,
-    agentTimeout: 7200 + 180, // 2 hr + 3 min buffer
-    verifier: 'check_gold.ts',
-    testSh: `#!/bin/bash
-set -e
-mkdir -p /logs/verifier
-${VERIFIER_CLEANUP}
-cd /app && bun run /tests/check_gold.ts
-`,
-    tags: ['game', 'runescape', 'automation', 'mcp', 'benchmark', 'gold'],
-    useTracker: true,
-    environmentDockerfile: TRACKER_DOCKERFILE(60000),
-    environmentFiles: [{ src: 'agent.sav', dst: 'agent.sav' }],
-  },
+  // ── Gold accumulation tasks (4 starting conditions × 2 horizons) ──
+  ...GOLD_VARIANTS,
 ];
 
 // ── Template generators ──────────────────────────────────────────

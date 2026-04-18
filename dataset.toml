@@ -1,0 +1,138 @@
+# Dataset manifest for maxbittker/rs-bench
+# Add tasks using: harbor add <org>/<name>
+# Publish using: harbor publish
+
+[dataset]
+name = "maxbittker/runebench"
+description = "Benchmark suite for evaluating AI agents on RuneScape gameplay tasks"
+authors = []
+keywords = []
+
+[[tasks]]
+name = "maxbittker/attack-xp-15m"
+digest = "sha256:ee491bd5a971480467f0bd5938aed53c942e2fdc79e613648953ff229050bc6b"
+
+[[tasks]]
+name = "maxbittker/attack-xp-30m"
+digest = "sha256:216ac7b74be706ce3a47433bf31951f1cb806ed8b936fe1009512b1e8c0ad100"
+
+[[tasks]]
+name = "maxbittker/cooking-xp-15m"
+digest = "sha256:1560d0deef86abbfd672004bdd925ab40c2dd479471fd426de5c60cd771c3aca"
+
+[[tasks]]
+name = "maxbittker/cooking-xp-30m"
+digest = "sha256:462ddc8388fb04bad213df2692367c90530b27bd74ad475b3b2ec520e63d4869"
+
+[[tasks]]
+name = "maxbittker/crafting-xp-15m"
+digest = "sha256:ab053c73fd79a9453e4dbb282424dd33bd0673dcb6f907c98a2f5ab028c6e775"
+
+[[tasks]]
+name = "maxbittker/crafting-xp-30m"
+digest = "sha256:de06133dd8afe92c5ee478e8e8ff81528a4d930781c099fd98c43b8ca14c0310"
+
+[[tasks]]
+name = "maxbittker/defence-xp-15m"
+digest = "sha256:c49cb46cd0871761ae013bc066b92383bcd54a0a98670cc33e0e17e28f7eb5c4"
+
+[[tasks]]
+name = "maxbittker/defence-xp-30m"
+digest = "sha256:1293234ab06fdb70a5c481bf2d615ceb09bf5be63106de317f880657eff2bc04"
+
+[[tasks]]
+name = "maxbittker/firemaking-xp-15m"
+digest = "sha256:bee0218eddd8bc215f36f41066bee197ac5b65c008d27d652229ca911db172bf"
+
+[[tasks]]
+name = "maxbittker/firemaking-xp-30m"
+digest = "sha256:664034124f11c7b21bead25a4e33b410351d95a9b5ba19f1cafb5e8d04b7753a"
+
+[[tasks]]
+name = "maxbittker/fishing-xp-15m"
+digest = "sha256:22f8c2345cae882bd8c7ec8c23d39c8cd56499e71ccd7be455124f6ececc2075"
+
+[[tasks]]
+name = "maxbittker/fishing-xp-30m"
+digest = "sha256:93426db90324486abdfca3e073147e7415d728a9ea2ad19375a8799b49297828"
+
+[[tasks]]
+name = "maxbittker/fletching-xp-15m"
+digest = "sha256:2391d246a94385e61157d393b8696fe37cccb2ffe57b0c39d70ef1ed4caf8606"
+
+[[tasks]]
+name = "maxbittker/fletching-xp-30m"
+digest = "sha256:06b85769d6d39ebcf0e8f1e39687afcd4403f0a5ef37fb48ea48287471683582"
+
+[[tasks]]
+name = "maxbittker/hitpoints-xp-15m"
+digest = "sha256:03e455c9646cdf1f9d76a311b62a2230cd03bbdea04a4265673afebd50ac5047"
+
+[[tasks]]
+name = "maxbittker/hitpoints-xp-30m"
+digest = "sha256:86993467c4c1d31d1e29206f6d1d0dad06d1a71f44cfe8769b14ddd0c1064cb6"
+
+[[tasks]]
+name = "maxbittker/magic-xp-15m"
+digest = "sha256:2a8805465e5ceddef3af4619e133cabfdc614a2c51236d492c476ed93098b91a"
+
+[[tasks]]
+name = "maxbittker/magic-xp-30m"
+digest = "sha256:997253594d4bee561a7b3ed613f874e5f6e9ef6482157324e655d7dd9337fe02"
+
+[[tasks]]
+name = "maxbittker/mining-xp-15m"
+digest = "sha256:4040b74bd3d0d88162ac91b0a7a5c91761bf311f5c3895d3f9f8cf8381860399"
+
+[[tasks]]
+name = "maxbittker/mining-xp-30m"
+digest = "sha256:7e87390e4c20e4b7326d42d05a56bf1b3cf1e85e90b25833339dc3dfe724d232"
+
+[[tasks]]
+name = "maxbittker/prayer-xp-15m"
+digest = "sha256:67f66d77c5a23a1bd11767dac7461f6464b36912ab080c2b3d1221438610a26a"
+
+[[tasks]]
+name = "maxbittker/prayer-xp-30m"
+digest = "sha256:14e6cd6f89eb44da2649fc988c8ae2e318b97b5cea93c2517b59a9d064ed4792"
+
+[[tasks]]
+name = "maxbittker/ranged-xp-15m"
+digest = "sha256:1bc71a537670766de396fd294dde73ee5882f98fea25d5fa0c29fb5198a46197"
+
+[[tasks]]
+name = "maxbittker/ranged-xp-30m"
+digest = "sha256:868052a56c87b17dc08615c107c33c8edde147c07e44f43c4c5769ad55bbc66f"
+
+[[tasks]]
+name = "maxbittker/smithing-xp-15m"
+digest = "sha256:99225bf3c4d71485bda8b8ce83b69f6e4dd6a5b2a0be718f772931b87d80c2da"
+
+[[tasks]]
+name = "maxbittker/smithing-xp-30m"
+digest = "sha256:7e6dddbdc45296869f5c2af13a97f73b6a42cac13cebeb7fc232dfbcc034fbdd"
+
+[[tasks]]
+name = "maxbittker/strength-xp-15m"
+digest = "sha256:86d8e5b8a14806c63a337ebfc2e8fd42e2899b5c22887e623b42d6b596e521e4"
+
+[[tasks]]
+name = "maxbittker/strength-xp-30m"
+digest = "sha256:2325708f74241d62ae98714bd11477838b4c77d2ab3b1fb81b8d1cafc43671b0"
+
+[[tasks]]
+name = "maxbittker/thieving-xp-15m"
+digest = "sha256:35a31efbf5c0c00b0e843542afcd3e2e4ec29e1192d388767ffd0f60870e1396"
+
+[[tasks]]
+name = "maxbittker/thieving-xp-30m"
+digest = "sha256:a17e05eac303042aae40fb6b450e16790c288e034016712e6bd960c7e6d23368"
+
+[[tasks]]
+name = "maxbittker/woodcutting-xp-15m"
+digest = "sha256:d56c3a8bb45d550f9beb652b3ef12bdf1ee358cb2f7cb1fea64f566835543a90"
+
+[[tasks]]
+name = "maxbittker/woodcutting-xp-30m"
+digest = "sha256:d6ea37eb1a036b4094f1e288d7444b3055be27f491779ad8481dc135601424d1"
+

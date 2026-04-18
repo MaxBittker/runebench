@@ -172,13 +172,54 @@ function highlightAndScrollToStep(container, currentStepTs, doScroll) {
   }
 }
 
+const GOLD_CONDITIONS = ['gold-vanilla', 'gold-smith-alch', 'gold-fish', 'gold-fletch-alch'];
+const GOLD_LABELS = {
+  'gold-vanilla':     'Vanilla',
+  'gold-smith-alch':  'Smith + Alch',
+  'gold-fish':        'Fish',
+  'gold-fletch-alch': 'Fletch + Alch',
+};
+const GOLD_BASE_SKILLS = {
+  'gold-vanilla':     null,
+  'gold-smith-alch':  'smithing',
+  'gold-fish':        'fishing',
+  'gold-fletch-alch': 'fletching',
+};
+
+function isGold(skill) { return typeof skill === 'string' && skill.startsWith('gold-'); }
+
+function GoldIcon({ skill, size, className }) {
+  const coinsSrc = VIEWS_BASE + 'coins.png';
+  const sz = size || 18;
+  if (!skill) {
+    return html`
+      <span className=${'gold-icon coins-only ' + (className || '')}
+            style=${{ width: sz + 'px', height: sz + 'px' }}>
+        <img className="gold-icon-coins" src=${coinsSrc} alt="gold" />
+      </span>
+    `;
+  }
+  return html`
+    <span className=${'gold-icon ' + (className || '')}
+          style=${{ width: sz + 'px', height: sz + 'px' }}>
+      <img className="gold-icon-skill"
+           src=${VIEWS_BASE + 'skill-icons/' + skill + '.png'}
+           width=${sz} height=${sz} alt="" />
+      <img className="gold-icon-coins" src=${coinsSrc} alt="gold" />
+    </span>
+  `;
+}
+
 function getNavLists(data, model, skill) {
+  const gold = isGold(skill);
   // Models that have data for this skill (in config order)
   const modelsForSkill = Object.keys(MODEL_CONFIG)
     .filter(m => data?.[m]?.[skill])
     .sort((a, b) => (MODEL_CONFIG[a]?.order || 99) - (MODEL_CONFIG[b]?.order || 99));
-  // Skills that have data for this model (in SKILL_ORDER)
-  const skillsForModel = SKILL_ORDER.filter(s => data?.[model]?.[s]);
+  // Rail: skills for skill runs, conditions for gold runs.
+  const skillsForModel = gold
+    ? GOLD_CONDITIONS.filter(s => data?.[model]?.[s])
+    : SKILL_ORDER.filter(s => data?.[model]?.[s]);
   return { modelsForSkill, skillsForModel };
 }
 
@@ -194,24 +235,25 @@ export function TrajectoryModal({ model, skill, data, seekTs }) {
     () => getNavLists(data, model, skill), [data, model, skill]
   );
 
-  // Compute heatmap-style tier colors for nav buttons
+  // Compute heatmap-style tier colors for nav buttons. For gold runs we tier
+  // by peakGold; for skill runs by peakXpRate.
   const { modelTiers, skillTiers } = useMemo(() => {
     if (!data) return { modelTiers: {}, skillTiers: {} };
-    const allModels = Object.keys(data);
+    const allModels = Object.keys(data).filter(k => typeof data[k] === 'object');
+    const metric = isGold(skill) ? 'peakGold' : 'peakXpRate';
 
-    // Model chips: tier each model's rate for the current skill
-    const maxForSkill = Math.max(0, ...allModels.map(m => data[m]?.[skill]?.peakXpRate || 0));
+    const maxForSkill = Math.max(0, ...allModels.map(m => data[m]?.[skill]?.[metric] || 0));
     const modelTiers = {};
     for (const m of modelsForSkill) {
-      const rate = data[m]?.[skill]?.peakXpRate || 0;
+      const rate = data[m]?.[skill]?.[metric] || 0;
       modelTiers[m] = cellTier(rate, maxForSkill);
     }
 
-    // Skill rail: tier current model's rate for each skill
     const skillTiers = {};
     for (const s of skillsForModel) {
-      const maxForS = Math.max(0, ...allModels.map(m => data[m]?.[s]?.peakXpRate || 0));
-      const rate = data[model]?.[s]?.peakXpRate || 0;
+      const skMetric = isGold(s) ? 'peakGold' : 'peakXpRate';
+      const maxForS = Math.max(0, ...allModels.map(m => data[m]?.[s]?.[skMetric] || 0));
+      const rate = data[model]?.[s]?.[skMetric] || 0;
       skillTiers[s] = cellTier(rate, maxForS);
     }
 
@@ -626,46 +668,84 @@ export function TrajectoryModal({ model, skill, data, seekTs }) {
     };
   }, [trajData?.samples, skill]);
 
-  // XP Rate chart setup
+  // XP Rate chart (skill mode) / gold-over-time chart (gold mode)
   useEffect(() => {
     const canvas = rateChartCanvasRef.current;
     if (!canvas || !trajData?.samples?.length) return;
 
-    const { rates, peakRates } = computeRateData(trajData.samples, skill);
-    if (rates.length === 0) return;
-
+    const gold = isGold(skill);
     const lastElapsed = trajData.samples[trajData.samples.length - 1].elapsedMs || 1;
     const rateChartMaxMinutes = trajData.durationSeconds ? trajData.durationSeconds / 60 : lastElapsed / 60000;
-    // Rates are already real-game XP/min (normalized at computation time)
-    const normRates = rates;
-    const normPeakRates = peakRates;
-    const maxRate = normPeakRates.length > 0 ? normPeakRates[normPeakRates.length - 1].y : 0;
 
-    const datasets = [
-      {
-        label: 'XP Rate',
-        data: normRates,
-        borderColor: SKILL_COLORS[skill] || '#888',
-        backgroundColor: (SKILL_COLORS[skill] || '#888') + '20',
-        borderWidth: 1.5,
-        pointRadius: 0,
-        tension: 0,
-        fill: true,
-        order: 1,
-      },
-      {
-        label: 'Peak Rate',
-        data: normPeakRates,
-        borderColor: '#333',
-        backgroundColor: 'transparent',
-        borderWidth: 2,
-        borderDash: [4, 3],
-        pointRadius: 0,
-        tension: 0,
-        fill: false,
-        order: 0,
-      },
-    ];
+    let datasets;
+    let maxRate;
+    if (gold) {
+      const goldPts = [];
+      const peakPts = [];
+      let runningPeak = 0;
+      for (const s of trajData.samples) {
+        const x = (s.elapsedMs || 0) / 60000;
+        const g = typeof s.gold === 'number' ? s.gold : 0;
+        goldPts.push({ x, y: g });
+        if (g > runningPeak) runningPeak = g;
+        peakPts.push({ x, y: runningPeak });
+      }
+      maxRate = runningPeak;
+      datasets = [
+        {
+          label: 'Gold',
+          data: goldPts,
+          borderColor: '#c07000',
+          backgroundColor: 'rgba(255,179,0,0.2)',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          tension: 0,
+          fill: true,
+          order: 1,
+        },
+        {
+          label: 'Peak',
+          data: peakPts,
+          borderColor: '#333',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          borderDash: [4, 3],
+          pointRadius: 0,
+          tension: 0,
+          fill: false,
+          order: 0,
+        },
+      ];
+    } else {
+      const { rates, peakRates } = computeRateData(trajData.samples, skill);
+      if (rates.length === 0) return;
+      maxRate = peakRates.length > 0 ? peakRates[peakRates.length - 1].y : 0;
+      datasets = [
+        {
+          label: 'XP Rate',
+          data: rates,
+          borderColor: SKILL_COLORS[skill] || '#888',
+          backgroundColor: (SKILL_COLORS[skill] || '#888') + '20',
+          borderWidth: 1.5,
+          pointRadius: 0,
+          tension: 0,
+          fill: true,
+          order: 1,
+        },
+        {
+          label: 'Peak Rate',
+          data: peakRates,
+          borderColor: '#333',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          borderDash: [4, 3],
+          pointRadius: 0,
+          tension: 0,
+          fill: false,
+          order: 0,
+        },
+      ];
+    }
 
     const chart = new Chart(canvas, {
       type: 'line',
@@ -775,22 +855,31 @@ export function TrajectoryModal({ model, skill, data, seekTs }) {
     };
   }, [trajData?.samples, skill]);
 
+  const gold = isGold(skill);
+  const displayLabel = gold ? (GOLD_LABELS[skill] || skill) : (SKILL_DISPLAY[skill] || skill);
+  const headerIcon = gold
+    ? html`<${GoldIcon} skill=${GOLD_BASE_SKILLS[skill]} size=${14} className="traj-transcript-header-icon" />`
+    : html`<img src=${VIEWS_BASE + 'skill-icons/' + skill + '.png'} className="traj-transcript-header-icon" />`;
   const horizonMin = trajData?.durationSeconds ? Math.round(trajData.durationSeconds / 60) : 30;
   const runDate = trajData?.containerFinishedAt || trajData?.agentStartedAt || trajData?.firstStepAt;
   const dateStr = runDate ? new Date(runDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
 
   const skillRail = html`
-    <aside className="traj-skill-rail" aria-label="Skill navigation">
+    <aside className="traj-skill-rail" aria-label=${gold ? 'Condition navigation' : 'Skill navigation'}>
       ${skillsForModel.map(s => {
         const tier = skillTiers[s] || TIERS.zero;
+        const label = isGold(s) ? (GOLD_LABELS[s] || s) : (SKILL_DISPLAY[s] || s);
+        const iconEl = isGold(s)
+          ? html`<${GoldIcon} skill=${GOLD_BASE_SKILLS[s]} size=${20} />`
+          : html`<img src=${VIEWS_BASE + 'skill-icons/' + s + '.png'} alt=${label} />`;
         return html`
           <button key=${s}
             type="button"
             className=${`traj-skill-rail-btn${s === skill ? ' active' : ''}`}
             style=${{ background: tier.bg }}
-            title=${SKILL_DISPLAY[s] || s}
+            title=${label}
             onClick=${() => navigate('trajectory/' + model + '/' + s)}>
-            <img src=${VIEWS_BASE + 'skill-icons/' + s + '.png'} alt=${SKILL_DISPLAY[s] || s} />
+            ${iconEl}
           </button>
         `;
       })}
@@ -857,12 +946,12 @@ export function TrajectoryModal({ model, skill, data, seekTs }) {
                 <div className="traj-skills-chart-wrap">
                   <div className="traj-rate-legend">
                     <span className="traj-rate-legend-item">
-                      <span className="traj-rate-legend-line" style=${{ borderColor: SKILL_COLORS[skill] || '#888', background: (SKILL_COLORS[skill] || '#888') + '20' }}></span>
-                      XP Rate
+                      <span className="traj-rate-legend-line" style=${{ borderColor: gold ? '#c07000' : (SKILL_COLORS[skill] || '#888'), background: gold ? 'rgba(255,179,0,0.2)' : ((SKILL_COLORS[skill] || '#888') + '20') }}></span>
+                      ${gold ? 'Gold' : 'XP Rate'}
                     </span>
                     <span className="traj-rate-legend-item">
                       <span className="traj-rate-legend-line dashed" style=${{ borderColor: '#333' }}></span>
-                      Peak Rate
+                      ${gold ? 'Peak' : 'Peak Rate'}
                     </span>
                   </div>
                   <canvas ref=${rateChartCanvasRef}></canvas>
@@ -875,8 +964,8 @@ export function TrajectoryModal({ model, skill, data, seekTs }) {
             <div className="traj-transcript-pane" ref=${transcriptRef} onClick=${handleStepClick}
                  onMouseOver=${handleStepHover} onMouseLeave=${handleStepHoverEnd}>
               <div className="traj-transcript-header">
-                <img src=${VIEWS_BASE + 'skill-icons/' + skill + '.png'} className="traj-transcript-header-icon" />
-                <span>${skillName} \u00b7 ${horizonMin}m \u00b7 ${config.shortName || config.displayName}</span>
+                ${headerIcon}
+                <span>${displayLabel} \u00b7 ${horizonMin}m \u00b7 ${config.shortName || config.displayName}</span>
                 ${dateStr && html`<span className="traj-transcript-header-date">\u00b7 ${dateStr}</span>`}
               </div>
               ${steps.length === 0

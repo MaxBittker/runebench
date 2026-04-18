@@ -9,10 +9,13 @@ All task directories are **generated** — never edit them directly.
 
 | Path | Purpose |
 |------|---------|
-| `generate-tasks.ts` | Generates all task directories (16 skills × 10m + 16 skills × 30m + 3 gold) |
+| `generate-tasks.ts` | Generates all task directories (16 skills × {15m,30m} + 4 gold conditions × {15m,30m}) |
 | `shared/check_skill_xp.ts` | XP verifier for single-skill tasks (embeds tracking data) |
+| `shared/check_gold.ts` | Gold verifier — reads the save file directly, counts coins in inventory + bank |
 | `shared/extract-utils.ts` | Shared utilities for extract scripts |
+| `shared/pricing.ts` | Single source of truth for per-model token pricing (used by postprocess + extractors + UI) |
 | `shared/skill_tracker.ts` | Standalone skill tracker (single source of truth — copied into Docker image at build time) |
+| `shared/agent-gold-{vanilla,fish,fletch-alch,smith-alch}.sav` | Starting save files for the four gold-task conditions |
 | `docker/` | Shared Docker image source (pre-built, pushed to GHCR) |
 
 ## Directory structure
@@ -44,24 +47,33 @@ Run this before `harbor run`. Generated directories are gitignored.
 ## Running benchmarks
 
 ```bash
-# 10m per-skill XP benchmarks (all 16 skills × all models)
+# Per-skill XP benchmarks
 ./scripts/run-skills-10m.sh
-
-# 30m per-skill XP benchmarks (all 16 skills × all models)
 ./scripts/run-skills-30m.sh
+
+# Gold benchmarks (4 starting conditions × all models, unified opencode agent)
+./scripts/run-gold.sh                    # 15m, all models × 4 conditions
+./scripts/run-gold.sh --horizon 30m
+./scripts/run-gold.sh -m opus -c smith-alch
 
 # Ad-hoc single-task run (all models)
 ./scripts/run.sh -t woodcutting-xp-10m
 ```
+
+Gold tasks use the unified OpenCode adapter (`agents/opencode_adapter.py`) for every
+provider so logs and cost tracking are uniform. OpenCode writes cost_usd per step;
+for claude-code/codex/gemini-cli skill runs, `scripts/postprocess-costs.ts` backfills
+cost_usd from token counts using `shared/pricing.ts`.
 
 Each task has an `environment/Dockerfile` that `FROM`s the pre-built GHCR image, so Modal pulls the image with no build step beyond the layer cache.
 
 ## Extracting results
 
 ```bash
+bun scripts/postprocess-costs.ts                     # backfill cost_usd on jobs/
 bun extractors/extract-skill-results.ts --horizon 10m
 bun extractors/extract-skill-results.ts              # 30m (default)
-bun extractors/extract-gold-results.ts
+bun extractors/extract-gold-results.ts               # gold: keyed by condition-horizon
 ```
 
 ## Adding a new task

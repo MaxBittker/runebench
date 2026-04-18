@@ -43,6 +43,7 @@ ALL_SKILLS="attack defence strength hitpoints ranged prayer magic woodcutting fi
 # ── Defaults ──────────────────────────────────────────────────────
 SELECTED_MODELS=""
 SELECTED_SKILLS=""
+K_TRIALS=1
 EXTRA_ARGS=""
 
 # ── Parse args ────────────────────────────────────────────────────
@@ -50,13 +51,15 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     -m|--model)   SELECTED_MODELS="$SELECTED_MODELS $2"; shift 2 ;;
     -s|--skill)   SELECTED_SKILLS="$SELECTED_SKILLS $2"; shift 2 ;;
+    -k|--k-trials) K_TRIALS="$2"; shift 2 ;;
     -h|--help)
-      echo "Usage: run-skills-30m.sh [-m model] [-s skill]"
+      echo "Usage: run-skills-30m.sh [-m model] [-s skill] [-k trials]"
       echo ""
       echo "Models: opus47, opus, opus45, sonnet46, sonnet45, haiku, codex, codex53, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, glm, kimi, qwen3, qwen35 (default: all)"
       echo "Skills: attack, defence, strength, hitpoints, ranged, prayer, magic,"
       echo "        woodcutting, fishing, mining, cooking, fletching, crafting,"
       echo "        smithing, firemaking, thieving (default: all sixteen)"
+      echo "Trials: -k N  (default: 1; e.g. 4 runs each for best-of-K)"
       exit 0
       ;;
     *)
@@ -153,7 +156,7 @@ for model_name in $SELECTED_MODELS; do
     --env $HARBOR_ENV \
     --ek sandbox_timeout_secs=7200 \
     -n 16 \
-    -k 1 \
+    -k $K_TRIALS \
     $EXTRA_ARGS $MODEL_EXTRA_ARGS" 2>&1 | tee "$LOG_FILE"; then
     TOTAL_FAILED=$((TOTAL_FAILED + 1))
   fi

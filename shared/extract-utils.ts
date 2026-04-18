@@ -8,6 +8,7 @@
 
 import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { join, basename } from 'path';
+import { computeCost } from './pricing';
 
 // ── Shared interfaces ────────────────────────────────────────────
 
@@ -29,6 +30,8 @@ export interface TokenUsage {
   inputTokens: number;
   cacheTokens: number;
   outputTokens: number;
+  /** USD cost for the run (from result.json agent_result.cost_usd or computed). */
+  costUsd?: number | null;
 }
 
 // ── Sample trimming ──────────────────────────────────────────────
@@ -197,11 +200,12 @@ export function findTokenUsageInTrial(trialDir: string, opts?: { geminiTrajector
       const result = JSON.parse(readFileSync(resultPath, 'utf-8'));
       const ar = result.agent_result;
       if (ar && (ar.n_input_tokens || ar.n_output_tokens)) {
-        return {
+        return annotateCost(result, {
           inputTokens: ar.n_input_tokens || 0,
           cacheTokens: ar.n_cache_tokens || 0,
           outputTokens: ar.n_output_tokens || 0,
-        };
+          costUsd: typeof ar.cost_usd === 'number' ? ar.cost_usd : null,
+        });
       }
     } catch {}
   }
@@ -210,11 +214,35 @@ export function findTokenUsageInTrial(trialDir: string, opts?: { geminiTrajector
     const geminiTraj = join(trialDir, 'agent', 'gemini-cli.trajectory.json');
     if (existsSync(geminiTraj)) {
       const usage = parseGeminiTrajectory(geminiTraj);
-      if (usage) return usage;
+      if (usage) return annotateCost(tryReadResultJson(trialDir), usage);
     }
   }
 
   return null;
+}
+
+function tryReadResultJson(trialDir: string): any | null {
+  const p = join(trialDir, 'result.json');
+  if (!existsSync(p)) return null;
+  try { return JSON.parse(readFileSync(p, 'utf-8')); } catch { return null; }
+}
+
+/**
+ * Fill in costUsd from result.json cost_usd when present; otherwise compute it
+ * from tokens + model name via shared/pricing.ts. Mutates and returns `usage`.
+ */
+function annotateCost(result: any, usage: TokenUsage): TokenUsage {
+  if (typeof usage.costUsd === 'number') return usage;
+
+  const cfgAgent = result?.config?.agent || {};
+  const modelInfo = result?.agent_info?.model_info || {};
+  let modelName = cfgAgent.model_name || '';
+  if (modelInfo.provider && modelInfo.name) modelName = `${modelInfo.provider}/${modelInfo.name}`;
+
+  if (!modelName) return usage;
+  const cost = computeCost(modelName, usage.inputTokens, usage.cacheTokens, usage.outputTokens);
+  if (cost !== null) usage.costUsd = Math.round(cost * 1_000_000) / 1_000_000;
+  return usage;
 }
 
 // ── Token usage extraction ───────────────────────────────────────
@@ -257,11 +285,12 @@ export function findTokenUsage(jobDir: string, opts?: { geminiTrajectoryFallback
       const result = JSON.parse(readFileSync(resultPath, 'utf-8'));
       const ar = result.agent_result;
       if (ar && (ar.n_input_tokens || ar.n_output_tokens)) {
-        return {
+        return annotateCost(result, {
           inputTokens: ar.n_input_tokens || 0,
           cacheTokens: ar.n_cache_tokens || 0,
           outputTokens: ar.n_output_tokens || 0,
-        };
+          costUsd: typeof ar.cost_usd === 'number' ? ar.cost_usd : null,
+        });
       }
     } catch {}
 
@@ -270,7 +299,7 @@ export function findTokenUsage(jobDir: string, opts?: { geminiTrajectoryFallback
       const geminiTraj = join(trialDir, 'agent', 'gemini-cli.trajectory.json');
       if (existsSync(geminiTraj)) {
         const usage = parseGeminiTrajectory(geminiTraj);
-        if (usage) return usage;
+        if (usage) return annotateCost(tryReadResultJson(trialDir), usage);
       }
     }
   }

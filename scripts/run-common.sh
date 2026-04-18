@@ -37,42 +37,50 @@ configure_model_env() {
   ENV_PREFIX=""
   AGENT_FLAG="-a '$(echo "$3" | cut -d'|' -f1)'"
 
-  case "$model_name" in
-    glm)
+  # Agent dispatch — agent_name (field 1 of ALL_MODELS entry) wins over model label.
+  local agent_name
+  agent_name="$(echo "$3" | cut -d'|' -f1)"
+
+  case "$agent_name" in
+    opencode)
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'opencode_adapter:OpenCodeAdapter'"
+      ;;
+    glm-opencode)
       if [ -z "${OPENROUTER_API_KEY:-}" ]; then
-        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping glm"
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
         return 1
       fi
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'glm_adapter:GlmOpenCode'"
       ;;
-    codex|codex53|gpt54|gpt54mini|gpt54nano)
-      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
-      AGENT_FLAG="--agent-import-path 'codex_adapter:CodexWithTimeout'"
-      ;;
-    kimi)
+    kimi-opencode)
       if [ -z "${OPENROUTER_API_KEY:-}" ]; then
-        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping kimi"
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
         return 1
       fi
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'kimi_adapter:KimiOpenCode'"
       ;;
-    qwen3)
+    qwen3-opencode)
       if [ -z "${OPENROUTER_API_KEY:-}" ]; then
-        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping qwen3"
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
         return 1
       fi
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'qwen3_adapter:Qwen3OpenCode'"
       ;;
-    qwen35)
+    qwen35-opencode)
       if [ -z "${OPENROUTER_API_KEY:-}" ]; then
-        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping qwen35"
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
         return 1
       fi
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'qwen35_adapter:Qwen35OpenCode'"
+      ;;
+    codex)
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'codex_adapter:CodexWithTimeout'"
       ;;
   esac
   return 0

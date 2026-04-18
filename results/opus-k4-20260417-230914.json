@@ -1,0 +1,2050 @@
+{
+  "perModel": {
+    "opus45": {
+      "strength": [
+        {
+          "score": 60880,
+          "costUsd": 1.064476,
+          "trialName": "skills-30m-opus45-20260417-230914/strength-xp-30m__DZYVRms"
+        },
+        {
+          "score": 153480,
+          "costUsd": 2.446857,
+          "trialName": "skills-30m-opus45-20260417-230914/strength-xp-30m__sQfSbrw"
+        },
+        {
+          "score": 135680,
+          "costUsd": 1.806642,
+          "trialName": "skills-30m-opus45-20260417-230914/strength-xp-30m__RYQfcPb"
+        },
+        {
+          "score": 162780,
+          "costUsd": 2.047157,
+          "trialName": "skills-30m-opus45-20260417-230914/strength-xp-30m__Z8cpJQ3"
+        }
+      ],
+      "defence": [
+        {
+          "score": 67060,
+          "costUsd": 1.344049,
+          "trialName": "skills-30m-opus45-20260417-230914/defence-xp-30m__3iFujEj"
+        },
+        {
+          "score": 159460,
+          "costUsd": 1.924181,
+          "trialName": "skills-30m-opus45-20260417-230914/defence-xp-30m__RPEsYZJ"
+        },
+        {
+          "score": 140460,
+          "costUsd": 1.496944,
+          "trialName": "skills-30m-opus45-20260417-230914/defence-xp-30m__jpwvAjF"
+        },
+        {
+          "score": 134060,
+          "costUsd": 2.302917,
+          "trialName": "skills-30m-opus45-20260417-230914/defence-xp-30m__kisWdYq"
+        }
+      ],
+      "firemaking": [
+        {
+          "score": 280000,
+          "costUsd": 1.052299,
+          "trialName": "skills-30m-opus45-20260417-230914/firemaking-xp-30m__KrZgiQU"
+        },
+        {
+          "score": 11000,
+          "costUsd": 0.207633,
+          "trialName": "skills-30m-opus45-20260417-230914/firemaking-xp-30m__3WaXQV4"
+        },
+        {
+          "score": 171000,
+          "costUsd": 1.256395,
+          "trialName": "skills-30m-opus45-20260417-230914/firemaking-xp-30m__n8siPJV"
+        },
+        {
+          "score": 256000,
+          "costUsd": 0.916057,
+          "trialName": "skills-30m-opus45-20260417-230914/firemaking-xp-30m__AHcZYSf"
+        }
+      ],
+      "smithing": [
+        {
+          "score": 31322,
+          "costUsd": 2.609025,
+          "trialName": "skills-30m-opus45-20260417-230914/smithing-xp-30m__FWoLqV6"
+        },
+        {
+          "score": 930,
+          "costUsd": 2.486853,
+          "trialName": "skills-30m-opus45-20260417-230914/smithing-xp-30m__DtX7SuJ"
+        },
+        {
+          "score": 49117,
+          "costUsd": 1.836102,
+          "trialName": "skills-30m-opus45-20260417-230914/smithing-xp-30m__wcQTSTX"
+        },
+        {
+          "score": 27437,
+          "costUsd": 2.696544,
+          "trialName": "skills-30m-opus45-20260417-230914/smithing-xp-30m__o2PZ6e2"
+        }
+      ],
+      "ranged": [
+        {
+          "score": 33500,
+          "costUsd": 2.836523,
+          "trialName": "skills-30m-opus45-20260417-230914/ranged-xp-30m__VqsUdZU"
+        },
+        {
+          "score": 60600,
+          "costUsd": 5.985765,
+          "trialName": "skills-30m-opus45-20260417-230914/ranged-xp-30m__m6rpBQV"
+        },
+        {
+          "score": 56800,
+          "costUsd": 1.238636,
+          "trialName": "skills-30m-opus45-20260417-230914/ranged-xp-30m__35yduNh"
+        },
+        {
+          "score": 193600,
+          "costUsd": 4.962596,
+          "trialName": "skills-30m-opus45-20260417-230914/ranged-xp-30m__R8vGKyt"
+        }
+      ],
+      "attack": [
+        {
+          "score": 55380,
+          "costUsd": 1.128359,
+          "trialName": "skills-30m-opus45-20260417-230914/attack-xp-30m__947NdJy"
+        },
+        {
+          "score": 66780,
+          "costUsd": 0.994465,
+          "trialName": "skills-30m-opus45-20260417-230914/attack-xp-30m__MBjgqjS"
+        },
+        {
+          "score": 284180,
+          "costUsd": 3.202226,
+          "trialName": "skills-30m-opus45-20260417-230914/attack-xp-30m__YNgFz7g"
+        },
+        {
+          "score": 129580,
+          "costUsd": 0.532249,
+          "trialName": "skills-30m-opus45-20260417-230914/attack-xp-30m__R5GhHqN"
+        }
+      ],
+      "fletching": [
+        {
+          "score": 34125,
+          "costUsd": 3.73573,
+          "trialName": "skills-30m-opus45-20260417-230914/fletching-xp-30m__z525dZF"
+        },
+        {
+          "score": 131562,
+          "costUsd": 2.725479,
+          "trialName": "skills-30m-opus45-20260417-230914/fletching-xp-30m__ZUrrpfL"
+        },
+        {
+          "score": 29912,
+          "costUsd": 1.517489,
+          "trialName": "skills-30m-opus45-20260417-230914/fletching-xp-30m__uk5Pk6h"
+        },
+        {
+          "score": 66750,
+          "costUsd": 2.821651,
+          "trialName": "skills-30m-opus45-20260417-230914/fletching-xp-30m__sW66pz8"
+        }
+      ],
+      "thieving": [
+        {
+          "score": 384400,
+          "costUsd": 1.989934,
+          "trialName": "skills-30m-opus45-20260417-230914/thieving-xp-30m__SQBBafh"
+        },
+        {
+          "score": 494600,
+          "costUsd": 1.343968,
+          "trialName": "skills-30m-opus45-20260417-230914/thieving-xp-30m__j5hzpWb"
+        },
+        {
+          "score": 145000,
+          "costUsd": 1.577978,
+          "trialName": "skills-30m-opus45-20260417-230914/thieving-xp-30m__4g5uvZn"
+        },
+        {
+          "score": 226647,
+          "costUsd": 2.41842,
+          "trialName": "skills-30m-opus45-20260417-230914/thieving-xp-30m__7kDtUwL"
+        }
+      ],
+      "prayer": [
+        {
+          "score": 19350,
+          "costUsd": 3.042512,
+          "trialName": "skills-30m-opus45-20260417-230914/prayer-xp-30m__tZNbjVm"
+        },
+        {
+          "score": 56475,
+          "costUsd": 3.084954,
+          "trialName": "skills-30m-opus45-20260417-230914/prayer-xp-30m__gYvG3fm"
+        },
+        {
+          "score": 27225,
+          "costUsd": 1.70157,
+          "trialName": "skills-30m-opus45-20260417-230914/prayer-xp-30m__X2UQGSN"
+        },
+        {
+          "score": 13275,
+          "costUsd": 2.618936,
+          "trialName": "skills-30m-opus45-20260417-230914/prayer-xp-30m__tndfK8z"
+        }
+      ],
+      "mining": [
+        {
+          "score": 1430625,
+          "costUsd": 2.561457,
+          "trialName": "skills-30m-opus45-20260417-230914/mining-xp-30m__UEjqkWn"
+        },
+        {
+          "score": 1218437,
+          "costUsd": 2.354742,
+          "trialName": "skills-30m-opus45-20260417-230914/mining-xp-30m__t3fXyZf"
+        },
+        {
+          "score": 572437,
+          "costUsd": 2.111528,
+          "trialName": "skills-30m-opus45-20260417-230914/mining-xp-30m__TdpfnPq"
+        },
+        {
+          "score": 1434125,
+          "costUsd": 2.230762,
+          "trialName": "skills-30m-opus45-20260417-230914/mining-xp-30m__Hg8A4GE"
+        }
+      ],
+      "woodcutting": [
+        {
+          "score": 494062,
+          "costUsd": 0.977385,
+          "trialName": "skills-30m-opus45-20260417-230914/woodcutting-xp-30m__fABJrop"
+        },
+        {
+          "score": 692687,
+          "costUsd": 1.642607,
+          "trialName": "skills-30m-opus45-20260417-230914/woodcutting-xp-30m__FdQs2cs"
+        },
+        {
+          "score": 295625,
+          "costUsd": 1.16413,
+          "trialName": "skills-30m-opus45-20260417-230914/woodcutting-xp-30m__aE7HDAQ"
+        },
+        {
+          "score": 155625,
+          "costUsd": 0.842909,
+          "trialName": "skills-30m-opus45-20260417-230914/woodcutting-xp-30m__GfcxvgL"
+        }
+      ],
+      "hitpoints": [
+        {
+          "score": 34727,
+          "costUsd": 3.115621,
+          "trialName": "skills-30m-opus45-20260417-230914/hitpoints-xp-30m__et2oGRb"
+        },
+        {
+          "score": 38562,
+          "costUsd": 2.425566,
+          "trialName": "skills-30m-opus45-20260417-230914/hitpoints-xp-30m__rToaN8z"
+        },
+        {
+          "score": 123842,
+          "costUsd": 1.628574,
+          "trialName": "skills-30m-opus45-20260417-230914/hitpoints-xp-30m__ywPmEG3"
+        },
+        {
+          "score": 104115,
+          "costUsd": 1.706001,
+          "trialName": "skills-30m-opus45-20260417-230914/hitpoints-xp-30m__WnMmJzb"
+        }
+      ],
+      "crafting": [
+        {
+          "score": 0,
+          "costUsd": 5.548636,
+          "trialName": "skills-30m-opus45-20260417-230914/crafting-xp-30m__mHpGvhM"
+        },
+        {
+          "score": 32085,
+          "costUsd": 4.303495,
+          "trialName": "skills-30m-opus45-20260417-230914/crafting-xp-30m__8psrjKw"
+        },
+        {
+          "score": 43470,
+          "costUsd": 3.824187,
+          "trialName": "skills-30m-opus45-20260417-230914/crafting-xp-30m__Hrw6Zvk"
+        },
+        {
+          "score": 3312,
+          "costUsd": 4.909895,
+          "trialName": "skills-30m-opus45-20260417-230914/crafting-xp-30m__bVSgqyc"
+        }
+      ],
+      "fishing": [
+        {
+          "score": 1305250,
+          "costUsd": 2.032751,
+          "trialName": "skills-30m-opus45-20260417-230914/fishing-xp-30m__BwoxPGJ"
+        },
+        {
+          "score": 367500,
+          "costUsd": 1.365085,
+          "trialName": "skills-30m-opus45-20260417-230914/fishing-xp-30m__Jw92Ajv"
+        },
+        {
+          "score": 653750,
+          "costUsd": 3.741534,
+          "trialName": "skills-30m-opus45-20260417-230914/fishing-xp-30m__3rpFmWT"
+        },
+        {
+          "score": 627500,
+          "costUsd": 2.269588,
+          "trialName": "skills-30m-opus45-20260417-230914/fishing-xp-30m__6FFzzYE"
+        }
+      ],
+      "cooking": [
+        {
+          "score": 18750,
+          "costUsd": 1.985244,
+          "trialName": "skills-30m-opus45-20260417-230914/cooking-xp-30m__SSJropr"
+        },
+        {
+          "score": 372750,
+          "costUsd": 3.241572,
+          "trialName": "skills-30m-opus45-20260417-230914/cooking-xp-30m__sY2iGfW"
+        },
+        {
+          "score": 43500,
+          "costUsd": 2.759263,
+          "trialName": "skills-30m-opus45-20260417-230914/cooking-xp-30m__CMDu9S5"
+        },
+        {
+          "score": 0,
+          "costUsd": 6.355182,
+          "trialName": "skills-30m-opus45-20260417-230914/cooking-xp-30m__mGDsC5H"
+        }
+      ],
+      "magic": [
+        {
+          "score": 7912,
+          "costUsd": 5.774973,
+          "trialName": "skills-30m-opus45-20260417-230914/magic-xp-30m__25dhsjh"
+        },
+        {
+          "score": 12312,
+          "costUsd": 4.925393,
+          "trialName": "skills-30m-opus45-20260417-230914/magic-xp-30m__BeHLKJF"
+        },
+        {
+          "score": 7537,
+          "costUsd": 6.509554,
+          "trialName": "skills-30m-opus45-20260417-230914/magic-xp-30m__VQAfhug"
+        },
+        {
+          "score": 5250,
+          "costUsd": 7.756355,
+          "trialName": "skills-30m-opus45-20260417-230914/magic-xp-30m__t3auukr"
+        }
+      ],
+      "gold-fish": [
+        {
+          "score": 10698,
+          "costUsd": 4.719283,
+          "trialName": "gold-30m-opus45-20260418-054652/gold-fish-30m__SxbNkHS"
+        },
+        {
+          "score": 786,
+          "costUsd": 4.967245,
+          "trialName": "gold-30m-opus45-20260418-054652/gold-fish-30m__w7dFbJs"
+        },
+        {
+          "score": 4264,
+          "costUsd": 9.376713,
+          "trialName": "gold-30m-opus45-20260418-054652/gold-fish-30m__B6QgsLM"
+        },
+        {
+          "score": 17721,
+          "costUsd": 4.34185,
+          "trialName": "gold-30m-opus45-20260418-054652/gold-fish-30m__zE2wAsP"
+        }
+      ],
+      "gold-fletch-alch": [
+        {
+          "score": 3994,
+          "costUsd": 5.937438,
+          "trialName": "gold-30m-opus45-20260418-054652/gold-fletch-alch-30m__4eanEoT"
+        },
+        {
+          "score": 2388,
+          "costUsd": 6.078785,
+          "trialName": "gold-30m-opus45-20260418-054652/gold-fletch-alch-30m__Knhaeru"
+        },
+        {
+          "score": 6564,
+          "costUsd": 4.134023,
+          "trialName": "gold-30m-opus45-20260418-054652/gold-fletch-alch-30m__s8KpHzq"
+        },
+        {
+          "score": 5034,
+          "costUsd": 6.57206,
+          "trialName": "gold-30m-opus45-20260418-054652/gold-fletch-alch-30m__oBYWoGM"
+        }
+      ],
+      "gold-smith-alch": [
+        {
+          "score": 723,
+          "costUsd": 5.180095,
+          "trialName": "gold-30m-opus45-20260418-054652/gold-smith-alch-30m__JGvrtng"
+        },
+        {
+          "score": 123,
+          "costUsd": 10.725435,
+          "trialName": "gold-30m-opus45-20260418-054652/gold-smith-alch-30m__KcShrnd"
+        },
+        {
+          "score": 7668,
+          "costUsd": 4.733793,
+          "trialName": "gold-30m-opus45-20260418-054652/gold-smith-alch-30m__RvH8Eg9"
+        },
+        {
+          "score": 1535,
+          "costUsd": 8.392662,
+          "trialName": "gold-30m-opus45-20260418-054652/gold-smith-alch-30m__S3PiUbC"
+        }
+      ],
+      "gold-vanilla": [
+        {
+          "score": 4347,
+          "costUsd": 3.690349,
+          "trialName": "gold-30m-opus45-20260418-054652/gold-vanilla-30m__kypRSaC"
+        },
+        {
+          "score": 5257,
+          "costUsd": 3.497381,
+          "trialName": "gold-30m-opus45-20260418-054652/gold-vanilla-30m__9NwFV2X"
+        },
+        {
+          "score": 367,
+          "costUsd": 3.788129,
+          "trialName": "gold-30m-opus45-20260418-054652/gold-vanilla-30m__eRxq42Q"
+        },
+        {
+          "score": 317,
+          "costUsd": 4.490995,
+          "trialName": "gold-30m-opus45-20260418-054652/gold-vanilla-30m__2voEnYb"
+        }
+      ]
+    },
+    "opus": {
+      "thieving": [
+        {
+          "score": 60400,
+          "costUsd": 2.398371,
+          "trialName": "skills-30m-opus-20260417-230914/thieving-xp-30m__48gtSAU"
+        },
+        {
+          "score": 150000,
+          "costUsd": 1.407736,
+          "trialName": "skills-30m-opus-20260417-230914/thieving-xp-30m__iQeeaV8"
+        },
+        {
+          "score": 368970,
+          "costUsd": 1.965801,
+          "trialName": "skills-30m-opus-20260417-230914/thieving-xp-30m__ExBMgqV"
+        },
+        {
+          "score": 175430,
+          "costUsd": 2.137961,
+          "trialName": "skills-30m-opus-20260417-230914/thieving-xp-30m__AzoAdzw"
+        }
+      ],
+      "crafting": [
+        {
+          "score": 10695,
+          "costUsd": 5.00343,
+          "trialName": "skills-30m-opus-20260417-230914/crafting-xp-30m__8EGjzFT"
+        },
+        {
+          "score": 0,
+          "costUsd": 5.871019,
+          "trialName": "skills-30m-opus-20260417-230914/crafting-xp-30m__NKYPcoM"
+        },
+        {
+          "score": 39382,
+          "costUsd": 3.643463,
+          "trialName": "skills-30m-opus-20260417-230914/crafting-xp-30m__dh2dKXk"
+        },
+        {
+          "score": 40442,
+          "costUsd": 3.951972,
+          "trialName": "skills-30m-opus-20260417-230914/crafting-xp-30m__4FnLE9x"
+        }
+      ],
+      "attack": [
+        {
+          "score": 7580,
+          "costUsd": 1.398516,
+          "trialName": "skills-30m-opus-20260417-230914/attack-xp-30m__wv2gTm8"
+        },
+        {
+          "score": 65480,
+          "costUsd": 0.796908,
+          "trialName": "skills-30m-opus-20260417-230914/attack-xp-30m__tyZLLVn"
+        },
+        {
+          "score": 36680,
+          "costUsd": 2.611331,
+          "trialName": "skills-30m-opus-20260417-230914/attack-xp-30m__Xj7JQa8"
+        },
+        {
+          "score": 216180,
+          "costUsd": 2.0106,
+          "trialName": "skills-30m-opus-20260417-230914/attack-xp-30m__X9gfcUc"
+        }
+      ],
+      "woodcutting": [
+        {
+          "score": 799500,
+          "costUsd": 0.888279,
+          "trialName": "skills-30m-opus-20260417-230914/woodcutting-xp-30m__937Xhs2"
+        },
+        {
+          "score": 320625,
+          "costUsd": 1.685083,
+          "trialName": "skills-30m-opus-20260417-230914/woodcutting-xp-30m__bAaEwtz"
+        },
+        {
+          "score": 1374750,
+          "costUsd": 4.635197,
+          "trialName": "skills-30m-opus-20260417-230914/woodcutting-xp-30m__RnKq6wd"
+        },
+        {
+          "score": 1967312,
+          "costUsd": 1.646195,
+          "trialName": "skills-30m-opus-20260417-230914/woodcutting-xp-30m__cKRGQTc"
+        }
+      ],
+      "mining": [
+        {
+          "score": 16187,
+          "costUsd": 1.892242,
+          "trialName": "skills-30m-opus-20260417-230914/mining-xp-30m__THyL9HQ"
+        },
+        {
+          "score": 1368062,
+          "costUsd": 0.974431,
+          "trialName": "skills-30m-opus-20260417-230914/mining-xp-30m__FbwxeuK"
+        },
+        {
+          "score": 1437625,
+          "costUsd": 1.920677,
+          "trialName": "skills-30m-opus-20260417-230914/mining-xp-30m__ypXNcrV"
+        },
+        {
+          "score": 1322562,
+          "costUsd": 1.116693,
+          "trialName": "skills-30m-opus-20260417-230914/mining-xp-30m__pxwwrnH"
+        }
+      ],
+      "hitpoints": [
+        {
+          "score": 44705,
+          "costUsd": 1.858229,
+          "trialName": "skills-30m-opus-20260417-230914/hitpoints-xp-30m__3bqPTNM"
+        },
+        {
+          "score": 41300,
+          "costUsd": 2.794391,
+          "trialName": "skills-30m-opus-20260417-230914/hitpoints-xp-30m__Pf8ctUb"
+        },
+        {
+          "score": 84387,
+          "costUsd": 1.743164,
+          "trialName": "skills-30m-opus-20260417-230914/hitpoints-xp-30m__iznPW3w"
+        },
+        {
+          "score": 51540,
+          "costUsd": 2.558589,
+          "trialName": "skills-30m-opus-20260417-230914/hitpoints-xp-30m__j9jfouY"
+        }
+      ],
+      "firemaking": [
+        {
+          "score": 127000,
+          "costUsd": 2.135404,
+          "trialName": "skills-30m-opus-20260417-230914/firemaking-xp-30m__iu4NoQd"
+        },
+        {
+          "score": 129000,
+          "costUsd": 0.683637,
+          "trialName": "skills-30m-opus-20260417-230914/firemaking-xp-30m__n4qLTyh"
+        },
+        {
+          "score": 385000,
+          "costUsd": 1.265506,
+          "trialName": "skills-30m-opus-20260417-230914/firemaking-xp-30m__a8wNyXt"
+        },
+        {
+          "score": 115125,
+          "costUsd": 1.866523,
+          "trialName": "skills-30m-opus-20260417-230914/firemaking-xp-30m__RdMEKgr"
+        }
+      ],
+      "prayer": [
+        {
+          "score": 21487,
+          "costUsd": 2.144753,
+          "trialName": "skills-30m-opus-20260417-230914/prayer-xp-30m__LBDmZC2"
+        },
+        {
+          "score": 5962,
+          "costUsd": 1.961366,
+          "trialName": "skills-30m-opus-20260417-230914/prayer-xp-30m__K3RDNq9"
+        },
+        {
+          "score": 51750,
+          "costUsd": 1.175395,
+          "trialName": "skills-30m-opus-20260417-230914/prayer-xp-30m__KodbQNC"
+        },
+        {
+          "score": 16875,
+          "costUsd": 1.945001,
+          "trialName": "skills-30m-opus-20260417-230914/prayer-xp-30m__ZJrLXGD"
+        }
+      ],
+      "smithing": [
+        {
+          "score": 18267,
+          "costUsd": 2.770629,
+          "trialName": "skills-30m-opus-20260417-230914/smithing-xp-30m__v3mxL53"
+        },
+        {
+          "score": 18422,
+          "costUsd": 3.725507,
+          "trialName": "skills-30m-opus-20260417-230914/smithing-xp-30m__cH2QRbS"
+        },
+        {
+          "score": 0,
+          "costUsd": 5.683011,
+          "trialName": "skills-30m-opus-20260417-230914/smithing-xp-30m__CzTVWgL"
+        },
+        {
+          "score": 149670,
+          "costUsd": 1.890881,
+          "trialName": "skills-30m-opus-20260417-230914/smithing-xp-30m__qVDqwJG"
+        }
+      ],
+      "fishing": [
+        {
+          "score": 16750,
+          "costUsd": 1.665853,
+          "trialName": "skills-30m-opus-20260417-230914/fishing-xp-30m__Eyg4NeS"
+        },
+        {
+          "score": 198500,
+          "costUsd": 1.618215,
+          "trialName": "skills-30m-opus-20260417-230914/fishing-xp-30m__LwvKxww"
+        },
+        {
+          "score": 198000,
+          "costUsd": 2.053368,
+          "trialName": "skills-30m-opus-20260417-230914/fishing-xp-30m__LJrdhtA"
+        },
+        {
+          "score": 533750,
+          "costUsd": 1.436404,
+          "trialName": "skills-30m-opus-20260417-230914/fishing-xp-30m__Kqsu2i5"
+        }
+      ],
+      "ranged": [
+        {
+          "score": 271000,
+          "costUsd": 2.814664,
+          "trialName": "skills-30m-opus-20260417-230914/ranged-xp-30m__p53GqwH"
+        },
+        {
+          "score": 247700,
+          "costUsd": 2.147452,
+          "trialName": "skills-30m-opus-20260417-230914/ranged-xp-30m__V2v6dbB"
+        },
+        {
+          "score": 28100,
+          "costUsd": 2.265464,
+          "trialName": "skills-30m-opus-20260417-230914/ranged-xp-30m__MqoiHYZ"
+        },
+        {
+          "score": 52000,
+          "costUsd": 2.434864,
+          "trialName": "skills-30m-opus-20260417-230914/ranged-xp-30m__DBrGDME"
+        }
+      ],
+      "strength": [
+        {
+          "score": 286480,
+          "costUsd": 2.453404,
+          "trialName": "skills-30m-opus-20260417-230914/strength-xp-30m__qR8J5g5"
+        },
+        {
+          "score": 130680,
+          "costUsd": 1.601098,
+          "trialName": "skills-30m-opus-20260417-230914/strength-xp-30m__zy58Kxw"
+        },
+        {
+          "score": 279580,
+          "costUsd": 2.42644,
+          "trialName": "skills-30m-opus-20260417-230914/strength-xp-30m__g99p6P7"
+        },
+        {
+          "score": 38180,
+          "costUsd": 1.971241,
+          "trialName": "skills-30m-opus-20260417-230914/strength-xp-30m__bjbgDaC"
+        }
+      ],
+      "defence": [
+        {
+          "score": 315360,
+          "costUsd": 1.117046,
+          "trialName": "skills-30m-opus-20260417-230914/defence-xp-30m__9MeHTFs"
+        },
+        {
+          "score": 82960,
+          "costUsd": 6.007729,
+          "trialName": "skills-30m-opus-20260417-230914/defence-xp-30m__5S7AEHh"
+        },
+        {
+          "score": 105660,
+          "costUsd": 2.727886,
+          "trialName": "skills-30m-opus-20260417-230914/defence-xp-30m__nvnXhdp"
+        },
+        {
+          "score": 96660,
+          "costUsd": 2.97929,
+          "trialName": "skills-30m-opus-20260417-230914/defence-xp-30m__PTmArVU"
+        }
+      ],
+      "magic": [
+        {
+          "score": 27125,
+          "costUsd": 4.293185,
+          "trialName": "skills-30m-opus-20260417-230914/magic-xp-30m__viMtsmf"
+        },
+        {
+          "score": 11700,
+          "costUsd": 3.957834,
+          "trialName": "skills-30m-opus-20260417-230914/magic-xp-30m__jM5VC87"
+        },
+        {
+          "score": 33050,
+          "costUsd": 5.24436,
+          "trialName": "skills-30m-opus-20260417-230914/magic-xp-30m__Xz5WWco"
+        },
+        {
+          "score": 4850,
+          "costUsd": 3.688488,
+          "trialName": "skills-30m-opus-20260417-230914/magic-xp-30m__RUAdrgV"
+        }
+      ],
+      "cooking": [
+        {
+          "score": 4500,
+          "costUsd": 1.449112,
+          "trialName": "skills-30m-opus-20260417-230914/cooking-xp-30m__4quEPRx"
+        },
+        {
+          "score": 60000,
+          "costUsd": 4.596448,
+          "trialName": "skills-30m-opus-20260417-230914/cooking-xp-30m__8WR3TXH"
+        },
+        {
+          "score": 0,
+          "costUsd": 1.947222,
+          "trialName": "skills-30m-opus-20260417-230914/cooking-xp-30m__tvLSbRW"
+        },
+        {
+          "score": 49500,
+          "costUsd": 4.595999,
+          "trialName": "skills-30m-opus-20260417-230914/cooking-xp-30m__xrnZNXj"
+        }
+      ],
+      "fletching": [
+        {
+          "score": 58125,
+          "costUsd": 3.049636,
+          "trialName": "skills-30m-opus-20260417-230914/fletching-xp-30m__78H4byV"
+        },
+        {
+          "score": 5250,
+          "costUsd": 3.492724,
+          "trialName": "skills-30m-opus-20260417-230914/fletching-xp-30m__pQQBqxm"
+        },
+        {
+          "score": 98625,
+          "costUsd": 3.031607,
+          "trialName": "skills-30m-opus-20260417-230914/fletching-xp-30m__ZYDvfBo"
+        },
+        {
+          "score": 149750,
+          "costUsd": 1.606637,
+          "trialName": "skills-30m-opus-20260417-230914/fletching-xp-30m__4yJSmTe"
+        }
+      ],
+      "gold-fish": [
+        {
+          "score": 5081,
+          "costUsd": 6.570593,
+          "trialName": "gold-30m-opus-20260418-054652/gold-fish-30m__egv7umm"
+        },
+        {
+          "score": 8027,
+          "costUsd": 5.517733,
+          "trialName": "gold-30m-opus-20260418-054652/gold-fish-30m__N8h3Pnk"
+        },
+        {
+          "score": 8889,
+          "costUsd": 5.210819,
+          "trialName": "gold-30m-opus-20260418-054652/gold-fish-30m__8BazyTH"
+        },
+        {
+          "score": 7304,
+          "costUsd": 6.428797,
+          "trialName": "gold-30m-opus-20260418-054652/gold-fish-30m__RZbR9gs"
+        }
+      ],
+      "gold-vanilla": [
+        {
+          "score": 486,
+          "costUsd": 5.172076,
+          "trialName": "gold-30m-opus-20260418-054652/gold-vanilla-30m__6DYHhHG"
+        },
+        {
+          "score": 11170,
+          "costUsd": 4.178703,
+          "trialName": "gold-30m-opus-20260418-054652/gold-vanilla-30m__ifFg457"
+        },
+        {
+          "score": 290,
+          "costUsd": 5.392751,
+          "trialName": "gold-30m-opus-20260418-054652/gold-vanilla-30m__Moh3pUG"
+        },
+        {
+          "score": 2400,
+          "costUsd": 4.909928,
+          "trialName": "gold-30m-opus-20260418-054652/gold-vanilla-30m__WYafJzH"
+        }
+      ],
+      "gold-fletch-alch": [
+        {
+          "score": 20918,
+          "costUsd": 4.970737,
+          "trialName": "gold-30m-opus-20260418-054652/gold-fletch-alch-30m__29CHqnB"
+        },
+        {
+          "score": 16304,
+          "costUsd": 5.334153,
+          "trialName": "gold-30m-opus-20260418-054652/gold-fletch-alch-30m__EW7RArJ"
+        },
+        {
+          "score": 21808,
+          "costUsd": 4.638652,
+          "trialName": "gold-30m-opus-20260418-054652/gold-fletch-alch-30m__c6aU9zb"
+        },
+        {
+          "score": 19567,
+          "costUsd": 5.862904,
+          "trialName": "gold-30m-opus-20260418-054652/gold-fletch-alch-30m__ipFtAFo"
+        }
+      ],
+      "gold-smith-alch": [
+        {
+          "score": 22738,
+          "costUsd": 6.37466,
+          "trialName": "gold-30m-opus-20260418-054652/gold-smith-alch-30m__znhqyXk"
+        },
+        {
+          "score": 2120,
+          "costUsd": 5.066208,
+          "trialName": "gold-30m-opus-20260418-054652/gold-smith-alch-30m__iaf6BWf"
+        },
+        {
+          "score": 3021,
+          "costUsd": 5.787904,
+          "trialName": "gold-30m-opus-20260418-054652/gold-smith-alch-30m__WkukSao"
+        },
+        {
+          "score": 4758,
+          "costUsd": 8.515479,
+          "trialName": "gold-30m-opus-20260418-054652/gold-smith-alch-30m__bu7YyWk"
+        }
+      ]
+    },
+    "opus47": {
+      "ranged": [
+        {
+          "score": 1800,
+          "costUsd": 5.362892,
+          "trialName": "skills-30m-opus47-20260417-230914/ranged-xp-30m__Dmcf5v8"
+        },
+        {
+          "score": 78100,
+          "costUsd": 6.084611,
+          "trialName": "skills-30m-opus47-20260417-230914/ranged-xp-30m__9yKtwnw"
+        },
+        {
+          "score": 21900,
+          "costUsd": 1.762028,
+          "trialName": "skills-30m-opus47-20260417-230914/ranged-xp-30m__ATnM4Zi"
+        },
+        {
+          "score": 69800,
+          "costUsd": 6.359754,
+          "trialName": "skills-30m-opus47-20260417-230914/ranged-xp-30m__f6et6fn"
+        }
+      ],
+      "strength": [
+        {
+          "score": 61780,
+          "costUsd": 3.091668,
+          "trialName": "skills-30m-opus47-20260417-230914/strength-xp-30m__ntjPeHP"
+        },
+        {
+          "score": 109280,
+          "costUsd": 2.793036,
+          "trialName": "skills-30m-opus47-20260417-230914/strength-xp-30m__YujaKgG"
+        },
+        {
+          "score": 390280,
+          "costUsd": 3.891042,
+          "trialName": "skills-30m-opus47-20260417-230914/strength-xp-30m__PQKZC7f"
+        },
+        {
+          "score": 133180,
+          "costUsd": 3.56307,
+          "trialName": "skills-30m-opus47-20260417-230914/strength-xp-30m__uxeNDDT"
+        }
+      ],
+      "fishing": [
+        {
+          "score": 1301500,
+          "costUsd": 3.029015,
+          "trialName": "skills-30m-opus47-20260417-230914/fishing-xp-30m__DLpRaCC"
+        },
+        {
+          "score": 571500,
+          "costUsd": 6.44814,
+          "trialName": "skills-30m-opus47-20260417-230914/fishing-xp-30m__romhkuP"
+        },
+        {
+          "score": 980500,
+          "costUsd": 2.766664,
+          "trialName": "skills-30m-opus47-20260417-230914/fishing-xp-30m__WHuSBTt"
+        },
+        {
+          "score": 1658500,
+          "costUsd": 5.965882,
+          "trialName": "skills-30m-opus47-20260417-230914/fishing-xp-30m__zh8rkmG"
+        }
+      ],
+      "smithing": [
+        {
+          "score": 12457,
+          "costUsd": 7.865289,
+          "trialName": "skills-30m-opus47-20260417-230914/smithing-xp-30m__7XFr8o9"
+        },
+        {
+          "score": 73240,
+          "costUsd": 8.527023,
+          "trialName": "skills-30m-opus47-20260417-230914/smithing-xp-30m__casUUGt"
+        },
+        {
+          "score": 4960,
+          "costUsd": 8.395957,
+          "trialName": "skills-30m-opus47-20260417-230914/smithing-xp-30m__gkJTPor"
+        },
+        {
+          "score": 4675,
+          "costUsd": 6.838348,
+          "trialName": "skills-30m-opus47-20260417-230914/smithing-xp-30m__vr2XvCE"
+        }
+      ],
+      "magic": [
+        {
+          "score": 4112,
+          "costUsd": 13.143433,
+          "trialName": "skills-30m-opus47-20260417-230914/magic-xp-30m__qk3KeoH"
+        },
+        {
+          "score": 3875,
+          "costUsd": 6.951311,
+          "trialName": "skills-30m-opus47-20260417-230914/magic-xp-30m__E4qYKMi"
+        },
+        {
+          "score": 10537,
+          "costUsd": 9.053118,
+          "trialName": "skills-30m-opus47-20260417-230914/magic-xp-30m__BwNtjxv"
+        },
+        {
+          "score": 7275,
+          "costUsd": 8.972391,
+          "trialName": "skills-30m-opus47-20260417-230914/magic-xp-30m__9jEps3K"
+        }
+      ],
+      "fletching": [
+        {
+          "score": 45812,
+          "costUsd": 5.148131,
+          "trialName": "skills-30m-opus47-20260417-230914/fletching-xp-30m__JrxUpMV"
+        },
+        {
+          "score": 205312,
+          "costUsd": 6.607271,
+          "trialName": "skills-30m-opus47-20260417-230914/fletching-xp-30m__zRrnyWc"
+        },
+        {
+          "score": 206500,
+          "costUsd": 3.904514,
+          "trialName": "skills-30m-opus47-20260417-230914/fletching-xp-30m__LcrUrTo"
+        },
+        {
+          "score": 0,
+          "costUsd": null,
+          "trialName": "skills-30m-opus47-20260417-230914/fletching-xp-30m__7xDj9C2"
+        }
+      ],
+      "attack": [
+        {
+          "score": 129880,
+          "costUsd": 2.833127,
+          "trialName": "skills-30m-opus47-20260417-230914/attack-xp-30m__VC4gpJt"
+        },
+        {
+          "score": 166780,
+          "costUsd": 2.818525,
+          "trialName": "skills-30m-opus47-20260417-230914/attack-xp-30m__K8SkYUS"
+        },
+        {
+          "score": 17780,
+          "costUsd": 1.912881,
+          "trialName": "skills-30m-opus47-20260417-230914/attack-xp-30m__qSw4ARH"
+        },
+        {
+          "score": 399380,
+          "costUsd": 2.358267,
+          "trialName": "skills-30m-opus47-20260417-230914/attack-xp-30m__fweTN49"
+        }
+      ],
+      "firemaking": [
+        {
+          "score": 691125,
+          "costUsd": 5.762455,
+          "trialName": "skills-30m-opus47-20260417-230914/firemaking-xp-30m__XhoEqUP"
+        },
+        {
+          "score": 209000,
+          "costUsd": 2.345624,
+          "trialName": "skills-30m-opus47-20260417-230914/firemaking-xp-30m__56yUV4d"
+        },
+        {
+          "score": 996000,
+          "costUsd": 3.330407,
+          "trialName": "skills-30m-opus47-20260417-230914/firemaking-xp-30m__WkYMSwV"
+        },
+        {
+          "score": 148000,
+          "costUsd": 5.728797,
+          "trialName": "skills-30m-opus47-20260417-230914/firemaking-xp-30m__Znz6NRs"
+        }
+      ],
+      "hitpoints": [
+        {
+          "score": 61225,
+          "costUsd": 2.920573,
+          "trialName": "skills-30m-opus47-20260417-230914/hitpoints-xp-30m__EHZCgYb"
+        },
+        {
+          "score": 72052,
+          "costUsd": 3.300922,
+          "trialName": "skills-30m-opus47-20260417-230914/hitpoints-xp-30m__FMoEofR"
+        },
+        {
+          "score": 117860,
+          "costUsd": 2.931175,
+          "trialName": "skills-30m-opus47-20260417-230914/hitpoints-xp-30m__AQrZfje"
+        },
+        {
+          "score": 78985,
+          "costUsd": 1.965257,
+          "trialName": "skills-30m-opus47-20260417-230914/hitpoints-xp-30m__B8bYGQ5"
+        }
+      ],
+      "woodcutting": [
+        {
+          "score": 58125,
+          "costUsd": 3.499184,
+          "trialName": "skills-30m-opus47-20260417-230914/woodcutting-xp-30m__X22zq2t"
+        },
+        {
+          "score": 645812,
+          "costUsd": 5.700927,
+          "trialName": "skills-30m-opus47-20260417-230914/woodcutting-xp-30m__vkQJud5"
+        },
+        {
+          "score": 36250,
+          "costUsd": 1.457339,
+          "trialName": "skills-30m-opus47-20260417-230914/woodcutting-xp-30m__hZxTRaQ"
+        },
+        {
+          "score": 651250,
+          "costUsd": 4.684167,
+          "trialName": "skills-30m-opus47-20260417-230914/woodcutting-xp-30m__S5pws9k"
+        }
+      ],
+      "mining": [
+        {
+          "score": 1501937,
+          "costUsd": 2.673461,
+          "trialName": "skills-30m-opus47-20260417-230914/mining-xp-30m__Yjq4eWE"
+        },
+        {
+          "score": 742312,
+          "costUsd": 6.232318,
+          "trialName": "skills-30m-opus47-20260417-230914/mining-xp-30m__WqYo8rR"
+        },
+        {
+          "score": 488437,
+          "costUsd": 5.371161,
+          "trialName": "skills-30m-opus47-20260417-230914/mining-xp-30m__BFjD9Vr"
+        },
+        {
+          "score": 17437,
+          "costUsd": 4.946604,
+          "trialName": "skills-30m-opus47-20260417-230914/mining-xp-30m__ZC249wz"
+        }
+      ],
+      "defence": [
+        {
+          "score": 195260,
+          "costUsd": 5.747127,
+          "trialName": "skills-30m-opus47-20260417-230914/defence-xp-30m__kfvLEK2"
+        },
+        {
+          "score": 310460,
+          "costUsd": 6.389498,
+          "trialName": "skills-30m-opus47-20260417-230914/defence-xp-30m__AComc6A"
+        },
+        {
+          "score": 96560,
+          "costUsd": 7.455398,
+          "trialName": "skills-30m-opus47-20260417-230914/defence-xp-30m__jphv8Tc"
+        },
+        {
+          "score": 135960,
+          "costUsd": 2.682279,
+          "trialName": "skills-30m-opus47-20260417-230914/defence-xp-30m__6fHqmBN"
+        }
+      ],
+      "thieving": [
+        {
+          "score": 892000,
+          "costUsd": 7.376972,
+          "trialName": "skills-30m-opus47-20260417-230914/thieving-xp-30m__ywcp4nQ"
+        },
+        {
+          "score": 149600,
+          "costUsd": 2.254987,
+          "trialName": "skills-30m-opus47-20260417-230914/thieving-xp-30m__Cg7DZCg"
+        },
+        {
+          "score": 1602800,
+          "costUsd": 5.078535,
+          "trialName": "skills-30m-opus47-20260417-230914/thieving-xp-30m__bHKjpTe"
+        },
+        {
+          "score": 3725910,
+          "costUsd": 4.138446,
+          "trialName": "skills-30m-opus47-20260417-230914/thieving-xp-30m__LKD2vjL"
+        }
+      ],
+      "crafting": [
+        {
+          "score": 125,
+          "costUsd": 8.11072,
+          "trialName": "skills-30m-opus47-20260417-230914/crafting-xp-30m__9oJmued"
+        },
+        {
+          "score": 22870,
+          "costUsd": 9.826583,
+          "trialName": "skills-30m-opus47-20260417-230914/crafting-xp-30m__wrqYb6T"
+        },
+        {
+          "score": 1562,
+          "costUsd": 9.616497,
+          "trialName": "skills-30m-opus47-20260417-230914/crafting-xp-30m__d2gYtNF"
+        },
+        {
+          "score": 5187,
+          "costUsd": 6.234785,
+          "trialName": "skills-30m-opus47-20260417-230914/crafting-xp-30m__tygXcXk"
+        }
+      ],
+      "cooking": [
+        {
+          "score": 9750,
+          "costUsd": 8.601002,
+          "trialName": "skills-30m-opus47-20260417-230914/cooking-xp-30m__XsHKh28"
+        },
+        {
+          "score": 31500,
+          "costUsd": 8.021501,
+          "trialName": "skills-30m-opus47-20260417-230914/cooking-xp-30m__qzwWEBB"
+        },
+        {
+          "score": 10500,
+          "costUsd": 10.000509,
+          "trialName": "skills-30m-opus47-20260417-230914/cooking-xp-30m__QWLqp3e"
+        },
+        {
+          "score": 51000,
+          "costUsd": 7.231348,
+          "trialName": "skills-30m-opus47-20260417-230914/cooking-xp-30m__xNNAUwU"
+        }
+      ],
+      "prayer": [
+        {
+          "score": 11137,
+          "costUsd": 3.92768,
+          "trialName": "skills-30m-opus47-20260417-230914/prayer-xp-30m__2oHq3CM"
+        },
+        {
+          "score": 11250,
+          "costUsd": 7.090883,
+          "trialName": "skills-30m-opus47-20260417-230914/prayer-xp-30m__8anU3Ad"
+        },
+        {
+          "score": 4050,
+          "costUsd": 11.393167,
+          "trialName": "skills-30m-opus47-20260417-230914/prayer-xp-30m__msCLfqC"
+        },
+        {
+          "score": 5962,
+          "costUsd": 2.833181,
+          "trialName": "skills-30m-opus47-20260417-230914/prayer-xp-30m__mErXiTW"
+        }
+      ],
+      "gold-fletch-alch": [
+        {
+          "score": 16872,
+          "costUsd": 7.280462,
+          "trialName": "gold-30m-opus47-20260418-054652/gold-fletch-alch-30m__7AzKwwg"
+        },
+        {
+          "score": 22200,
+          "costUsd": 8.868292,
+          "trialName": "gold-30m-opus47-20260418-054652/gold-fletch-alch-30m__fHbRGbg"
+        },
+        {
+          "score": 20100,
+          "costUsd": 11.745527,
+          "trialName": "gold-30m-opus47-20260418-054652/gold-fletch-alch-30m__3QNc37f"
+        },
+        {
+          "score": 11280,
+          "costUsd": 8.401315,
+          "trialName": "gold-30m-opus47-20260418-054652/gold-fletch-alch-30m__YhoVNgQ"
+        }
+      ],
+      "gold-fish": [
+        {
+          "score": 18946,
+          "costUsd": 7.810357,
+          "trialName": "gold-30m-opus47-20260418-054652/gold-fish-30m__2jJECGy"
+        },
+        {
+          "score": 20409,
+          "costUsd": 7.85157,
+          "trialName": "gold-30m-opus47-20260418-054652/gold-fish-30m__5TknuVj"
+        },
+        {
+          "score": 16715,
+          "costUsd": 5.252562,
+          "trialName": "gold-30m-opus47-20260418-054652/gold-fish-30m__pGD4cXZ"
+        },
+        {
+          "score": 21828,
+          "costUsd": 6.158476,
+          "trialName": "gold-30m-opus47-20260418-054652/gold-fish-30m__mr6i64S"
+        }
+      ],
+      "gold-smith-alch": [
+        {
+          "score": 845,
+          "costUsd": 11.246081,
+          "trialName": "gold-30m-opus47-20260418-054652/gold-smith-alch-30m__xdr8YRo"
+        },
+        {
+          "score": 5220,
+          "costUsd": 9.024129,
+          "trialName": "gold-30m-opus47-20260418-054652/gold-smith-alch-30m__zF8rKSU"
+        },
+        {
+          "score": 3459,
+          "costUsd": 12.562372,
+          "trialName": "gold-30m-opus47-20260418-054652/gold-smith-alch-30m__Ttve3Qs"
+        },
+        {
+          "score": 960,
+          "costUsd": 12.432708,
+          "trialName": "gold-30m-opus47-20260418-054652/gold-smith-alch-30m__J9WajdY"
+        }
+      ],
+      "gold-vanilla": [
+        {
+          "score": 1672,
+          "costUsd": 8.747301,
+          "trialName": "gold-30m-opus47-20260418-054652/gold-vanilla-30m__VeGQ3oG"
+        },
+        {
+          "score": 1861,
+          "costUsd": 9.587888,
+          "trialName": "gold-30m-opus47-20260418-054652/gold-vanilla-30m__won9MaE"
+        },
+        {
+          "score": 1413,
+          "costUsd": 8.156294,
+          "trialName": "gold-30m-opus47-20260418-054652/gold-vanilla-30m__uWxUXb6"
+        },
+        {
+          "score": 2721,
+          "costUsd": 3.934409,
+          "trialName": "gold-30m-opus47-20260418-054652/gold-vanilla-30m__s4k4xzT"
+        }
+      ]
+    }
+  },
+  "agg": {
+    "opus45": {
+      "perTask": {
+        "attack": {
+          "best": 284180,
+          "mean": 133980,
+          "trials": [
+            55380,
+            66780,
+            284180,
+            129580
+          ],
+          "avgCost": 1.46432475
+        },
+        "defence": {
+          "best": 159460,
+          "mean": 125260,
+          "trials": [
+            67060,
+            159460,
+            140460,
+            134060
+          ],
+          "avgCost": 1.76702275
+        },
+        "strength": {
+          "best": 162780,
+          "mean": 128205,
+          "trials": [
+            60880,
+            153480,
+            135680,
+            162780
+          ],
+          "avgCost": 1.8412830000000002
+        },
+        "hitpoints": {
+          "best": 123842,
+          "mean": 75311.5,
+          "trials": [
+            34727,
+            38562,
+            123842,
+            104115
+          ],
+          "avgCost": 2.2189405
+        },
+        "ranged": {
+          "best": 193600,
+          "mean": 86125,
+          "trials": [
+            33500,
+            60600,
+            56800,
+            193600
+          ],
+          "avgCost": 3.75588
+        },
+        "prayer": {
+          "best": 56475,
+          "mean": 29081.25,
+          "trials": [
+            19350,
+            56475,
+            27225,
+            13275
+          ],
+          "avgCost": 2.611993
+        },
+        "magic": {
+          "best": 12312,
+          "mean": 8252.75,
+          "trials": [
+            7912,
+            12312,
+            7537,
+            5250
+          ],
+          "avgCost": 6.241568749999999
+        },
+        "woodcutting": {
+          "best": 692687,
+          "mean": 409499.75,
+          "trials": [
+            494062,
+            692687,
+            295625,
+            155625
+          ],
+          "avgCost": 1.15675775
+        },
+        "fishing": {
+          "best": 1305250,
+          "mean": 738500,
+          "trials": [
+            1305250,
+            367500,
+            653750,
+            627500
+          ],
+          "avgCost": 2.3522395
+        },
+        "mining": {
+          "best": 1434125,
+          "mean": 1163906,
+          "trials": [
+            1430625,
+            1218437,
+            572437,
+            1434125
+          ],
+          "avgCost": 2.3146222499999998
+        },
+        "cooking": {
+          "best": 372750,
+          "mean": 108750,
+          "trials": [
+            18750,
+            372750,
+            43500,
+            0
+          ],
+          "avgCost": 3.58531525
+        },
+        "fletching": {
+          "best": 131562,
+          "mean": 65587.25,
+          "trials": [
+            34125,
+            131562,
+            29912,
+            66750
+          ],
+          "avgCost": 2.70008725
+        },
+        "crafting": {
+          "best": 43470,
+          "mean": 19716.75,
+          "trials": [
+            0,
+            32085,
+            43470,
+            3312
+          ],
+          "avgCost": 4.64655325
+        },
+        "smithing": {
+          "best": 49117,
+          "mean": 27201.5,
+          "trials": [
+            31322,
+            930,
+            49117,
+            27437
+          ],
+          "avgCost": 2.4071309999999997
+        },
+        "firemaking": {
+          "best": 280000,
+          "mean": 179500,
+          "trials": [
+            280000,
+            11000,
+            171000,
+            256000
+          ],
+          "avgCost": 0.858096
+        },
+        "thieving": {
+          "best": 494600,
+          "mean": 312661.75,
+          "trials": [
+            384400,
+            494600,
+            145000,
+            226647
+          ],
+          "avgCost": 1.8325749999999998
+        },
+        "gold-vanilla": {
+          "best": 5257,
+          "mean": 2572,
+          "trials": [
+            4347,
+            5257,
+            367,
+            317
+          ],
+          "avgCost": 3.8667135
+        },
+        "gold-smith-alch": {
+          "best": 7668,
+          "mean": 2512.25,
+          "trials": [
+            723,
+            123,
+            7668,
+            1535
+          ],
+          "avgCost": 7.25799625
+        },
+        "gold-fish": {
+          "best": 17721,
+          "mean": 8367.25,
+          "trials": [
+            10698,
+            786,
+            4264,
+            17721
+          ],
+          "avgCost": 5.85127275
+        },
+        "gold-fletch-alch": {
+          "best": 6564,
+          "mean": 4495,
+          "trials": [
+            3994,
+            2388,
+            6564,
+            5034
+          ],
+          "avgCost": 5.6805765
+        }
+      },
+      "avgBest": 0,
+      "avgMean": 0,
+      "avgCostPerRun": 3.220547449999999,
+      "totalRuns": 80
+    },
+    "opus": {
+      "perTask": {
+        "attack": {
+          "best": 216180,
+          "mean": 81480,
+          "trials": [
+            7580,
+            65480,
+            36680,
+            216180
+          ],
+          "avgCost": 1.70433875
+        },
+        "defence": {
+          "best": 315360,
+          "mean": 150160,
+          "trials": [
+            315360,
+            82960,
+            105660,
+            96660
+          ],
+          "avgCost": 3.2079877500000005
+        },
+        "strength": {
+          "best": 286480,
+          "mean": 183730,
+          "trials": [
+            286480,
+            130680,
+            279580,
+            38180
+          ],
+          "avgCost": 2.1130457499999995
+        },
+        "hitpoints": {
+          "best": 84387,
+          "mean": 55483,
+          "trials": [
+            44705,
+            41300,
+            84387,
+            51540
+          ],
+          "avgCost": 2.23859325
+        },
+        "ranged": {
+          "best": 271000,
+          "mean": 149700,
+          "trials": [
+            271000,
+            247700,
+            28100,
+            52000
+          ],
+          "avgCost": 2.415611
+        },
+        "prayer": {
+          "best": 51750,
+          "mean": 24018.5,
+          "trials": [
+            21487,
+            5962,
+            51750,
+            16875
+          ],
+          "avgCost": 1.8066287499999998
+        },
+        "magic": {
+          "best": 33050,
+          "mean": 19181.25,
+          "trials": [
+            27125,
+            11700,
+            33050,
+            4850
+          ],
+          "avgCost": 4.29596675
+        },
+        "woodcutting": {
+          "best": 1967312,
+          "mean": 1115546.75,
+          "trials": [
+            799500,
+            320625,
+            1374750,
+            1967312
+          ],
+          "avgCost": 2.2136885
+        },
+        "fishing": {
+          "best": 533750,
+          "mean": 236750,
+          "trials": [
+            16750,
+            198500,
+            198000,
+            533750
+          ],
+          "avgCost": 1.69346
+        },
+        "mining": {
+          "best": 1437625,
+          "mean": 1036109,
+          "trials": [
+            16187,
+            1368062,
+            1437625,
+            1322562
+          ],
+          "avgCost": 1.47601075
+        },
+        "cooking": {
+          "best": 60000,
+          "mean": 28500,
+          "trials": [
+            4500,
+            60000,
+            0,
+            49500
+          ],
+          "avgCost": 3.14719525
+        },
+        "fletching": {
+          "best": 149750,
+          "mean": 77937.5,
+          "trials": [
+            58125,
+            5250,
+            98625,
+            149750
+          ],
+          "avgCost": 2.7951509999999997
+        },
+        "crafting": {
+          "best": 40442,
+          "mean": 22629.75,
+          "trials": [
+            10695,
+            0,
+            39382,
+            40442
+          ],
+          "avgCost": 4.617471
+        },
+        "smithing": {
+          "best": 149670,
+          "mean": 46589.75,
+          "trials": [
+            18267,
+            18422,
+            0,
+            149670
+          ],
+          "avgCost": 3.517507
+        },
+        "firemaking": {
+          "best": 385000,
+          "mean": 189031.25,
+          "trials": [
+            127000,
+            129000,
+            385000,
+            115125
+          ],
+          "avgCost": 1.4877675
+        },
+        "thieving": {
+          "best": 368970,
+          "mean": 188700,
+          "trials": [
+            60400,
+            150000,
+            368970,
+            175430
+          ],
+          "avgCost": 1.97746725
+        },
+        "gold-vanilla": {
+          "best": 11170,
+          "mean": 3586.5,
+          "trials": [
+            486,
+            11170,
+            290,
+            2400
+          ],
+          "avgCost": 4.9133645
+        },
+        "gold-smith-alch": {
+          "best": 22738,
+          "mean": 8159.25,
+          "trials": [
+            22738,
+            2120,
+            3021,
+            4758
+          ],
+          "avgCost": 6.43606275
+        },
+        "gold-fish": {
+          "best": 8889,
+          "mean": 7325.25,
+          "trials": [
+            5081,
+            8027,
+            8889,
+            7304
+          ],
+          "avgCost": 5.9319855
+        },
+        "gold-fletch-alch": {
+          "best": 21808,
+          "mean": 19649.25,
+          "trials": [
+            20918,
+            16304,
+            21808,
+            19567
+          ],
+          "avgCost": 5.2016115
+        }
+      },
+      "avgBest": 0,
+      "avgMean": 0,
+      "avgCostPerRun": 3.159545725,
+      "totalRuns": 80
+    },
+    "opus47": {
+      "perTask": {
+        "attack": {
+          "best": 399380,
+          "mean": 178455,
+          "trials": [
+            129880,
+            166780,
+            17780,
+            399380
+          ],
+          "avgCost": 2.4807
+        },
+        "defence": {
+          "best": 310460,
+          "mean": 184560,
+          "trials": [
+            195260,
+            310460,
+            96560,
+            135960
+          ],
+          "avgCost": 5.5685755
+        },
+        "strength": {
+          "best": 390280,
+          "mean": 173630,
+          "trials": [
+            61780,
+            109280,
+            390280,
+            133180
+          ],
+          "avgCost": 3.334704
+        },
+        "hitpoints": {
+          "best": 117860,
+          "mean": 82530.5,
+          "trials": [
+            61225,
+            72052,
+            117860,
+            78985
+          ],
+          "avgCost": 2.77948175
+        },
+        "ranged": {
+          "best": 78100,
+          "mean": 42900,
+          "trials": [
+            1800,
+            78100,
+            21900,
+            69800
+          ],
+          "avgCost": 4.89232125
+        },
+        "prayer": {
+          "best": 11250,
+          "mean": 8099.75,
+          "trials": [
+            11137,
+            11250,
+            4050,
+            5962
+          ],
+          "avgCost": 6.31122775
+        },
+        "magic": {
+          "best": 10537,
+          "mean": 6449.75,
+          "trials": [
+            4112,
+            3875,
+            10537,
+            7275
+          ],
+          "avgCost": 9.53006325
+        },
+        "woodcutting": {
+          "best": 651250,
+          "mean": 347859.25,
+          "trials": [
+            58125,
+            645812,
+            36250,
+            651250
+          ],
+          "avgCost": 3.83540425
+        },
+        "fishing": {
+          "best": 1658500,
+          "mean": 1128000,
+          "trials": [
+            1301500,
+            571500,
+            980500,
+            1658500
+          ],
+          "avgCost": 4.55242525
+        },
+        "mining": {
+          "best": 1501937,
+          "mean": 687530.75,
+          "trials": [
+            1501937,
+            742312,
+            488437,
+            17437
+          ],
+          "avgCost": 4.805886
+        },
+        "cooking": {
+          "best": 51000,
+          "mean": 25687.5,
+          "trials": [
+            9750,
+            31500,
+            10500,
+            51000
+          ],
+          "avgCost": 8.46359
+        },
+        "fletching": {
+          "best": 206500,
+          "mean": 114406,
+          "trials": [
+            45812,
+            205312,
+            206500,
+            0
+          ],
+          "avgCost": 5.219971999999999
+        },
+        "crafting": {
+          "best": 22870,
+          "mean": 7436,
+          "trials": [
+            125,
+            22870,
+            1562,
+            5187
+          ],
+          "avgCost": 8.447146250000001
+        },
+        "smithing": {
+          "best": 73240,
+          "mean": 23833,
+          "trials": [
+            12457,
+            73240,
+            4960,
+            4675
+          ],
+          "avgCost": 7.90665425
+        },
+        "firemaking": {
+          "best": 996000,
+          "mean": 511031.25,
+          "trials": [
+            691125,
+            209000,
+            996000,
+            148000
+          ],
+          "avgCost": 4.29182075
+        },
+        "thieving": {
+          "best": 3725910,
+          "mean": 1592577.5,
+          "trials": [
+            892000,
+            149600,
+            1602800,
+            3725910
+          ],
+          "avgCost": 4.712235
+        },
+        "gold-vanilla": {
+          "best": 2721,
+          "mean": 1916.75,
+          "trials": [
+            1672,
+            1861,
+            1413,
+            2721
+          ],
+          "avgCost": 7.606473
+        },
+        "gold-smith-alch": {
+          "best": 5220,
+          "mean": 2621,
+          "trials": [
+            845,
+            5220,
+            3459,
+            960
+          ],
+          "avgCost": 11.3163225
+        },
+        "gold-fish": {
+          "best": 21828,
+          "mean": 19474.5,
+          "trials": [
+            18946,
+            20409,
+            16715,
+            21828
+          ],
+          "avgCost": 6.76824125
+        },
+        "gold-fletch-alch": {
+          "best": 22200,
+          "mean": 17613,
+          "trials": [
+            16872,
+            22200,
+            20100,
+            11280
+          ],
+          "avgCost": 9.073899
+        }
+      },
+      "avgBest": 0,
+      "avgMean": 0,
+      "avgCostPerRun": 6.105931645569618,
+      "totalRuns": 80
+    }
+  },
+  "skillsRollup": {
+    "opus45": {
+      "avgBest": 362263.125,
+      "avgMean": 225721.15625,
+      "nTasks": 16
+    },
+    "opus": {
+      "avgBest": 396920.375,
+      "avgMean": 225346.671875,
+      "nTasks": 16
+    },
+    "opus47": {
+      "avgBest": 637817.125,
+      "avgMean": 319686.640625,
+      "nTasks": 16
+    }
+  },
+  "goldRollup": {
+    "opus45": {
+      "avgBest": 9302.5,
+      "avgMean": 4486.625,
+      "nTasks": 4
+    },
+    "opus": {
+      "avgBest": 16151.25,
+      "avgMean": 9680.0625,
+      "nTasks": 4
+    },
+    "opus47": {
+      "avgBest": 12992.25,
+      "avgMean": 10406.3125,
+      "nTasks": 4
+    }
+  }
+}

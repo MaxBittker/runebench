@@ -353,6 +353,31 @@ body {
   color: #000;
 }
 
+/* Gold-task composite icon: skill icon with coins overlay */
+.gold-icon {
+  position: relative;
+  display: inline-block;
+  line-height: 0;
+}
+.gold-icon > img.gold-icon-skill {
+  display: block;
+}
+.gold-icon > img.gold-icon-coins {
+  position: absolute;
+  right: -30%;
+  bottom: -20%;
+  width: 75%;
+  height: 75%;
+  pointer-events: none;
+  filter: drop-shadow(0 0 1px rgba(255,255,255,0.9));
+}
+.gold-icon.coins-only > img.gold-icon-coins {
+  position: static;
+  width: 100%;
+  height: 100%;
+  filter: none;
+}
+
 /* Heatmap styles */
 .heatmap-scroll {
   overflow-x: auto;

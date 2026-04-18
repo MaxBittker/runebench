@@ -254,8 +254,26 @@ function main() {
         console.log('No tracking data file found');
     }
 
+    // Peak-gold scoring: reward = max(any sample's gold, final save read).
+    // This protects against death-loss and bank-failure variance at the very
+    // end of the run — if the agent successfully built up N coins at any
+    // point, we credit N regardless of what they had at verifier time.
+    let peakGold = totalGold;
+    let peakAtMs: number | null = null;
+    const samples = trackingData?.samples || [];
+    for (const s of samples) {
+        const g = typeof s.gold === 'number' ? s.gold : 0;
+        if (g > peakGold) {
+            peakGold = g;
+            peakAtMs = typeof s.elapsedMs === 'number' ? s.elapsedMs : null;
+        }
+    }
+
     const rewardObj = {
-        gold: totalGold,
+        gold: peakGold,          // primary reward (peak)
+        peakGold,
+        peakAtMs,
+        finalGold: totalGold,    // what the save file showed at verifier time
         inventoryGold,
         bankGold,
         totalLevel,
@@ -263,9 +281,9 @@ function main() {
     };
 
     writeFileSync('/logs/verifier/reward.json', JSON.stringify(rewardObj, null, 2));
-    writeFileSync('/logs/verifier/reward.txt', totalGold.toString());
+    writeFileSync('/logs/verifier/reward.txt', peakGold.toString());
 
-    console.log(`Reward: gold=${totalGold}`);
+    console.log(`Reward: gold=${peakGold} (peak); finalGold=${totalGold}${peakAtMs != null ? ` (peak at ${(peakAtMs/1000).toFixed(0)}s)` : ''}`);
 
     // Print reward JSON to stdout for recovery
     console.log('__REWARD_JSON_START__');

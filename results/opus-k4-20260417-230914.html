@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Opus 4.5 / 4.6 / 4.7 — k=4 × 30m</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 0; padding: 24px; background: #f7f7f8; color: #1a1a1a; }
+  .wrap { max-width: 1200px; margin: 0 auto; }
+  h1 { margin: 0 0 4px; font-size: 24px; }
+  .sub { color: #888; font-size: 13px; margin-bottom: 24px; }
+  .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  h2 { font-size: 16px; margin: 0 0 12px; font-weight: 600; }
+  .note { font-size: 12px; color: #666; margin-bottom: 12px; line-height: 1.4; }
+  .chart { height: 420px; }
+  .chart-tall { height: 620px; }
+  .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+  .summary-card { background: white; border-radius: 8px; padding: 16px 20px; border-left: 4px solid var(--model-color); box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .summary-card .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: #888; margin-bottom: 8px; }
+  .summary-card .name { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+  .summary-card .metric { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+  .summary-card .metric .v { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .legend-gold { display: inline-block; width: 8px; height: 8px; background: #d4a017; border-radius: 2px; vertical-align: middle; margin: 0 4px; }
+  .legend-skills { display: inline-block; width: 8px; height: 8px; background: #4a90e2; border-radius: 2px; vertical-align: middle; margin: 0 4px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Opus 4.5 / 4.6 / 4.7 — k=4 × 30m</h1>
+  <div class="sub">20 tasks (16 skills + 4 gold conditions) × 3 models × 4 trials = 240 runs. Filter: since=20260417-230914.</div>
+
+  <div class="summary-grid" id="summary"></div>
+
+  <div class="card">
+    <h2>Normalized performance (best@4 and mean across all 20 tasks)</h2>
+    <div class="note">Each task's score is divided by the max across models, so both skills (xp) and gold (gp) contribute on the same [0, 1] scale. A value of 1.00 means "wins this task"; 0.50 means "half the winning model's score". Bars show the avg of those normalized values across all 20 tasks.</div>
+    <div id="chartNorm" class="chart"></div>
+  </div>
+
+  <div class="card">
+    <h2>Per-task best@4 — log-scale raw scores</h2>
+    <div class="note">All 20 tasks plotted together. <span class="legend-skills"></span>skills (xp) and <span class="legend-gold"></span>gold (peak gp) live on the same log y-axis. Hover bars for mean@4 and cost details.</div>
+    <div id="chartPerTask" class="chart-tall"></div>
+  </div>
+
+  <div class="card">
+    <h2>Avg cost per run</h2>
+    <div class="note">Averaged across all 80 trials (16 skills × 4 + 4 gold × 4) per model.</div>
+    <div id="chartCost" class="chart" style="height:280px;"></div>
+  </div>
+</div>
+
+<script>
+const DATA = {"models":["opus45","opus","opus47"],"modelLabel":{"opus45":"Opus 4.5","opus":"Opus 4.6","opus47":"Opus 4.7"},"tasks":[{"task":"attack","isGold":false,"opus45_best":284180,"opus45_mean":133980,"opus45_cost":1.46432475,"opus_best":216180,"opus_mean":81480,"opus_cost":1.70433875,"opus47_best":399380,"opus47_mean":178455,"opus47_cost":2.4807},{"task":"defence","isGold":false,"opus45_best":159460,"opus45_mean":125260,"opus45_cost":1.76702275,"opus_best":315360,"opus_mean":150160,"opus_cost":3.2079877500000005,"opus47_best":310460,"opus47_mean":184560,"opus47_cost":5.5685755},{"task":"strength","isGold":false,"opus45_best":162780,"opus45_mean":128205,"opus45_cost":1.8412830000000002,"opus_best":286480,"opus_mean":183730,"opus_cost":2.1130457499999995,"opus47_best":390280,"opus47_mean":173630,"opus47_cost":3.334704},{"task":"hitpoints","isGold":false,"opus45_best":123842,"opus45_mean":75311.5,"opus45_cost":2.2189405,"opus_best":84387,"opus_mean":55483,"opus_cost":2.23859325,"opus47_best":117860,"opus47_mean":82530.5,"opus47_cost":2.77948175},{"task":"ranged","isGold":false,"opus45_best":193600,"opus45_mean":86125,"opus45_cost":3.75588,"opus_best":271000,"opus_mean":149700,"opus_cost":2.415611,"opus47_best":78100,"opus47_mean":42900,"opus47_cost":4.89232125},{"task":"prayer","isGold":false,"opus45_best":56475,"opus45_mean":29081.25,"opus45_cost":2.611993,"opus_best":51750,"opus_mean":24018.5,"opus_cost":1.8066287499999998,"opus47_best":11250,"opus47_mean":8099.75,"opus47_cost":6.31122775},{"task":"magic","isGold":false,"opus45_best":12312,"opus45_mean":8252.75,"opus45_cost":6.241568749999999,"opus_best":33050,"opus_mean":19181.25,"opus_cost":4.29596675,"opus47_best":10537,"opus47_mean":6449.75,"opus47_cost":9.53006325},{"task":"woodcutting","isGold":false,"opus45_best":692687,"opus45_mean":409499.75,"opus45_cost":1.15675775,"opus_best":1967312,"opus_mean":1115546.75,"opus_cost":2.2136885,"opus47_best":651250,"opus47_mean":347859.25,"opus47_cost":3.83540425},{"task":"fishing","isGold":false,"opus45_best":1305250,"opus45_mean":738500,"opus45_cost":2.3522395,"opus_best":533750,"opus_mean":236750,"opus_cost":1.69346,"opus47_best":1658500,"opus47_mean":1128000,"opus47_cost":4.55242525},{"task":"mining","isGold":false,"opus45_best":1434125,"opus45_mean":1163906,"opus45_cost":2.3146222499999998,"opus_best":1437625,"opus_mean":1036109,"opus_cost":1.47601075,"opus47_best":1501937,"opus47_mean":687530.75,"opus47_cost":4.805886},{"task":"cooking","isGold":false,"opus45_best":372750,"opus45_mean":108750,"opus45_cost":3.58531525,"opus_best":60000,"opus_mean":28500,"opus_cost":3.14719525,"opus47_best":51000,"opus47_mean":25687.5,"opus47_cost":8.46359},{"task":"fletching","isGold":false,"opus45_best":131562,"opus45_mean":65587.25,"opus45_cost":2.70008725,"opus_best":149750,"opus_mean":77937.5,"opus_cost":2.7951509999999997,"opus47_best":206500,"opus47_mean":114406,"opus47_cost":5.219971999999999},{"task":"crafting","isGold":false,"opus45_best":43470,"opus45_mean":19716.75,"opus45_cost":4.64655325,"opus_best":40442,"opus_mean":22629.75,"opus_cost":4.617471,"opus47_best":22870,"opus47_mean":7436,"opus47_cost":8.447146250000001},{"task":"smithing","isGold":false,"opus45_best":49117,"opus45_mean":27201.5,"opus45_cost":2.4071309999999997,"opus_best":149670,"opus_mean":46589.75,"opus_cost":3.517507,"opus47_best":73240,"opus47_mean":23833,"opus47_cost":7.90665425},{"task":"firemaking","isGold":false,"opus45_best":280000,"opus45_mean":179500,"opus45_cost":0.858096,"opus_best":385000,"opus_mean":189031.25,"opus_cost":1.4877675,"opus47_best":996000,"opus47_mean":511031.25,"opus47_cost":4.29182075},{"task":"thieving","isGold":false,"opus45_best":494600,"opus45_mean":312661.75,"opus45_cost":1.8325749999999998,"opus_best":368970,"opus_mean":188700,"opus_cost":1.97746725,"opus47_best":3725910,"opus47_mean":1592577.5,"opus47_cost":4.712235},{"task":"gold-vanilla","isGold":true,"opus45_best":5257,"opus45_mean":2572,"opus45_cost":3.8667135,"opus_best":11170,"opus_mean":3586.5,"opus_cost":4.9133645,"opus47_best":2721,"opus47_mean":1916.75,"opus47_cost":7.606473},{"task":"gold-smith-alch","isGold":true,"opus45_best":7668,"opus45_mean":2512.25,"opus45_cost":7.25799625,"opus_best":22738,"opus_mean":8159.25,"opus_cost":6.43606275,"opus47_best":5220,"opus47_mean":2621,"opus47_cost":11.3163225},{"task":"gold-fish","isGold":true,"opus45_best":17721,"opus45_mean":8367.25,"opus45_cost":5.85127275,"opus_best":8889,"opus_mean":7325.25,"opus_cost":5.9319855,"opus47_best":21828,"opus47_mean":19474.5,"opus47_cost":6.76824125},{"task":"gold-fletch-alch","isGold":true,"opus45_best":6564,"opus45_mean":4495,"opus45_cost":5.6805765,"opus_best":21808,"opus_mean":19649.25,"opus_cost":5.2016115,"opus47_best":22200,"opus47_mean":17613,"opus47_cost":9.073899}],"normSummary":{"opus45":{"best":0.6054844756791125,"mean":0.33077366281518383},"opus":{"best":0.7421856499045549,"mean":0.39917230288648176},"opus47":{"best":0.6849426938366943,"mean":0.3910568893310601}},"costPerRun":{"opus45":3.220547449999999,"opus":3.159545725,"opus47":6.105931645569618},"totalRuns":{"opus45":80,"opus":80,"opus47":80},"filterLabel":"since=20260417-230914"};
+
+const MODEL_COLOR = { opus45: '#7fba00', opus: '#f2a900', opus47: '#d83b01' };
+
+// ── Summary cards ──
+const sg = document.getElementById('summary');
+for (const m of DATA.models) {
+  const card = document.createElement('div');
+  card.className = 'summary-card';
+  card.style.setProperty('--model-color', MODEL_COLOR[m]);
+  const best = DATA.normSummary[m].best;
+  const mean = DATA.normSummary[m].mean;
+  const cost = DATA.costPerRun[m];
+  card.innerHTML = `
+    <div class="label">${DATA.totalRuns[m]} trials</div>
+    <div class="name">${DATA.modelLabel[m]}</div>
+    <div class="metric"><span>avg best@4 (norm)</span><span class="v">${best.toFixed(2)}</span></div>
+    <div class="metric"><span>avg mean@4 (norm)</span><span class="v">${mean.toFixed(2)}</span></div>
+    <div class="metric"><span>avg cost / run</span><span class="v">$${cost.toFixed(2)}</span></div>
+  `;
+  sg.appendChild(card);
+}
+
+// ── Chart: normalized best + mean per model ──
+const normChart = echarts.init(document.getElementById('chartNorm'));
+normChart.setOption({
+  grid: { left: 80, right: 40, top: 40, bottom: 40 },
+  tooltip: { trigger: 'axis' },
+  legend: { top: 0, data: ['best@4 (normalized)', 'mean@4 (normalized)'] },
+  xAxis: {
+    type: 'category',
+    data: DATA.models.map(m => DATA.modelLabel[m]),
+  },
+  yAxis: {
+    type: 'value',
+    min: 0, max: 1,
+    name: 'fraction of per-task best',
+    nameLocation: 'middle', nameGap: 50,
+    axisLabel: { formatter: v => v.toFixed(2) },
+  },
+  series: [
+    {
+      name: 'best@4 (normalized)',
+      type: 'bar',
+      data: DATA.models.map(m => ({
+        value: DATA.normSummary[m].best,
+        itemStyle: { color: MODEL_COLOR[m] },
+      })),
+      label: { show: true, position: 'top', formatter: p => p.value.toFixed(2) },
+    },
+    {
+      name: 'mean@4 (normalized)',
+      type: 'bar',
+      data: DATA.models.map(m => ({
+        value: DATA.normSummary[m].mean,
+        itemStyle: { color: MODEL_COLOR[m], opacity: 0.45 },
+      })),
+      label: { show: true, position: 'top', formatter: p => p.value.toFixed(2) },
+    },
+  ],
+});
+
+// ── Chart: per-task log-scale best@4 ──
+const perTaskChart = echarts.init(document.getElementById('chartPerTask'));
+const seriesPerTask = DATA.models.map(m => ({
+  name: DATA.modelLabel[m] + ' best@4',
+  type: 'bar',
+  data: DATA.tasks.map(t => t[m + '_best']),
+  itemStyle: { color: MODEL_COLOR[m] },
+  emphasis: { focus: 'series' },
+}));
+// Add mean as scatter overlay per model
+const meanSeries = DATA.models.map(m => ({
+  name: DATA.modelLabel[m] + ' mean@4',
+  type: 'scatter',
+  symbol: 'rect',
+  symbolSize: [12, 3],
+  data: DATA.tasks.map(t => t[m + '_mean']),
+  itemStyle: { color: MODEL_COLOR[m], opacity: 0.9, borderColor: '#111', borderWidth: 0.5 },
+  tooltip: { show: false },
+}));
+
+perTaskChart.setOption({
+  grid: { left: 70, right: 40, top: 50, bottom: 120 },
+  tooltip: {
+    trigger: 'axis',
+    axisPointer: { type: 'shadow' },
+    formatter: params => {
+      if (!params.length) return '';
+      const taskIdx = params[0].dataIndex;
+      const task = DATA.tasks[taskIdx];
+      const lines = [`<b>${task.task}${task.isGold ? ' (gold, peak gp)' : ' (skill, xp)'}</b>`];
+      for (const m of DATA.models) {
+        const b = task[m + '_best'], mv = task[m + '_mean'], c = task[m + '_cost'];
+        lines.push(`<span style="color:${MODEL_COLOR[m]}">${DATA.modelLabel[m]}</span>: best ${b.toLocaleString()} · mean ${mv.toLocaleString()} · $${c.toFixed(2)}/run`);
+      }
+      return lines.join('<br>');
+    },
+  },
+  legend: { top: 0 },
+  xAxis: {
+    type: 'category',
+    data: DATA.tasks.map(t => t.task),
+    axisLabel: {
+      interval: 0,
+      rotate: 55,
+      color: t => {
+        const idx = DATA.tasks.findIndex(x => x.task === t);
+        return idx >= 0 && DATA.tasks[idx].isGold ? '#d4a017' : '#4a90e2';
+      },
+    },
+  },
+  yAxis: {
+    type: 'log',
+    name: 'score (log scale)',
+    nameLocation: 'middle', nameGap: 50,
+    axisLabel: { formatter: v => v >= 1000000 ? (v/1e6).toFixed(0)+'M' : v >= 1000 ? (v/1000).toFixed(0)+'k' : v },
+    min: 100,
+  },
+  series: [...seriesPerTask, ...meanSeries],
+});
+
+// ── Chart: cost ──
+const costChart = echarts.init(document.getElementById('chartCost'));
+costChart.setOption({
+  grid: { left: 80, right: 40, top: 20, bottom: 40 },
+  tooltip: { trigger: 'axis', formatter: p => `${p[0].name}<br><b>$${p[0].value.toFixed(2)}</b> per run` },
+  xAxis: {
+    type: 'category',
+    data: DATA.models.map(m => DATA.modelLabel[m]),
+  },
+  yAxis: {
+    type: 'value',
+    name: 'USD / run',
+    nameLocation: 'middle', nameGap: 50,
+    axisLabel: { formatter: v => '$' + v.toFixed(2) },
+  },
+  series: [{
+    type: 'bar',
+    data: DATA.models.map(m => ({
+      value: DATA.costPerRun[m],
+      itemStyle: { color: MODEL_COLOR[m] },
+    })),
+    label: { show: true, position: 'top', formatter: p => '$' + p.value.toFixed(2) },
+  }],
+});
+
+window.addEventListener('resize', () => {
+  normChart.resize();
+  perTaskChart.resize();
+  costChart.resize();
+});
+</script>
+</body>
+</html>
