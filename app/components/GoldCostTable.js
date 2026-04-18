@@ -134,8 +134,9 @@ export function GoldCostTable({ data }) {
                 <th className="sort-header" onClick=${() => handleSort('costPerKGp')}>
                   Cost / 1k gp${sortIndicator('costPerKGp')}
                 </th>
-                <th className="sort-header" onClick=${() => handleSort('totalIn')}>
-                  Tokens (in/out)${sortIndicator('totalIn')}
+                <th className="sort-header" onClick=${() => handleSort('totalIn')}
+                    title="Average input / output tokens per run">
+                  Avg Tokens/Run (in/out)${sortIndicator('totalIn')}
                 </th>
                 <th className="sort-header" onClick=${() => handleSort('cachePct')}>
                   Cache %${sortIndicator('cachePct')}
@@ -157,7 +158,7 @@ export function GoldCostTable({ data }) {
                     <td style=${{ fontVariantNumeric: 'tabular-nums' }}>${fmt$(r.avgCost)}</td>
                     <td style=${{ fontVariantNumeric: 'tabular-nums' }}>${fmt$(r.totalCost)}</td>
                     <td style=${{ fontVariantNumeric: 'tabular-nums' }}>${r.costPerKGp === Infinity ? '—' : fmt$(r.costPerKGp)}</td>
-                    <td style=${{ fontVariantNumeric: 'tabular-nums', fontSize: '11px' }}>${fmtTokens(r.totalIn)} / ${fmtTokens(r.totalOut)}</td>
+                    <td style=${{ fontVariantNumeric: 'tabular-nums', fontSize: '11px' }}>${r.tokenRuns > 0 ? fmtTokens(r.totalIn / r.tokenRuns) : '—'} / ${r.tokenRuns > 0 ? fmtTokens(r.totalOut / r.tokenRuns) : '—'}</td>
                     <td style=${{ fontVariantNumeric: 'tabular-nums' }}>${r.cachePct.toFixed(0)}%</td>
                   </tr>
                 `;

@@ -115,8 +115,9 @@ export function CostTable({ data }) {
                 <th className="sort-header" onClick=${() => handleSort('avgCost')}>
                   Avg Cost/Run${sortIndicator('avgCost')}
                 </th>
-                <th className="sort-header" onClick=${() => handleSort('totalInput')}>
-                  Tokens (in/out)${sortIndicator('totalInput')}
+                <th className="sort-header" onClick=${() => handleSort('totalInput')}
+                    title="Average input / output tokens per run">
+                  Avg Tokens/Run (in/out)${sortIndicator('totalInput')}
                 </th>
               </tr>
             </thead>
@@ -132,7 +133,7 @@ export function CostTable({ data }) {
                     </td>
                     <td style=${{ fontVariantNumeric: 'tabular-nums' }}>${m.logMean.toFixed(1)}</td>
                     <td style=${{ fontVariantNumeric: 'tabular-nums' }}>${fmt$(m.avgCost)}</td>
-                    <td style=${{ fontVariantNumeric: 'tabular-nums', fontSize: '11px' }}>${fmtTokens(m.totalInput)} / ${fmtTokens(m.totalOutput)}</td>
+                    <td style=${{ fontVariantNumeric: 'tabular-nums', fontSize: '11px' }}>${m.runsWithCost > 0 ? fmtTokens(m.totalInput / m.runsWithCost) : '—'} / ${m.runsWithCost > 0 ? fmtTokens(m.totalOutput / m.runsWithCost) : '—'}</td>
                   </tr>
                 `;
               })}
