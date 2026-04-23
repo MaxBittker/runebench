@@ -32,7 +32,7 @@ const KNOWN_MODELS = [
   'sonnet46', 'sonnet45',
   'haiku',
   'codex53', 'codex',
-  'gpt54nano', 'gpt54mini', 'gpt54',
+  'gpt55', 'gpt54nano', 'gpt54mini', 'gpt54',
   'gemini31', 'geminiflash', 'gemini',
   'glm', 'kimi', 'qwen35', 'qwen3',
 ];
@@ -49,6 +49,7 @@ const MODEL_LABELS: Record<string, string> = {
   gpt54: 'GPT-5.4',
   gpt54mini: 'GPT-5.4 Mini',
   gpt54nano: 'GPT-5.4 Nano',
+  gpt55: 'GPT-5.5',
   gemini: 'Gemini 3 Pro',
   gemini31: 'Gemini 3.1 Pro',
   geminiflash: 'Gemini 3 Flash',

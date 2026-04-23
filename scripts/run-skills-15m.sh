@@ -27,6 +27,7 @@ codex|openai/gpt-5.3-codex|codex53
 codex|openai/gpt-5.4|gpt54
 codex|openai/gpt-5.4-mini|gpt54mini
 codex|openai/gpt-5.4-nano|gpt54nano
+codex|openai/gpt-5.5|gpt55
 gemini-cli|google/gemini-3-pro-preview|gemini
 gemini-cli|google/gemini-3.1-pro-preview|gemini31
 gemini-cli|google/gemini-3-flash-preview|geminiflash
@@ -52,7 +53,7 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
       echo "Usage: run-skills-15m.sh [-m model] [-s skill]"
       echo ""
-      echo "Models: opus, opus45, sonnet46, sonnet45, haiku, codex, codex53, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, glm, kimi, qwen3, qwen35 (default: all)"
+      echo "Models: opus, opus45, sonnet46, sonnet45, haiku, codex, codex53, gpt55, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, glm, kimi, qwen3, qwen35 (default: all)"
       echo "Skills: attack, defence, strength, hitpoints, ranged, prayer, magic,"
       echo "        woodcutting, fishing, mining, cooking, fletching, crafting,"
       echo "        smithing, firemaking, thieving (default: all sixteen)"
@@ -87,7 +88,7 @@ TOTAL_FAILED=0
 for model_name in $SELECTED_MODELS; do
   entry=$(lookup_model "$model_name" "$ALL_MODELS")
   if [ -z "$entry" ]; then
-    echo "Unknown model: $model_name (available: opus, opus45, sonnet46, sonnet45, haiku, codex, codex53, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, glm, kimi, qwen3, qwen35)"
+    echo "Unknown model: $model_name (available: opus, opus45, sonnet46, sonnet45, haiku, codex, codex53, gpt55, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, glm, kimi, qwen3, qwen35)"
     exit 1
   fi
 
@@ -109,7 +110,7 @@ for model_name in $SELECTED_MODELS; do
   #   - For opencode agents: sets the bash loop timeout (game time)
   #   - For codex: sets the Modal exec timeout (must be < harbor's 1020s agent timeout)
   case "$model_name" in
-    codex|codex53|gpt54|gpt54mini|gpt54nano)
+    codex|codex53|gpt55|gpt54|gpt54mini|gpt54nano)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=950"
       ;;
     kimi|qwen3|qwen35)

@@ -15,6 +15,7 @@ const MODEL_CONFIG = {
   'haiku':    { displayName: 'Claude Haiku 4.5',   shortName: 'Haiku 4.5',  color: '#e06090', order: 7, icon: VIEWS_BASE + 'model-icons/anthropic.svg' },
   'codex':    { displayName: 'Codex CLI 5.2',       shortName: 'Codex 5.2', color: '#10a37f', order: 8, icon: VIEWS_BASE + 'model-icons/openai.png' },
   'codex53':  { displayName: 'Codex CLI 5.3',       shortName: 'Codex 5.3', color: '#0d8c6b', order: 9, icon: VIEWS_BASE + 'model-icons/openai.png' },
+  'gpt55':    { displayName: 'GPT-5.5',             shortName: 'GPT-5.5',  color: '#066f4a', order: 9.5, icon: VIEWS_BASE + 'model-icons/openai.png' },
   'gpt54':    { displayName: 'GPT-5.4',             shortName: 'GPT-5.4',  color: '#0a7a5a', order: 10, icon: VIEWS_BASE + 'model-icons/openai.png' },
   'gpt54mini': { displayName: 'GPT-5.4 Mini',     shortName: 'GPT-5.4 Mini', color: '#15b886', order: 10.5, icon: VIEWS_BASE + 'model-icons/openai.png' },
   'gpt54nano': { displayName: 'GPT-5.4 Nano',     shortName: 'GPT-5.4 Nano', color: '#20d6a2', order: 10.6, icon: VIEWS_BASE + 'model-icons/openai.png' },

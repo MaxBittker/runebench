@@ -31,6 +31,7 @@ opencode|openai/gpt-5.3-codex|codex53
 opencode|openai/gpt-5.4|gpt54
 opencode|openai/gpt-5.4-mini|gpt54mini
 opencode|openai/gpt-5.4-nano|gpt54nano
+opencode|openai/gpt-5.5|gpt55
 opencode|gemini/gemini-3-pro-preview|gemini
 opencode|gemini/gemini-3-flash-preview|geminiflash
 glm-opencode|openrouter/z-ai/glm-5|glm
@@ -58,8 +59,8 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
       echo "Usage: run-gold.sh [-m model] [-c condition] [--horizon 15m|30m] [-k trials]"
       echo ""
-      echo "Models:     opus47, opus, sonnet46, sonnet45, haiku, codex53, gpt54,"
-      echo "            gpt54mini, gpt54nano, gemini, geminiflash, glm, kimi,"
+      echo "Models:     opus47, opus, sonnet46, sonnet45, haiku, codex53, gpt55,"
+      echo "            gpt54, gpt54mini, gpt54nano, gemini, geminiflash, glm, kimi,"
       echo "            qwen3, qwen35 (default: all)"
       echo "Conditions: vanilla, smith-alch, fish, fletch-alch (default: all four)"
       echo "Horizon:    15m or 30m (default: 15m)"
@@ -71,7 +72,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [ -z "$SELECTED_MODELS" ]; then
-  SELECTED_MODELS="opus47 opus sonnet46 sonnet45 haiku codex53 gpt54 gpt54mini gpt54nano gemini geminiflash glm kimi qwen3 qwen35"
+  SELECTED_MODELS="opus47 opus sonnet46 sonnet45 haiku codex53 gpt55 gpt54 gpt54mini gpt54nano gemini geminiflash glm kimi qwen3 qwen35"
 fi
 if [ -z "$SELECTED_CONDITIONS" ]; then
   SELECTED_CONDITIONS="$ALL_CONDITIONS"

@@ -30,7 +30,7 @@ export function App() {
         data[model][cond] = trial;
       }
     }
-    data.__goldMerged = true;
+    Object.defineProperty(data, '__goldMerged', { value: true });
   }
 
   return html`

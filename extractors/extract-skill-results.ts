@@ -28,7 +28,7 @@ import {
 const JOBS_DIR = join(import.meta.dir, '..', 'jobs');
 const RESULTS_ROOT = join(import.meta.dir, '..', 'results');
 
-const KNOWN_MODELS = ['opus47', 'opus', 'opus45', 'sonnet46', 'sonnet45', 'haiku', 'codex53', 'gpt54mini', 'gpt54nano', 'gpt54', 'gemini31', 'geminiflash', 'gemini', 'glm', 'kimi', 'qwen35', 'qwen3'];
+const KNOWN_MODELS = ['opus47', 'opus', 'opus45', 'sonnet46', 'sonnet45', 'haiku', 'codex53', 'gpt55', 'gpt54mini', 'gpt54nano', 'gpt54', 'gemini31', 'geminiflash', 'gemini', 'glm', 'kimi', 'qwen35', 'qwen3'];
 
 const KNOWN_SKILLS = [
   'attack', 'defence', 'strength', 'hitpoints', 'ranged', 'prayer', 'magic',

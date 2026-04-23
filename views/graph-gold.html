@@ -28,6 +28,7 @@
     gap: 0;
     margin-left: 16px;
     vertical-align: middle;
+    flex-wrap: wrap;
   }
   .horizon-tabs button {
     padding: 4px 14px;
@@ -44,6 +45,21 @@
   .horizon-tabs button:not(:first-child):not(:last-child) { border-left: none; }
   .horizon-tabs button.active { background: #1a1a1a; border-color: #1a1a1a; color: #fff; }
   .horizon-tabs button:hover:not(.active) { border-color: #999; color: #1a1a1a; }
+
+  .variant-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 10px 0 18px;
+    flex-wrap: wrap;
+  }
+  .variant-label {
+    font-size: 12px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+  }
 
   .charts-row {
     display: grid;
@@ -152,13 +168,17 @@
 <body>
 
 <div class="page-header">
-  <h1>Gold Benchmark
-    <span class="horizon-tabs" id="horizonTabs" style="display:none"></span>
-  </h1>
+  <h1>Gold Benchmark</h1>
 </div>
 <div class="page-subtitle" id="pageSubtitle">Coins earned across AI models</div>
 
 <div id="mainContent" style="display:none">
+  <div class="variant-row" id="variantRow" style="display:none">
+    <span class="variant-label">Starting condition</span>
+    <span class="horizon-tabs" id="conditionTabs"></span>
+    <span class="variant-label" style="margin-left:16px">Horizon</span>
+    <span class="horizon-tabs" id="horizonTabs"></span>
+  </div>
   <div class="charts-row">
     <div class="chart-card">
       <h2>Total Gold Earned</h2>
@@ -180,6 +200,8 @@
           <th>Inventory / Bank</th>
           <th>Total Level</th>
           <th>Tokens</th>
+          <th>Cost</th>
+          <th>gp / $</th>
         </tr>
       </thead>
       <tbody id="summaryBody"></tbody>
@@ -199,20 +221,48 @@
 
 <script>
 const MODEL_CONFIG = {
-  'opus':     { displayName: 'Claude Opus 4.6',   color: '#8b7355', order: 1 },
-  'sonnet46': { displayName: 'Claude Sonnet 4.6', color: '#d4442a', order: 2 },
-  'sonnet45': { displayName: 'Claude Sonnet 4.5', color: '#e07850', order: 3 },
-  'gemini':   { displayName: 'Gemini 3 Pro',      color: '#4285f4', order: 4 },
-  'haiku':    { displayName: 'Claude Haiku 4.5',   color: '#e06090', order: 5 },
-  'codex':    { displayName: 'Codex CLI',          color: '#10a37f', order: 6 },
-  'glm':      { displayName: 'GLM 5',             color: '#6c5ce7', order: 7 },
-  'kimi':     { displayName: 'Kimi K2.5',         color: '#00b4d8', order: 8 },
+  'opus47':     { displayName: 'Claude Opus 4.7',   color: '#6d5843', order: 0.5 },
+  'opus':       { displayName: 'Claude Opus 4.6',   color: '#8b7355', order: 1 },
+  'opus45':     { displayName: 'Claude Opus 4.5',   color: '#a08060', order: 2 },
+  'sonnet46':   { displayName: 'Claude Sonnet 4.6', color: '#d4442a', order: 3 },
+  'sonnet45':   { displayName: 'Claude Sonnet 4.5', color: '#e07850', order: 4 },
+  'gemini':     { displayName: 'Gemini 3 Pro',      color: '#4285f4', order: 5 },
+  'gemini31':   { displayName: 'Gemini 3.1 Pro',    color: '#1a57c4', order: 6 },
+  'geminiflash':{ displayName: 'Gemini 3 Flash',    color: '#7baaf7', order: 6.5 },
+  'haiku':      { displayName: 'Claude Haiku 4.5',  color: '#e06090', order: 7 },
+  'codex':      { displayName: 'Codex 5.2',         color: '#10a37f', order: 8 },
+  'codex53':    { displayName: 'Codex 5.3',         color: '#0d8c6b', order: 9 },
+  'gpt54':      { displayName: 'GPT-5.4',           color: '#0a7a5a', order: 10 },
+  'gpt54mini':  { displayName: 'GPT-5.4 Mini',      color: '#15b886', order: 10.5 },
+  'gpt54nano':  { displayName: 'GPT-5.4 Nano',      color: '#20d6a2', order: 10.6 },
+  'glm':        { displayName: 'GLM 5',             color: '#6c5ce7', order: 11 },
+  'kimi':       { displayName: 'Kimi K2.5',         color: '#00b4d8', order: 12 },
+  'qwen3':      { displayName: 'Qwen3 Coder',       color: '#6366f1', order: 13 },
+  'qwen35':     { displayName: 'Qwen3.5 35B',       color: '#818cf8', order: 14 },
+};
+
+const CONDITION_DISPLAY = {
+  'vanilla':     'Vanilla',
+  'smith-alch':  'Smith + Alch',
+  'fish':        'Fish',
+  'fletch-alch': 'Fletch + Alch',
 };
 
 let goldData = {};
-let currentHorizon = null;
+let currentVariant = null;   // full key, e.g. "smith-alch-15m" or legacy "15m"
+let currentCondition = null; // e.g. "smith-alch" (null for legacy-only data)
+let currentHorizon = null;   // e.g. "15m"
 let barChart = null;
 let lineChart = null;
+
+// Parse a variant key into { condition, horizon }.
+// "smith-alch-15m" → { condition: "smith-alch", horizon: "15m" }
+// "15m"            → { condition: null,         horizon: "15m" }
+function parseVariantKey(key) {
+  const m = key.match(/^(.+)-(\d+[mh])$/);
+  if (m && m[1] !== '') return { condition: m[1], horizon: m[2] };
+  return { condition: null, horizon: key };
+}
 
 function loadResults() {
   if (window.GOLD_DATA) {
@@ -247,32 +297,78 @@ function onDataLoaded() {
   document.getElementById('loadSection').style.display = 'none';
   document.getElementById('mainContent').style.display = '';
 
-  const horizons = Object.keys(goldData).sort();
-  if (horizons.length === 0) return;
+  const variants = Object.keys(goldData).sort();
+  if (variants.length === 0) return;
 
-  // Build horizon tabs
-  const tabs = document.getElementById('horizonTabs');
-  if (horizons.length > 1) {
-    tabs.style.display = '';
-    tabs.innerHTML = horizons.map(h =>
-      `<button data-horizon="${h}" onclick="selectHorizon('${h}')">${h}</button>`
-    ).join('');
+  // Split into (condition, horizon) buckets
+  const conditions = new Set();
+  const horizons = new Set();
+  let hasConditionedData = false;
+  for (const v of variants) {
+    const { condition, horizon } = parseVariantKey(v);
+    if (condition) { conditions.add(condition); hasConditionedData = true; }
+    horizons.add(horizon);
   }
 
-  selectHorizon(horizons[horizons.length - 1]); // Default to longest
+  const variantRow = document.getElementById('variantRow');
+  const condTabs = document.getElementById('conditionTabs');
+  const horizonTabs = document.getElementById('horizonTabs');
+
+  const shouldShowTabs = (hasConditionedData && conditions.size > 1) || horizons.size > 1;
+  variantRow.style.display = shouldShowTabs ? '' : 'none';
+
+  if (hasConditionedData && conditions.size > 0) {
+    const ordered = ['vanilla', 'smith-alch', 'fish', 'fletch-alch'].filter(c => conditions.has(c));
+    for (const c of conditions) if (!ordered.includes(c)) ordered.push(c);
+    condTabs.innerHTML = ordered.map(c =>
+      `<button data-condition="${c}" onclick="selectCondition('${c}')">${CONDITION_DISPLAY[c] || c}</button>`
+    ).join('');
+    currentCondition = ordered[0];
+  } else {
+    condTabs.innerHTML = '';
+    currentCondition = null;
+  }
+
+  const horizonOrder = Array.from(horizons).sort((a, b) => parseInt(a) - parseInt(b));
+  horizonTabs.innerHTML = horizonOrder.map(h =>
+    `<button data-horizon="${h}" onclick="selectHorizon('${h}')">${h}</button>`
+  ).join('');
+  currentHorizon = horizonOrder[0];
+
+  applyVariant();
 }
 
-function selectHorizon(h) {
-  currentHorizon = h;
-  document.querySelectorAll('.horizon-tabs button').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.horizon === h);
+function variantKey() {
+  return currentCondition ? `${currentCondition}-${currentHorizon}` : currentHorizon;
+}
+
+function applyVariant() {
+  currentVariant = variantKey();
+  // If the combo doesn't exist in data, pick a fallback that does
+  if (!goldData[currentVariant]) {
+    const fallback = Object.keys(goldData).find(k => parseVariantKey(k).horizon === currentHorizon);
+    if (fallback) {
+      currentVariant = fallback;
+      const parsed = parseVariantKey(fallback);
+      currentCondition = parsed.condition;
+    }
+  }
+  document.querySelectorAll('#conditionTabs button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.condition === currentCondition);
   });
-  document.getElementById('pageSubtitle').textContent = `Coins earned in ${h} across AI models`;
+  document.querySelectorAll('#horizonTabs button').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.horizon === currentHorizon);
+  });
+  const condLabel = currentCondition ? `${CONDITION_DISPLAY[currentCondition] || currentCondition} · ` : '';
+  document.getElementById('pageSubtitle').textContent = `${condLabel}Coins earned in ${currentHorizon} across AI models`;
   renderAll();
 }
 
+function selectCondition(c) { currentCondition = c; applyVariant(); }
+function selectHorizon(h)   { currentHorizon = h;   applyVariant(); }
+
 function getModels() {
-  const data = goldData[currentHorizon] || {};
+  const data = goldData[currentVariant] || {};
   return Object.keys(data)
     .sort((a, b) => (data[b]?.gold || 0) - (data[a]?.gold || 0)); // Sort by gold descending
 }
@@ -286,7 +382,7 @@ function renderAll() {
 function renderBarChart() {
   if (barChart) { barChart.destroy(); barChart = null; }
   const models = getModels();
-  const data = goldData[currentHorizon] || {};
+  const data = goldData[currentVariant] || {};
 
   const labels = models.map(m => (MODEL_CONFIG[m] || { displayName: m }).displayName);
   const values = models.map(m => data[m]?.gold || 0);
@@ -366,10 +462,10 @@ function renderBarChart() {
 function renderLineChart() {
   if (lineChart) { lineChart.destroy(); lineChart = null; }
   const models = getModels();
-  const data = goldData[currentHorizon] || {};
+  const data = goldData[currentVariant] || {};
 
   // Parse horizon for max time
-  const horizonMatch = currentHorizon.match(/(\d+)(m|h)/);
+  const horizonMatch = (currentHorizon || '').match(/(\d+)(m|h)/);
   const maxMinutes = horizonMatch
     ? (horizonMatch[2] === 'h' ? parseInt(horizonMatch[1]) * 60 : parseInt(horizonMatch[1]))
     : 30;
@@ -456,7 +552,7 @@ function renderLineChart() {
 
 function renderSummaryTable() {
   const models = getModels();
-  const data = goldData[currentHorizon] || {};
+  const data = goldData[currentVariant] || {};
   const tbody = document.getElementById('summaryBody');
 
   const maxGold = Math.max(...models.map(m => data[m]?.gold || 0), 1);
@@ -470,6 +566,11 @@ function renderSummaryTable() {
     const tokenStr = tokens
       ? `${(tokens.inputTokens / 1000).toFixed(0)}k in / ${(tokens.outputTokens / 1000).toFixed(0)}k out`
       : '-';
+    const cost = tokens?.costUsd;
+    const costStr = cost != null ? (cost >= 1 ? `$${cost.toFixed(2)}` : `$${cost.toFixed(3)}`) : '-';
+    const gpPerDollar = cost != null && cost > 0 && r.gold > 0
+      ? Math.round(r.gold / cost).toLocaleString()
+      : '-';
     const medal = i === 0 && r.gold > 0 ? ' \u2B50' : '';
 
     return `<tr class="${isBest ? 'best' : ''}">
@@ -478,10 +579,15 @@ function renderSummaryTable() {
         <span class="model-dot" style="background:${config.color}"></span>
         ${config.displayName}${medal}
       </td>
-      <td class="gold-cell" style="color:${config.color}">${r.gold.toLocaleString()}</td>
+      <td class="gold-cell" style="color:${config.color}">
+        ${r.gold.toLocaleString()}
+        ${r.finalGold != null && r.finalGold !== r.gold ? `<div class="breakdown">final: ${r.finalGold.toLocaleString()}</div>` : ''}
+      </td>
       <td class="breakdown">${r.inventoryGold.toLocaleString()} inv / ${r.bankGold.toLocaleString()} bank</td>
       <td>${r.totalLevel}</td>
       <td class="token-info">${tokenStr}</td>
+      <td class="token-info">${costStr}</td>
+      <td class="token-info">${gpPerDollar}</td>
     </tr>`;
   }).join('');
 }

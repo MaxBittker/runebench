@@ -2,15 +2,20 @@ import { html, useMemo, useState } from '../html.js';
 
 function fmt$(v) {
   if (v == null || v <= 0) return '—';
-  if (v >= 1) return '$' + v.toFixed(2);
-  return '$' + v.toFixed(3);
+  return '$' + v.toFixed(2);
 }
 
 function fmtTokens(n) {
   if (!n) return '—';
-  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
-  if (n >= 1e3) return (n / 1e3).toFixed(0) + 'k';
-  return String(n);
+  if (n >= 1e6) {
+    const v = n / 1e6;
+    return (v >= 10 ? v.toFixed(0) : v.toFixed(1)) + 'M';
+  }
+  if (n >= 1e3) {
+    const v = n / 1e3;
+    return (v >= 10 ? (Math.round(v / 10) * 10) : v.toFixed(1)) + 'k';
+  }
+  return String(Math.round(n));
 }
 
 export function CostTable({ data }) {
@@ -100,7 +105,7 @@ export function CostTable({ data }) {
             <p className="subtitle is-6" style=${{ color: '#888' }}>
               Average API cost per 30-min skill run vs. log-average performance across 16 skills.
               <br />
-              ⟨ln⟩ averages ln(1 + peak XP/min). Click any header to sort.
+              ⟨ln⟩ averages ln(1 + peak XP/min).
             </p>
           </div>
         </div>

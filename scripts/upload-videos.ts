@@ -45,6 +45,31 @@ if (!horizon) {
   process.exit(1);
 }
 
+// Horizon duration in seconds — videos are trimmed to show exactly this much
+// of agent gameplay (starting from agent_execution.started_at in result.json,
+// skipping the container boot / idle prelude).
+const horizonSec = parseInt(horizon.replace("m", ""), 10) * 60;
+
+/** Read result.json next to a recording.mp4 and compute the offset (seconds)
+ * from container start to agent start. Falls back to 0 if unavailable. */
+function agentStartOffsetSec(videoPath: string): number {
+  // videoPath = .../<trialDir>/verifier/recording.mp4
+  const trialDir = join(videoPath, "..", "..");
+  const resultPath = join(trialDir, "result.json");
+  if (!existsSync(resultPath)) return 0;
+  try {
+    const r = JSON.parse(readFileSync(resultPath, "utf-8"));
+    const containerStart = r.started_at as string | undefined;
+    const agentStart = r.agent_execution?.started_at as string | undefined;
+    if (!containerStart || !agentStart) return 0;
+    const offsetMs = Date.parse(agentStart) - Date.parse(containerStart);
+    if (!Number.isFinite(offsetMs) || offsetMs < 0) return 0;
+    return Math.floor(offsetMs / 1000);
+  } catch {
+    return 0;
+  }
+}
+
 // ── Job directory parsing (same as generate-video-grid.ts) ────────
 
 interface VideoEntry {
@@ -244,7 +269,7 @@ async function r2Exists(key: string): Promise<boolean> {
 
 // ── Process videos (concurrent) ───────────────────────────────────
 
-const CONCURRENCY = 8;
+const CONCURRENCY = 4;
 
 const tmpDir = join(tmpdir(), "rs-video-upload");
 mkdirSync(tmpDir, { recursive: true });
@@ -266,10 +291,18 @@ async function processVideo(video: VideoEntry): Promise<void> {
     return;
   }
 
-  // Crop + re-encode
+  // Crop + trim + re-encode.
+  //   -ss BEFORE -i → fast seek (re-encodes from the nearest keyframe, which is
+  //                     fine since we re-encode anyway). Skips container boot.
+  //   -t horizonSec → cap output duration to the scoring horizon, so videos
+  //                   can't run past the 30m (or 15m / 10m) mark.
+  const startOffset = agentStartOffsetSec(video.localPath);
   const tmpFile = join(tmpDir, `${video.skill}-${video.model}.mp4`);
   const ffResult = await run([
-    "ffmpeg", "-i", video.localPath,
+    "ffmpeg",
+    "-ss", String(startOffset),
+    "-i", video.localPath,
+    "-t", String(horizonSec),
     "-vf", CROP_FILTER,
     "-c:v", "libx264", "-preset", "fast", "-crf", "30",
     "-pix_fmt", "yuv420p",

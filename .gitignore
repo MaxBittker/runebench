@@ -7,6 +7,7 @@ jobs-v1/
 
 # Secrets
 .env
+agents/auth.json
 
 # OS / editor
 .DS_Store

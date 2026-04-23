@@ -439,18 +439,17 @@ body {
   background: #fff;
   text-align: left !important;
   font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 4px;
   white-space: nowrap;
 }
 .heatmap-model img {
   width: 14px;
   height: 14px;
-  flex-shrink: 0;
+  vertical-align: middle;
+  margin-right: 4px;
 }
 .heatmap-model span {
   font-size: 11px;
+  vertical-align: middle;
 }
 .heatmap-total {
   font-weight: 700;
