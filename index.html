@@ -19,7 +19,43 @@
   <link rel="stylesheet" href="app/styles.css">
 </head>
 <body>
-  <div id="root"></div>
+  <div id="root">
+<!-- PRERENDER:START -->
+<link rel="preload" as="image" href="views/skill-icons/smithing.png"/><section class="hero"><div class="hero-body"><div class="container is-max-desktop"><div class="columns is-centered"><div class="column has-text-centered"><h1 class="title is-1 publication-title">RuneBench</h1><p class="subtitle is-3" style="margin-top:-0.5rem;margin-bottom:0">Agent Benchmark on RuneScape Gameplay Tasks</p><div class="column has-text-centered"><div class="publication-links" style="gap:8px;display:flex;justify-content:center"><span class="link-block"><a href="https://github.com/MaxBittker/RuneBench" target="_blank" class="external-link button is-normal is-rounded is-dark"><span class="icon"><i class="fab fa-github"></i></span><span>Code</span></a></span><span class="link-block"><a href="https://github.com/MaxBittker/rs-sdk" target="_blank" class="external-link button is-normal is-rounded is-dark"><span class="icon"><img src="views/skill-icons/smithing.png" alt="" style="width:18px;height:18px;filter:brightness(0) invert(1)"/></span><span>rs-sdk</span></a></span><span class="link-block"><a href="https://discord.com/invite/3DcuU5cMJN" target="_blank" class="external-link button is-normal is-rounded is-dark"><span class="icon"><i class="fab fa-discord"></i></span><span>Discord</span></a></span></div></div></div></div></div></div></section>
+<section class="section"><div class="container is-max-desktop"><div class="columns is-centered has-text-centered"><div class="column is-four-fifths"><div class="content has-text-justified"><p><strong>Runebench</strong> evaluates AI coding agents on their ability to play RuneScape via a<a href="https://github.com/MaxBittker/rs-sdk"> typescript sdk</a> and must accomplish tasks in the game world.  Measuring agent&#x27;s behavior in an &quot;orient, decide, act&quot; loop provides interesting insights into their multi-step planning and problem solving capabilities in coding agents.</p></div></div></div></div></section>
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="columns is-centered has-text-centered">
+      <div class="column is-four-fifths">
+        <h2 class="title is-3">How Agents See the World</h2>
+      </div>
+    </div>
+    <div class="agent-row">
+      <div class="agent-row-text">
+        <div class="agent-panel-label">TypeScript SDK</div>
+        <p>Agents play the game by writing and executing TypeScript snippets against an emulated game server. The SDK provides access to reading game state and performing actions.</p>
+      </div>
+    </div>
+    <div class="agent-row">
+      <div class="agent-row-text">
+        <div class="agent-panel-label">Game Knowledge</div>
+        <p>Each agent is given a folder of markdown files extracted from the game wiki — skill guides, item stats, NPC locations, and quest walkthroughs. They can search the files to inform their strategy.</p>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="section"><div class="container is-max-widescreen"><div class="columns is-centered"><div class="column is-8"><div class="content"><h3 class="title is-4">Task Design</h3><h4>Scoring: XP Rates as the goal</h4><p>The originally task was to gain as much XP as possible for a skill within a fixed time window, but we found this approach punished exploration - The winning strategies were often a simple grind with as little stopping as possible. Because we wanted to reward interesting strategies and exploration, we landed on measuring max XP rate per 15 second window.
+
+                By focusing on XP rate, we reward agents that discover higher-level strategies, beyond pure time-on-task. It was great seeing winning runs use many locations, tricks, and methods as they level up - models are incredible optimizers.</p><h3 class="title is-4">Limitations</h3><p>The biggest remaining issue with this task design is the long runtime. I experimented with shorter task duration, but it punished the models&#x27; tendancy to front-load planning (spending many minutes reading docs), as well as the slow inference rates for some models. The complexity of the environment and low sample size also lead to noise and false negatives that hurt the numberical accuracy of the comparison between models</p><p>There is room to design interesting micro-tasks with shorter runtimes to make the benchmark easier to run and iterate on. The complexity of the environment and low sample counts likely contributed significant noise to the results.</p><h3 class="title is-4">Harness Development</h3><h4>Growing an API</h4><p>The rs-sdk typescript library was developed through cycles of automated error analysis — I would run a batch of agents on a task, categorize failures and missing features, and use those to inform harness improvements. This was a really interesting way to &quot;grow&quot; an API layer between the agents and the game server.</p><h3 class="title is-4">Future Work</h3><h4>Multi-Agent Collaboration</h4><p>Can two bots outperform a single agent? For example, one agent gathering raw materials while another processes them — splitting the supply chain to achieve a higher combined XP rate. It would be fascinating to test coordination, communication around an optimization task. This might take the form of one LLM agent scripting multiple players characters, or seperate LLMs communicating through in-game chat.</p><h4>Knowledge Transfer</h4><p>How well can an agent write a guide for another agent? Given one agent&#x27;s experience training a skill, how well can it produce instructions that meaningfully improve a second agent&#x27;s performance?</p><h3>Contribution</h3><p>We would love to see more people experimenting with  <a href="https://github.com/MaxBittker/rs-sdk">RS-SDK</a>! Join the <a href="https://discord.com/invite/3DcuU5cMJN">Discord</a> to get involved, there are many people doing interesting small scale experiments with harnesses and techniques.</p><br/><h4>Thank you</h4>Thanks to Rob Haisfield, Sean Lee, Christopher Settles, Alex Duffy, and Erik Quintanilla for critical feedback and input, and to LostCity and Harbor RL communities for providing critical open source ecosystem.</div></div></div></div></section>
+<footer class="footer" style="background-color:#f0f0f0;margin-top:60px"><div class="container"><div class="columns is-centered"><div class="column is-8"><div class="content has-text-centered" style="font-size:0.85em;color:#888"><p>RuneBench is built on <a href="https://github.com/MaxBittker/rs-sdk">rs-sdk</a>,
+                and <a href="https://github.com/LostCityRS/Server">LostCity</a> engine/client</p><p>Benchmark inspiration from <a href="https://jackhopkins.github.io/factorio-learning-environment/versions/0.3.0.html">Factorio Learning Environment</a> by Jack Hopkins et al.</p><p>Benchmarks run using the <a href="https://harborframework.com/">Harbor</a> framework.</p><p>Website template borrowed from <a href="https://nerfies.github.io">Nerfies</a> licensed under <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0</a>.</p></div><div class="content" style="margin-top:24px;background:#f5f5f5;border-radius:8px;padding:16px 20px;font-size:0.8em;font-family:monospace;color:#555;white-space:pre-wrap">@misc{bittker2026runebench,
+  title   = {RuneBench: AI Agent Benchmark on RuneScape Gameplay Tasks},
+  author  = {Max Bittker, Surya Narreddi, Rob Haisfield, Sean Lee},
+  year    = {2026},
+  note    = {Websim}
+}</div></div></div></div></footer>
+<!-- PRERENDER:END -->
+</div>
 
   <!-- Dependencies -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
