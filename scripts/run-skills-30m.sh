@@ -32,6 +32,7 @@ codex|openai/gpt-5.5|gpt55
 gemini-cli|google/gemini-3-pro-preview|gemini
 gemini-cli|google/gemini-3.1-pro-preview|gemini31
 gemini-cli|google/gemini-3-flash-preview|geminiflash
+gemini-cli|google/gemini-3.5-flash|gemini35flash
 glm-opencode|openrouter/z-ai/glm-5|glm
 kimi-opencode|openrouter/moonshotai/kimi-k2.5|kimi
 qwen3-opencode|openrouter/qwen/qwen3-coder-next|qwen3
@@ -56,7 +57,7 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
       echo "Usage: run-skills-30m.sh [-m model] [-s skill] [-k trials]"
       echo ""
-      echo "Models: opus47, opus, opus45, sonnet46, sonnet45, haiku, codex, codex53, gpt55, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, glm, kimi, qwen3, qwen35 (default: all)"
+      echo "Models: opus47, opus, opus45, sonnet46, sonnet45, haiku, codex, codex53, gpt55, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, gemini35flash, glm, kimi, qwen3, qwen35 (default: all)"
       echo "Skills: attack, defence, strength, hitpoints, ranged, prayer, magic,"
       echo "        woodcutting, fishing, mining, cooking, fletching, crafting,"
       echo "        smithing, firemaking, thieving (default: all sixteen)"
@@ -70,7 +71,7 @@ done
 
 # Default to all if none specified
 if [ -z "$SELECTED_MODELS" ]; then
-  SELECTED_MODELS="opus opus45 sonnet46 sonnet45 haiku codex codex53 gpt55 gpt54 gpt54mini gpt54nano gemini gemini31 geminiflash glm kimi qwen3 qwen35"
+  SELECTED_MODELS="opus opus45 sonnet46 sonnet45 haiku codex codex53 gpt55 gpt54 gpt54mini gpt54nano gemini gemini31 geminiflash gemini35flash glm kimi qwen3 qwen35"
 fi
 if [ -z "$SELECTED_SKILLS" ]; then
   SELECTED_SKILLS="$ALL_SKILLS"
@@ -92,7 +93,7 @@ TOTAL_FAILED=0
 for model_name in $SELECTED_MODELS; do
   entry=$(lookup_model "$model_name" "$ALL_MODELS")
   if [ -z "$entry" ]; then
-    echo "Unknown model: $model_name (available: opus, opus45, sonnet46, sonnet45, haiku, codex, codex53, gpt55, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, glm, kimi, qwen3, qwen35)"
+    echo "Unknown model: $model_name (available: opus, opus45, sonnet46, sonnet45, haiku, codex, codex53, gpt55, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, gemini35flash, glm, kimi, qwen3, qwen35)"
     exit 1
   fi
 
@@ -119,6 +120,13 @@ for model_name in $SELECTED_MODELS; do
       ;;
     glm|kimi|qwen3|qwen35)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1800"
+      ;;
+    gemini|gemini31|geminiflash|gemini35flash)
+      # gemini-cli ≥0.39 switched session storage from session-*.json to
+      # session-*.jsonl in a different layout; harbor's post-run find/parse
+      # still expects the legacy single-JSON file. Pin to the last version
+      # that uses the old format so token usage / cost gets captured.
+      MODEL_EXTRA_ARGS="--ak version=0.38.2"
       ;;
   esac
   # OAuth auth for codex-family models that need a ChatGPT session token

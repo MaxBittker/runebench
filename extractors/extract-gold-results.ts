@@ -33,7 +33,7 @@ const KNOWN_MODELS = [
   'haiku',
   'codex53', 'codex',
   'gpt55', 'gpt54nano', 'gpt54mini', 'gpt54',
-  'gemini31', 'geminiflash', 'gemini',
+  'gemini35flash', 'gemini31', 'geminiflash', 'gemini',
   'glm', 'kimi', 'qwen35', 'qwen3',
 ];
 
@@ -53,6 +53,7 @@ const MODEL_LABELS: Record<string, string> = {
   gemini: 'Gemini 3 Pro',
   gemini31: 'Gemini 3.1 Pro',
   geminiflash: 'Gemini 3 Flash',
+  gemini35flash: 'Gemini 3.5 Flash',
   glm: 'GLM-5',
   kimi: 'Kimi K2.5',
   qwen3: 'Qwen3 Coder Next',

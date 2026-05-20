@@ -28,7 +28,7 @@ import {
 const JOBS_DIR = join(import.meta.dir, '..', 'jobs');
 const RESULTS_ROOT = join(import.meta.dir, '..', 'results');
 
-const KNOWN_MODELS = ['opus47', 'opus', 'opus45', 'sonnet46', 'sonnet45', 'haiku', 'codex53', 'gpt55', 'gpt54mini', 'gpt54nano', 'gpt54', 'gemini31', 'geminiflash', 'gemini', 'glm', 'kimi', 'qwen35', 'qwen3'];
+const KNOWN_MODELS = ['opus47', 'opus', 'opus45', 'sonnet46', 'sonnet45', 'haiku', 'codex53', 'gpt55', 'gpt54mini', 'gpt54nano', 'gpt54', 'gemini31', 'gemini35flash', 'geminiflash', 'gemini', 'glm', 'kimi', 'qwen35', 'qwen3'];
 
 const KNOWN_SKILLS = [
   'attack', 'defence', 'strength', 'hitpoints', 'ranged', 'prayer', 'magic',
@@ -455,6 +455,7 @@ for (const dir of jobDirs) {
   let model = detectModel(jobName, KNOWN_MODELS);
   if (model === 'unknown') model = detectModelFromConfig(dir, KNOWN_MODELS, {
     preMatch: (lower) => {
+      if (lower.includes('gemini-3.5-flash') || lower.includes('gemini-3_5_flash')) return 'gemini35flash';
       if (lower.includes('gemini-3.1') || lower.includes('gemini-3_1')) return 'gemini31';
       if (lower.includes('gemini-3-flash') || lower.includes('gemini-3_flash')) return 'geminiflash';
       return null;
@@ -621,7 +622,7 @@ for (const { dir, model } of allJobDirs) {
 
     const videoUrl = videoManifest[`${HORIZON}/${model}/${skill}`];
 
-    // Merge logic: keep whichever result has better data.
+    // Merge logic: keep latest result with valid data.
     // A newer run wins only if it has meaningful tracking data (>5 samples);
     // otherwise keep the existing result to avoid replacing good data with failed re-runs.
     const existing = combined[model][skill];

@@ -545,5 +545,21 @@
   "30m/gpt55/strength": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/gpt55/strength.mp4",
   "30m/gpt55/thieving": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/gpt55/thieving.mp4",
   "30m/gpt55/woodcutting": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/gpt55/woodcutting.mp4",
-  "30m/gpt55/smithing": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/gpt55/smithing.mp4"
+  "30m/gpt55/smithing": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/gpt55/smithing.mp4",
+  "30m/gemini35flash/cooking": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/gemini35flash/cooking.mp4",
+  "30m/gemini35flash/firemaking": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/gemini35flash/firemaking.mp4",
+  "30m/gemini35flash/attack": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/gemini35flash/attack.mp4",
+  "30m/gemini35flash/defence": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/gemini35flash/defence.mp4",
+  "30m/gemini35flash/hitpoints": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/gemini35flash/hitpoints.mp4",
+  "30m/gemini35flash/fletching": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/gemini35flash/fletching.mp4",
+  "30m/gemini35flash/fishing": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/gemini35flash/fishing.mp4",
+  "30m/gemini35flash/magic": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/gemini35flash/magic.mp4",
+  "30m/gemini35flash/prayer": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/gemini35flash/prayer.mp4",
+  "30m/gemini35flash/mining": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/gemini35flash/mining.mp4",
+  "30m/gemini35flash/smithing": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/gemini35flash/smithing.mp4",
+  "30m/gemini35flash/woodcutting": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/gemini35flash/woodcutting.mp4",
+  "30m/gemini35flash/strength": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/gemini35flash/strength.mp4",
+  "30m/gemini35flash/thieving": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/gemini35flash/thieving.mp4",
+  "30m/gemini35flash/ranged": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/gemini35flash/ranged.mp4",
+  "30m/gemini35flash/crafting": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/gemini35flash/crafting.mp4"
 }

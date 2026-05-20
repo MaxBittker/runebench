@@ -108,6 +108,11 @@ RUN printf '#!/bin/bash\ncat > "$1"\n' > /usr/local/bin/writefile && chmod +x /u
 # (belt-and-suspenders; bot.env already has SERVER=localhost for the daemon)
 ENV GATEWAY_URL=ws://localhost:7780
 
+# Newer gemini-cli releases (post-Apr 2026) refuse to honor --yolo unless the
+# workspace is explicitly trusted. Headless-safe override per the gemini-cli
+# trusted-folders docs.
+ENV GEMINI_CLI_TRUST_WORKSPACE=true
+
 # Idempotent service checker — verifier calls this to ensure services + tracker are alive
 COPY ensure-services.sh /ensure-services.sh
 RUN chmod +x /ensure-services.sh

@@ -116,6 +116,11 @@ for model_name in $SELECTED_MODELS; do
     kimi|qwen3|qwen35)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=900"
       ;;
+    gemini|gemini31|geminiflash|gemini35flash)
+      # See run-skills-30m.sh: harbor's post-run only handles the legacy
+      # session-*.json layout; gemini-cli ≥0.39 writes session-*.jsonl.
+      MODEL_EXTRA_ARGS="--ak version=0.38.2"
+      ;;
   esac
   if [ "$model_name" = "codex53" ]; then
     CODEX_AUTH_FILE="$HOME/.codex/auth.json"
