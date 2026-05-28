@@ -78,9 +78,22 @@ configure_model_env() {
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'qwen35_adapter:Qwen35OpenCode'"
       ;;
+    qwen3max-opencode)
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'qwen3max_adapter:Qwen3MaxOpenCode'"
+      ;;
     codex)
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'codex_adapter:CodexWithTimeout'"
+      ;;
+    gemini-cli-high)
+      # Gemini CLI pinned to thinking_level=HIGH (its max) via gemini_adapter.
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'gemini_adapter:GeminiCliHighThinking'"
       ;;
   esac
   return 0

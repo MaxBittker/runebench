@@ -35,6 +35,7 @@ glm-opencode|openrouter/z-ai/glm-5|glm
 kimi-opencode|openrouter/moonshotai/kimi-k2.5|kimi
 qwen3-opencode|openrouter/qwen/qwen3-coder-next|qwen3
 qwen35-opencode|openrouter/qwen/qwen3.5-35b-a3b|qwen35
+qwen3max-opencode|openrouter/qwen/qwen3-max|qwen3max
 
 "
 
@@ -113,7 +114,7 @@ for model_name in $SELECTED_MODELS; do
     codex|codex53|gpt55|gpt54|gpt54mini|gpt54nano)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=950"
       ;;
-    kimi|qwen3|qwen35)
+    kimi|qwen3|qwen35|qwen3max)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=900"
       ;;
     gemini|gemini31|geminiflash|gemini35flash)
@@ -133,10 +134,12 @@ for model_name in $SELECTED_MODELS; do
     ENV_PREFIX="$ENV_PREFIX CODEX_AUTH_JSON_B64='$CODEX_AUTH_B64'"
   fi
 
-  # Build -t flags for selected skills (dataset mode: one harbor process per model)
+  # Build include flags for selected skills (dataset mode: one harbor process per model).
+  # NOTE: harbor's -t means "single task from registry"; to filter *within* a -p dataset
+  # you must use -i/--include-task-name, otherwise the whole tasks/ dir runs.
   TASK_FLAGS=""
   for skill in $SELECTED_SKILLS; do
-    TASK_FLAGS="$TASK_FLAGS -t '${skill}-xp-15m'"
+    TASK_FLAGS="$TASK_FLAGS -i '${skill}-xp-15m'"
   done
 
   JOB_NAME="skills-15m-${label}-${TIMESTAMP}"

@@ -161,10 +161,10 @@ Your score is your **peak XP rate** — the best XP/min measured in any 15-secon
 Check your peak rate anytime: \`bun /app/benchmark/shared/check_xp_rate.ts ${skillName}\`
 
 You control the bot via the \`rs-agent\` MCP server. Use the \`execute_code\` tool with \`bot_name: "agent"\`. Two globals are available in the code context:
-- \`bot\` (BotActions) — high-level actions: \`await bot.chopTree()\`, \`await bot.mineRock()\`, \`await bot.attackNpc("chicken")\`, etc.
+- \`bot\` (BotActions) — high-level actions: \`await bot.chopTree()\`, \`await bot.interactLoc("rock", "Mine")\`, \`await bot.attackNpc("chicken")\`, etc.
 - \`sdk\` (BotSDK) — low-level state & actions: \`sdk.getState()\`, \`sdk.getInventory()\`, \`sdk.findNearbyLoc(/tree/i)\`, etc.
 
-Read the MCP resources ("Bot API", "SDK API") for the full list of available methods.
+Read the MCP resources ("Bot API", "SDK API") for the full list of available methods. The examples above are illustrative — confirm exact method names there before relying on them, and do NOT invent skill-specific methods (there is no \`mineRock\`/\`fish\`/\`cook\`). Most gathering and processing skills go through generic verbs like \`bot.interactLoc(target, "Mine")\`, \`bot.interactNpc(target, "Fish")\`, or \`bot.useItemOnLoc(item, loc)\`.
 
 IMPORTANT: You have ${durationMinutes} minutes. Start experimenting immediately. Try to get a non-zero baseline then optimize or find new strategies.
 
@@ -190,7 +190,11 @@ bun /tmp/my_script.ts > /tmp/train.log 2>&1 &
 Then check progress with \`bun /app/benchmark/shared/check_xp_rate.ts ${skillName}\` and \`tail /tmp/train.log\`.
 Do NOT use the \`timeout\` command — it sends SIGTERM which kills the game connection.
 
-RULES: Gain XP through legitimate in-game actions only. Do NOT modify server files, save files, or use cheat commands.`;
+RULES: Gain XP through legitimate in-game actions only. Do NOT modify server files, save files, or use cheat commands.${process.env.WIKI_REMINDER ? `
+
+TIP: A \`wiki/\` folder of game knowledge ships in your working directory (\`/app/wiki/\` — skill guides with training methods, item stats, NPC and shop locations). Consult it for efficient ${skillName} strategies, e.g. \`grep -ril ${skillName.toLowerCase()} /app/wiki\` then read the relevant guide before committing to an approach.
+
+REMEMBER THE METRIC: You are scored ONLY on your **peak XP rate** — the single best XP/min over any 15-second window. Not your total XP, not your average, not your final level. One short burst from a faster method beats 30 minutes of steady mediocre training. So do NOT settle for the first method that works: treat the whole run as a search for the highest-rate strategy you can find. Try many distinctly different approaches (different methods, locations, equipment, item-drop vs banking, AFK vs active), and after each one run \`bun /app/benchmark/shared/check_xp_rate.ts ${skillName}\` to see your current peak and whether the new approach actually beat it. If a strategy isn't beating your peak, abandon it and try something else.` : ''}`;
 
 function generateSkillXpVariants(horizonMinutes: number, sampleIntervalMs: number): VariantTask[] {
   const horizonLabel = `${horizonMinutes}m`;
@@ -216,6 +220,10 @@ cd /app && bun run /tests/check_skill_xp.ts
 
 const SKILL_XP_15M_VARIANTS = generateSkillXpVariants(15, 15000);
 const SKILL_XP_30M_VARIANTS = generateSkillXpVariants(30, 15000);
+// Fast smoke task (woodcutting only) for verifying a model works end-to-end.
+const SKILL_XP_5M_SMOKE = generateSkillXpVariants(5, 15000).filter(
+  v => v.slug === 'woodcutting-xp-5m',
+);
 
 function generateGoldVariants(): VariantTask[] {
   const variants: VariantTask[] = [];
@@ -250,6 +258,7 @@ cd /app && bun run /tests/check_gold.ts
 const GOLD_VARIANTS = generateGoldVariants();
 
 const VARIANTS: VariantTask[] = [
+  ...SKILL_XP_5M_SMOKE,
   ...SKILL_XP_15M_VARIANTS,
   ...SKILL_XP_30M_VARIANTS,
   // ── Gold accumulation tasks (4 starting conditions × 2 horizons) ──

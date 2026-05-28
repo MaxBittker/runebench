@@ -4,7 +4,10 @@
 const VIEWS_BASE = window.VIEWS_BASE || '';
 
 const MODEL_CONFIG = {
+  'opus48':   { displayName: 'Claude Opus 4.8',   shortName: 'Opus 4.8',    color: '#7a6045', order: 0.3, icon: VIEWS_BASE + 'model-icons/anthropic.svg' },
+  'opus48-max': { displayName: 'Claude Opus 4.8 max', shortName: 'Opus 4.8 max', color: '#2e1f10', order: 0.35, icon: VIEWS_BASE + 'model-icons/anthropic.svg' },
   'opus47':   { displayName: 'Claude Opus 4.7',   shortName: 'Opus 4.7',    color: '#6d5843', order: 0.5, icon: VIEWS_BASE + 'model-icons/anthropic.svg' },
+  'opus47-xhigh': { displayName: 'Claude Opus 4.7 xhigh', shortName: 'Opus 4.7 xh', color: '#4a3320', order: 0.55, icon: VIEWS_BASE + 'model-icons/anthropic.svg' },
   'opus':     { displayName: 'Claude Opus 4.6',   shortName: 'Opus 4.6',    color: '#8b7355', order: 1, icon: VIEWS_BASE + 'model-icons/anthropic.svg' },
   'opus45':   { displayName: 'Claude Opus 4.5',   shortName: 'Opus 4.5',    color: '#a08060', order: 2, icon: VIEWS_BASE + 'model-icons/anthropic.svg' },
   'sonnet46': { displayName: 'Claude Sonnet 4.6', shortName: 'Sonnet 4.6',  color: '#d4442a', order: 3, icon: VIEWS_BASE + 'model-icons/anthropic.svg' },
@@ -13,10 +16,12 @@ const MODEL_CONFIG = {
   'gemini31': { displayName: 'Gemini 3.1 Pro',    shortName: 'Gemini 3.1',  color: '#1a57c4', order: 6, icon: VIEWS_BASE + 'model-icons/gemini.webp' },
   'geminiflash': { displayName: 'Gemini 3 Flash', shortName: 'Gemini Flash', color: '#7baaf7', order: 6.5, icon: VIEWS_BASE + 'model-icons/gemini.webp' },
   'gemini35flash': { displayName: 'Gemini 3.5 Flash', shortName: 'Gemini 3.5 Flash', color: '#5295e8', order: 6.6, icon: VIEWS_BASE + 'model-icons/gemini.webp' },
+  'gemini35flash-high': { displayName: 'Gemini 3.5 Flash high', shortName: 'Gemini 3.5 Flash hi', color: '#1f6fd0', order: 6.65, icon: VIEWS_BASE + 'model-icons/gemini.webp' },
   'haiku':    { displayName: 'Claude Haiku 4.5',   shortName: 'Haiku 4.5',  color: '#e06090', order: 7, icon: VIEWS_BASE + 'model-icons/anthropic.svg' },
   'codex':    { displayName: 'Codex CLI 5.2',       shortName: 'Codex 5.2', color: '#10a37f', order: 8, icon: VIEWS_BASE + 'model-icons/openai.png' },
   'codex53':  { displayName: 'Codex CLI 5.3',       shortName: 'Codex 5.3', color: '#0d8c6b', order: 9, icon: VIEWS_BASE + 'model-icons/openai.png' },
   'gpt55':    { displayName: 'GPT-5.5',             shortName: 'GPT-5.5',  color: '#066f4a', order: 9.5, icon: VIEWS_BASE + 'model-icons/openai.png' },
+  'gpt55-apikey': { displayName: 'GPT-5.5 xhigh',  shortName: 'GPT-5.5 xh', color: '#02392a', order: 9.6, icon: VIEWS_BASE + 'model-icons/openai.png' },
   'gpt54':    { displayName: 'GPT-5.4',             shortName: 'GPT-5.4',  color: '#0a7a5a', order: 10, icon: VIEWS_BASE + 'model-icons/openai.png' },
   'gpt54mini': { displayName: 'GPT-5.4 Mini',     shortName: 'GPT-5.4 Mini', color: '#15b886', order: 10.5, icon: VIEWS_BASE + 'model-icons/openai.png' },
   'gpt54nano': { displayName: 'GPT-5.4 Nano',     shortName: 'GPT-5.4 Nano', color: '#20d6a2', order: 10.6, icon: VIEWS_BASE + 'model-icons/openai.png' },
@@ -24,6 +29,7 @@ const MODEL_CONFIG = {
   'kimi':     { displayName: 'Kimi K2.5',         shortName: 'Kimi K2.5',   color: '#00b4d8', order: 12, icon: VIEWS_BASE + 'model-icons/kimi.png' },
   'qwen3':    { displayName: 'Qwen3 Coder Next', shortName: 'Qwen3 Coder',  color: '#6366f1', order: 13, icon: VIEWS_BASE + 'model-icons/qwen.webp' },
   'qwen35':   { displayName: 'Qwen3.5 35B',     shortName: 'Qwen3.5 35B', color: '#818cf8', order: 14, icon: VIEWS_BASE + 'model-icons/qwen.webp' },
+  'qwen3max': { displayName: 'Qwen3 Max',       shortName: 'Qwen3 Max',   color: '#a5b4fc', order: 15, icon: VIEWS_BASE + 'model-icons/qwen.webp' },
 };
 
 const SKILL_ORDER = [
