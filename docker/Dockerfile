@@ -25,6 +25,10 @@ RUN rm -rf /app/scripts /app/sdk/test
 # Replace upstream instruction files with our simplified benchmark version
 RUN rm -f /app/agents.md /app/claude.md /app/GEMINI.md
 COPY agents.md /app/agents.md
+# claude-code only auto-loads CLAUDE.md/AGENTS.md (not lowercase agents.md), so the
+# guidance — including "read and grep the learnings/ and wiki/ folders" — never reached
+# the model. Surface it by giving claude-code the filename it loads.
+RUN cp /app/agents.md /app/CLAUDE.md
 
 # Pre-pack game cache and let engine fully start so all data files are generated.
 # Wait for "World ready" in output, then kill. This ensures maps, scripts, configs are all packed.

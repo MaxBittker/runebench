@@ -8,6 +8,8 @@ jobs-v1/
 # Secrets
 .env
 agents/auth.json
+# Private / never-commit run scripts + analysis
+private/
 
 # OS / editor
 .DS_Store
@@ -36,3 +38,4 @@ results/gold/*
 docker/skill_tracker.ts
 docker/check_xp_rate.ts
 docker/agents.md
+analysis/

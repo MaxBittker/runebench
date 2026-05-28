@@ -13,12 +13,20 @@
  */
 
 import { readdirSync, existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
-import { join } from "path";
+import { join, relative } from "path";
 import { tmpdir } from "os";
 
 const ROOT = join(import.meta.dir, "..");
 const JOBS_DIR = join(ROOT, "jobs");
 const MANIFEST_PATH = join(ROOT, "results", "video-urls.json");
+// Sidecar: records which source run (recording path) each uploaded video came from,
+// so a re-run with a new run auto-re-uploads instead of silently keeping the stale clip.
+const SOURCES_PATH = join(ROOT, "results", "video-sources.json");
+
+/** Stable identity for the run a video came from (relative recording path). */
+function sourceIdOf(localPath: string): string {
+  return relative(ROOT, localPath);
+}
 
 const R2_BUCKET = "rs-videos";
 const CF_ACCOUNT_ID = "01ffb951a87113b20a7c43c34bad6e92";
@@ -29,6 +37,7 @@ const CROP_FILTER = "crop=367:240:17:32";
 let horizon = "";
 let force = false;
 let fromResults = false;
+let modelFilter = "";
 
 for (let i = 2; i < process.argv.length; i++) {
   if (process.argv[i] === "--horizon" && process.argv[i + 1]) {
@@ -37,6 +46,9 @@ for (let i = 2; i < process.argv.length; i++) {
     force = true;
   } else if (process.argv[i] === "--from-results") {
     fromResults = true;
+  } else if (process.argv[i] === "--model" && process.argv[i + 1]) {
+    // Substring filter on model name, e.g. --model opus
+    modelFilter = process.argv[++i];
   }
 }
 
@@ -227,6 +239,12 @@ if (fromResults) {
   console.log(`Found ${videos.length} videos to process (${allEntries.length} total recordings, deduplicated to latest per skill-model)\n`);
 }
 
+if (modelFilter) {
+  const before = videos.length;
+  videos = videos.filter((v) => v.model.includes(modelFilter));
+  console.log(`Filtered to model substring "${modelFilter}": ${videos.length}/${before} videos`);
+}
+
 if (videos.length === 0) {
   console.log("Nothing to do.");
   process.exit(0);
@@ -238,6 +256,14 @@ let manifest: Record<string, string> = {};
 if (existsSync(MANIFEST_PATH)) {
   try {
     manifest = JSON.parse(readFileSync(MANIFEST_PATH, "utf-8"));
+  } catch {}
+}
+
+// Sidecar map: manifestKey -> source run id of the currently-uploaded video.
+let sources: Record<string, string> = {};
+if (existsSync(SOURCES_PATH)) {
+  try {
+    sources = JSON.parse(readFileSync(SOURCES_PATH, "utf-8"));
   } catch {}
 }
 
@@ -283,9 +309,11 @@ async function processVideo(video: VideoEntry): Promise<void> {
   const r2Key = `${video.horizon}/${video.model}/${video.skill}.mp4`;
   const manifestKey = `${video.horizon}/${video.model}/${video.skill}`;
   const label = `${video.skill}/${video.model}`;
+  const sourceId = sourceIdOf(video.localPath);
 
-  // Skip if already in manifest (fast path — no R2 roundtrip)
-  if (!force && manifest[manifestKey]) {
+  // Skip only if already uploaded AND from the same source run. If the source run
+  // changed (re-run), fall through and re-upload so the video can't go stale.
+  if (!force && manifest[manifestKey] && sources[manifestKey] === sourceId) {
     skipped++;
     done++;
     return;
@@ -345,6 +373,7 @@ async function processVideo(video: VideoEntry): Promise<void> {
 
   const publicUrl = `https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/${r2Key}`;
   manifest[manifestKey] = publicUrl;
+  sources[manifestKey] = sourceId;
   uploaded++;
   done++;
   if (done % 10 === 0 || done === videos.length) {
@@ -369,6 +398,7 @@ if (validManifestKeys) {
   for (const key of Object.keys(manifest)) {
     if (key.startsWith(`${horizon}/`) && !validManifestKeys.has(key)) {
       delete manifest[key];
+      delete sources[key];
       cleaned++;
     }
   }
@@ -377,10 +407,11 @@ if (validManifestKeys) {
   }
 }
 
-// ── Write manifest ────────────────────────────────────────────────
+// ── Write manifest + source sidecar ───────────────────────────────
 
 mkdirSync(join(ROOT, "results"), { recursive: true });
 writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2));
+writeFileSync(SOURCES_PATH, JSON.stringify(sources, null, 2));
 
 console.log(`\nDone. ${uploaded} uploaded, ${skipped} skipped, ${failed} failed.`);
 console.log(`Manifest: ${MANIFEST_PATH} (${Object.keys(manifest).length} entries)`);

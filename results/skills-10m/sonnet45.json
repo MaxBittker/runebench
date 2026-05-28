@@ -374,7 +374,7 @@
         "inputTokens": 1080951,
         "cacheTokens": 1080181,
         "outputTokens": 5606,
-        "costUsd": 0.410454
+        "costUsd": 0.847419
       },
       "trajectory": [
         {
@@ -972,7 +972,7 @@
         "inputTokens": 4167544,
         "cacheTokens": 4166275,
         "outputTokens": 19833,
-        "costUsd": 1.551185
+        "costUsd": 2.572163
       },
       "trajectory": [
         {
@@ -1716,7 +1716,7 @@
         "inputTokens": 3117368,
         "cacheTokens": 3111111,
         "outputTokens": 15567,
-        "costUsd": 1.185609
+        "costUsd": 1.840292
       },
       "trajectory": [
         {
@@ -2387,7 +2387,7 @@
         "inputTokens": 1651990,
         "cacheTokens": 1650830,
         "outputTokens": 9245,
-        "costUsd": 0.637404
+        "costUsd": 0.916573
       },
       "trajectory": [
         {
@@ -2983,7 +2983,7 @@
         "inputTokens": 2030707,
         "cacheTokens": 2029727,
         "outputTokens": 8146,
-        "costUsd": 0.734048
+        "costUsd": 1.636996
       },
       "trajectory": [
         {
@@ -3745,7 +3745,7 @@
         "inputTokens": 1596152,
         "cacheTokens": 1595257,
         "outputTokens": 8687,
-        "costUsd": 0.611567
+        "costUsd": 1.115061
       },
       "trajectory": [
         {
@@ -4529,7 +4529,7 @@
         "inputTokens": 2709755,
         "cacheTokens": 2708673,
         "outputTokens": 10027,
-        "costUsd": 0.966253
+        "costUsd": 1.646229
       },
       "trajectory": [
         {
@@ -5332,7 +5332,7 @@
         "inputTokens": 4346607,
         "cacheTokens": 4345786,
         "outputTokens": 21536,
-        "costUsd": 1.629239
+        "costUsd": 1.970864
       },
       "trajectory": [
         {
@@ -6106,7 +6106,7 @@
         "inputTokens": 590253,
         "cacheTokens": 589683,
         "outputTokens": 5243,
-        "costUsd": 0.25726
+        "costUsd": 0.740522
       },
       "trajectory": [
         {
@@ -6724,7 +6724,7 @@
         "inputTokens": 699463,
         "cacheTokens": 698683,
         "outputTokens": 3760,
-        "costUsd": 0.268345
+        "costUsd": 0.874026
       },
       "trajectory": [
         {
@@ -7381,7 +7381,7 @@
         "inputTokens": 3806949,
         "cacheTokens": 3805519,
         "outputTokens": 21350,
-        "costUsd": 1.466196
+        "costUsd": 2.351976
       },
       "trajectory": [
         {
@@ -8211,7 +8211,7 @@
         "inputTokens": 3253039,
         "cacheTokens": 3252215,
         "outputTokens": 17148,
-        "costUsd": 1.235357
+        "costUsd": 1.560137
       },
       "trajectory": [
         {
@@ -8805,7 +8805,7 @@
         "inputTokens": 5570275,
         "cacheTokens": 5569371,
         "outputTokens": 14553,
-        "costUsd": 1.891818
+        "costUsd": 2.415127
       },
       "trajectory": [
         {
@@ -9661,7 +9661,7 @@
         "inputTokens": 666958,
         "cacheTokens": 666428,
         "outputTokens": 5722,
-        "costUsd": 0.287348
+        "costUsd": 0.741616
       },
       "trajectory": [
         {
@@ -10164,7 +10164,7 @@
         "inputTokens": 2438226,
         "cacheTokens": 2431418,
         "outputTokens": 15326,
-        "costUsd": 0.979739
+        "costUsd": 1.509937
       },
       "trajectory": [
         {
@@ -10777,7 +10777,7 @@
         "inputTokens": 618037,
         "cacheTokens": 617489,
         "outputTokens": 6106,
-        "costUsd": 0.278481
+        "costUsd": 0.770878
       },
       "trajectory": [
         {

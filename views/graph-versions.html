@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="skill-icons/crafting.png">
+<title>Model Progress Over Time — RuneBench</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="shared-constants.js"></script>
+<script>
+  // Parse horizon from URL (default: 30m), matching graph-skills.html
+  const params = new URLSearchParams(window.location.search);
+  const HORIZON = params.get('horizon') || '30m';
+  const HORIZON_MINUTES = parseInt(HORIZON);
+</script>
+<script>
+  // Synchronously load the data file for the selected horizon (works with file://)
+  document.write('<script src="../results/skills-' + HORIZON + '/_data.js"></' + 'script>');
+</script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #fff;
+    color: #1a1a1a;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    padding: 24px 32px;
+  }
+  .page-header h1 { font-size: 22px; font-weight: 600; }
+  .page-subtitle { font-size: 14px; color: #999; margin-bottom: 16px; }
+  .page-description {
+    font-size: 13px; color: #888; line-height: 1.6;
+    max-width: 760px; margin-bottom: 20px;
+  }
+  .chart-wrap { flex: 1; min-height: 480px; position: relative; }
+  .chart-tooltip {
+    position: absolute; pointer-events: none; opacity: 0;
+    background: #fff; border: 1px solid #e0e0e0; border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    padding: 8px 10px; font-size: 12px; transition: opacity 0.1s;
+    z-index: 10; white-space: nowrap;
+  }
+  .chart-tooltip-title { display: flex; align-items: center; gap: 6px; font-weight: 600; margin-bottom: 4px; }
+  .chart-tooltip-title img { width: 14px; height: 14px; }
+  .chart-tooltip-sub { color: #666; }
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 8px; font-size: 13px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-swatch { width: 22px; height: 3px; border-radius: 2px; }
+</style>
+</head>
+<body>
+  <div class="page-header"><h1>Model Progress Over Time</h1></div>
+  <div class="page-subtitle">RuneBench skill score vs. model release date (<span id="horizon-label"></span> horizon)</div>
+  <div class="page-description">
+    Each line tracks a model family across its versions. The y-axis is the benchmark's
+    <b>log-average score</b> &mdash; the mean of <code>ln(1&nbsp;+&nbsp;peak&nbsp;XP/min)</code> across all 16 skills,
+    the same aggregate used in the &ldquo;Average&rdquo; trajectory view. The x-axis is each model's
+    public release date (source: <a href="https://models.dev/">models.dev</a>).
+  </div>
+  <div class="chart-wrap"><canvas id="chart"></canvas></div>
+  <div class="legend" id="legend"></div>
+
+<script>
+  document.getElementById('horizon-label').textContent = HORIZON;
+
+  // Family definitions: job key in COMBINED_DATA -> { version label, models.dev release_date }.
+  // Release dates pulled from https://models.dev/api.json (canonical model IDs).
+  const FAMILIES = [
+    {
+      name: 'Claude Opus',
+      color: '#7a6045',
+      icon: VIEWS_BASE + 'model-icons/anthropic.svg',
+      members: [
+        { key: 'opus45', label: 'Opus 4.5', date: '2025-11-24', id: 'claude-opus-4-5' },
+        { key: 'opus',   label: 'Opus 4.6', date: '2026-02-05', id: 'claude-opus-4-6' },
+        { key: 'opus47', label: 'Opus 4.7', date: '2026-04-16', id: 'claude-opus-4-7' },
+        { key: 'opus48', label: 'Opus 4.8', date: '2026-05-28', id: 'claude-opus-4-8' },
+      ],
+    },
+    {
+      name: 'OpenAI Codex / GPT',
+      color: '#10a37f',
+      icon: VIEWS_BASE + 'model-icons/openai.png',
+      members: [
+        { key: 'codex53', label: 'Codex 5.3', date: '2026-02-05', id: 'gpt-5.3-codex' },
+        { key: 'gpt54',   label: 'GPT-5.4',   date: '2026-03-05', id: 'gpt-5.4' },
+        { key: 'gpt55',   label: 'GPT-5.5',   date: '2026-04-22', id: 'gpt-5.5' },
+      ],
+    },
+    {
+      name: 'Gemini Pro',
+      color: '#4285f4',
+      icon: VIEWS_BASE + 'model-icons/gemini.webp',
+      members: [
+        { key: 'gemini',   label: 'Gemini 3 Pro',   date: '2025-11-18', id: 'gemini-3-pro' },
+        { key: 'gemini31', label: 'Gemini 3.1 Pro', date: '2026-02-19', id: 'gemini-3.1-pro' },
+      ],
+    },
+    {
+      name: 'Gemini Flash',
+      color: '#7baaf7',
+      icon: VIEWS_BASE + 'model-icons/gemini.webp',
+      members: [
+        { key: 'geminiflash',  label: 'Gemini 3 Flash',   date: '2025-12-17', id: 'gemini-3-flash' },
+        { key: 'gemini35flash', label: 'Gemini 3.5 Flash', date: '2026-05-19', id: 'gemini-3.5-flash' },
+      ],
+    },
+  ];
+
+  const DAY = 86400000;
+  function dateToMs(s) {
+    const [y, m, d] = s.split('-').map(Number);
+    return Date.UTC(y, m - 1, d);
+  }
+  function msToLabel(ms) {
+    const dt = new Date(ms);
+    return dt.toLocaleString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' });
+  }
+
+  // Log-average score: mean of ln(1 + peakXpRate) over all skills.
+  // Identical to getModelTotalRate() in cumulative-chart.js.
+  function logAvgScore(modelKey) {
+    const skills = (window.COMBINED_DATA || {})[modelKey];
+    if (!skills) return null;
+    const rates = Object.values(skills).map(s => s.peakXpRate || 0);
+    if (rates.length === 0) return null;
+    return rates.reduce((sum, r) => sum + Math.log(1 + r), 0) / rates.length;
+  }
+
+  // Preload family icons for the point plugin.
+  const iconImgs = {};
+  FAMILIES.forEach(f => { const img = new Image(); img.src = f.icon; iconImgs[f.name] = img; });
+
+  // Build datasets, dropping any member that has no data for this horizon.
+  const datasets = [];
+  for (const fam of FAMILIES) {
+    const pts = [];
+    for (const m of fam.members) {
+      const score = logAvgScore(m.key);
+      if (score == null) continue;
+      pts.push({ x: dateToMs(m.date), y: +score.toFixed(3), label: m.label, date: m.date, id: m.id });
+    }
+    pts.sort((a, b) => a.x - b.x);
+    if (pts.length === 0) continue;
+    datasets.push({
+      label: fam.name,
+      data: pts,
+      borderColor: fam.color,
+      backgroundColor: fam.color,
+      fill: false,
+      tension: 0,
+      borderWidth: 2.5,
+      pointRadius: 5,
+      pointHoverRadius: 7,
+      _family: fam.name,
+    });
+  }
+
+  // X-axis range with a little padding, and monthly ticks.
+  const allX = datasets.flatMap(d => d.data.map(p => p.x));
+  const xMin = Math.min(...allX) - 12 * DAY;
+  const xMax = Math.max(...allX) + 22 * DAY;
+  const monthTicks = [];
+  {
+    const start = new Date(xMin);
+    let y = start.getUTCFullYear(), mo = start.getUTCMonth();
+    let t = Date.UTC(y, mo, 1);
+    while (t <= xMax) { if (t >= xMin) monthTicks.push(t); mo++; if (mo > 11) { mo = 0; y++; } t = Date.UTC(y, mo, 1); }
+  }
+
+  // Plugin: draw each family's icon + version label at every point.
+  const pointIconPlugin = {
+    id: 'pointIcons',
+    afterDatasetsDraw(chart) {
+      const ctx = chart.ctx;
+      const R = 12;          // logo circle radius
+      const iconSize = 15;
+      const FONT = '600 11px -apple-system, BlinkMacSystemFont, sans-serif';
+
+      // Collect every visible point.
+      const items = [];
+      chart.data.datasets.forEach((ds, di) => {
+        const meta = chart.getDatasetMeta(di);
+        if (!meta.visible) return;
+        meta.data.forEach((el, pi) => {
+          const pt = ds.data[pi];
+          items.push({ x: el.x, y: el.y, color: ds.borderColor, img: iconImgs[ds._family], label: pt.label });
+        });
+      });
+
+      // White-circle background + colored border + clipped logo.
+      for (const it of items) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(it.x, it.y, R, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = it.color;
+        ctx.stroke();
+        if (it.img && it.img.complete && it.img.naturalWidth) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(it.x, it.y, R - 2, 0, Math.PI * 2);
+          ctx.clip();
+          ctx.drawImage(it.img, it.x - iconSize / 2, it.y - iconSize / 2, iconSize, iconSize);
+          ctx.restore();
+        }
+        ctx.restore();
+      }
+
+      // Labels: above each logo by default; a few sit below to avoid clutter.
+      const BELOW = new Set(['Gemini 3 Pro', 'Codex 5.3']);
+      ctx.font = FONT;
+      const labels = items.map(it => {
+        const dir = BELOW.has(it.label) ? 1 : -1;   // -1 above, +1 below
+        return {
+          x: it.x, color: it.color, text: it.label, dir,
+          w: ctx.measureText(it.label).width,
+          cy: it.y + dir * (R + 9),   // label center y
+          anchorY: it.y + dir * R,
+        };
+      });
+      const LH = 15, PAD = 8;
+      const overlapX = (a, b) => Math.abs(a.x - b.x) < (a.w + b.w) / 2 + PAD;
+      for (let iter = 0; iter < 80; iter++) {
+        let moved = false;
+        for (let i = 0; i < labels.length; i++) {
+          for (let j = i + 1; j < labels.length; j++) {
+            const a = labels[i], b = labels[j];
+            if (!overlapX(a, b)) continue;
+            const dy = b.cy - a.cy;
+            if (Math.abs(dy) >= LH) continue;
+            const push = (LH - Math.abs(dy)) / 2 + 0.5;
+            if (dy >= 0) { a.cy -= push; b.cy += push; } else { a.cy += push; b.cy -= push; }
+            moved = true;
+          }
+        }
+        if (!moved) break;
+      }
+
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = 'center';
+      for (const l of labels) {
+        // connector when a label drifted away from its logo
+        if (l.dir * (l.cy - l.anchorY) > 13) {
+          ctx.save();
+          ctx.strokeStyle = l.color;
+          ctx.globalAlpha = 0.35;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(l.x, l.anchorY + l.dir);
+          ctx.lineTo(l.x, l.cy - l.dir * (LH / 2 - 1));
+          ctx.stroke();
+          ctx.restore();
+        }
+        // white pill behind text for legibility
+        ctx.save();
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.fillRect(l.x - l.w / 2 - 3, l.cy - LH / 2, l.w + 6, LH);
+        ctx.fillStyle = l.color;
+        ctx.fillText(l.text, l.x, l.cy);
+        ctx.restore();
+      }
+    },
+  };
+
+  // HTML tooltip.
+  let tipEl = null;
+  function tooltip(context) {
+    if (!tipEl) { tipEl = document.createElement('div'); tipEl.className = 'chart-tooltip'; document.body.appendChild(tipEl); }
+    const { chart, tooltip: tt } = context;
+    if (tt.opacity === 0) { tipEl.style.opacity = '0'; return; }
+    const item = tt.dataPoints?.[0]; if (!item) return;
+    const pt = item.raw;
+    const fam = item.dataset._family;
+    const img = iconImgs[fam];
+    let html = `<div class="chart-tooltip-title">`;
+    if (img) html += `<img src="${img.src}">`;
+    html += `${pt.label}</div>`;
+    html += `<div class="chart-tooltip-sub">⟨ln⟩ score: <b>${pt.y.toFixed(2)}</b></div>`;
+    html += `<div class="chart-tooltip-sub">released ${msToLabel(pt.x)} (${pt.date})</div>`;
+    tipEl.innerHTML = html;
+    tipEl.style.opacity = '1';
+    const rect = chart.canvas.getBoundingClientRect();
+    const cx = rect.left + window.scrollX + tt.caretX;
+    const cy = rect.top + window.scrollY + tt.caretY;
+    const w = tipEl.offsetWidth || 200;
+    tipEl.style.left = (cx + w + 16 > window.innerWidth + window.scrollX ? cx - w - 12 : cx + 12) + 'px';
+    tipEl.style.top = (cy - 20) + 'px';
+  }
+
+  new Chart(document.getElementById('chart'), {
+    type: 'line',
+    data: { datasets },
+    plugins: [pointIconPlugin],
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: { padding: { top: 24, right: 24, bottom: 4, left: 4 } },
+      interaction: { mode: 'nearest', intersect: true },
+      scales: {
+        x: {
+          type: 'linear', min: xMin, max: xMax,
+          afterBuildTicks: axis => { axis.ticks = monthTicks.map(v => ({ value: v })); },
+          ticks: { color: '#999', font: { size: 11 }, callback: v => msToLabel(v), maxRotation: 0 },
+          grid: { color: '#f4f4f4', drawTicks: false },
+          border: { color: '#e0e0e0' },
+          title: { display: true, text: 'Release date', color: '#999', font: { size: 12 } },
+        },
+        y: {
+          type: 'linear', beginAtZero: true,
+          ticks: { color: '#999', font: { size: 11 } },
+          grid: { color: '#f4f4f4', drawTicks: false },
+          border: { color: '#e0e0e0' },
+          title: { display: true, text: '⟨ln⟩ log-average score', color: '#999', font: { size: 12 } },
+        },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { enabled: false, external: tooltip },
+      },
+    },
+  });
+
+  // Custom legend.
+  document.getElementById('legend').innerHTML = datasets.map(ds =>
+    `<div class="legend-item"><span class="legend-swatch" style="background:${ds.borderColor}"></span>${ds.label}</div>`
+  ).join('');
+</script>
+</body>
+</html>

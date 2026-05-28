@@ -47,6 +47,43 @@ function resolvePricingKey(modelName: string): string | null {
   return null;
 }
 
+/**
+ * Read cost-relevant data from a trial's agent/trajectory.json:
+ *   - cacheWriteTokens: summed `cache_creation_input_tokens` (claude-code surfaces
+ *     these; Harbor's n_input_tokens / n_cache_tokens omit them entirely).
+ *   - perStepCost: summed `steps[].metrics.cost_usd` — OpenCode reports the real
+ *     provider cost per step (already includes cache-write premiums). This is the
+ *     authoritative cost for OpenCode runs, which do NOT expose a write-token
+ *     breakdown we could reconstruct.
+ */
+function readTrajectoryCostData(trialDir: string): { cacheWriteTokens: number; perStepCost: number } {
+  const trajPath = join(trialDir, 'agent', 'trajectory.json');
+  let cacheWriteTokens = 0;
+  let perStepCost = 0;
+  if (!existsSync(trajPath)) return { cacheWriteTokens, perStepCost };
+  try {
+    const traj = JSON.parse(readFileSync(trajPath, 'utf-8'));
+    const walk = (o: any) => {
+      if (Array.isArray(o)) { for (const x of o) walk(x); return; }
+      if (o && typeof o === 'object') {
+        const cw = o.cache_creation_input_tokens;
+        if (typeof cw === 'number') cacheWriteTokens += cw;
+        for (const v of Object.values(o)) walk(v);
+      }
+    };
+    walk(traj.steps ?? traj);
+
+    const steps = traj.steps;
+    if (Array.isArray(steps)) {
+      for (const s of steps) {
+        const c = s?.metrics?.cost_usd;
+        if (typeof c === 'number') perStepCost += c;
+      }
+    }
+  } catch {}
+  return { cacheWriteTokens, perStepCost };
+}
+
 if (!existsSync(jobsDir)) {
   console.error(`Directory not found: ${jobsDir}`);
   process.exit(1);
@@ -77,12 +114,26 @@ function processTrialDir(trialDir: string) {
   const cacheTokens = ar.n_cache_tokens || 0;
   const outputTokens = ar.n_output_tokens || 0;
 
-  if (inputTokens === 0 && outputTokens === 0) {
+  // Cache-write tokens + OpenCode's real per-step cost both live in trajectory.json.
+  const { cacheWriteTokens, perStepCost } = readTrajectoryCostData(trialDir);
+
+  if (inputTokens === 0 && outputTokens === 0 && perStepCost === 0) {
     skippedNoTokens++;
     return;
   }
 
-  const cost = computeCost(modelName, inputTokens, cacheTokens, outputTokens);
+  // Cost source priority:
+  //   1. claude-code (Anthropic) — flat formula + cache-write tokens at 1.25× rate.
+  //   2. OpenCode — trust its real per-step cost (already includes write premiums).
+  //   3. OpenAI/Gemini-cli — flat formula (no write premium, no write bucket).
+  let cost: number | null;
+  if (cacheWriteTokens > 0) {
+    cost = computeCost(modelName, inputTokens, cacheTokens, outputTokens, cacheWriteTokens);
+  } else if (perStepCost > 0) {
+    cost = perStepCost;
+  } else {
+    cost = computeCost(modelName, inputTokens, cacheTokens, outputTokens);
+  }
   if (cost === null) {
     skippedNoPricing++;
     return;
@@ -96,6 +147,7 @@ function processTrialDir(trialDir: string) {
   let dirty = false;
   if (ar.cost_usd == null || forceThis) {
     ar.cost_usd = Math.round(cost * 1_000_000) / 1_000_000;
+    if (cacheWriteTokens > 0) ar.n_cache_write_tokens = cacheWriteTokens;
     result.agent_result = ar;
     dirty = true;
   }

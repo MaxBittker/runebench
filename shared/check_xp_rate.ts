@@ -10,7 +10,8 @@
  */
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 
-const TRACKING_FILE = process.env.TRACKING_FILE || '/logs/verifier/skill_tracking.json';
+// The skill_tracker daemon writes here (see ensure-services.sh).
+const TRACKING_FILE = process.env.TRACKING_FILE || '/logs/tracking/skill_tracking.json';
 const STATE_FILE = '/tmp/last_xp_rate_check.json';
 
 const skillName = process.argv[2];

@@ -6,6 +6,12 @@
   const modelIconImages = {};
   const skillIconImages = {};
 
+  // Models shown in the Peak XP Rate chart (subset of MODEL_CONFIG)
+  const CHART_MODELS = new Set([
+    'gpt55', 'gemini35flash', 'opus48', 'gemini31',
+    'sonnet46', 'kimi', 'gpt54mini', 'haiku', 'qwen3max',
+  ]);
+
   // Skill line colors for single-model view
   const SKILL_LINE_COLORS = {};
   const _palette = ['#e6194b','#3cb44b','#4363d8','#f58231','#911eb4','#42d4f4','#f032e6','#bcbd22','#17becf','#469990','#e377c2','#9A6324','#800000','#aaffc3','#808000','#000075'];
@@ -192,6 +198,7 @@
 
     function getModels() {
       return Object.keys(data)
+        .filter(m => CHART_MODELS.has(m))
         .sort((a, b) => ((MODEL_CONFIG[a] || {order:99}).order) - ((MODEL_CONFIG[b] || {order:99}).order));
     }
 
