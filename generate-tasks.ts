@@ -190,11 +190,7 @@ bun /tmp/my_script.ts > /tmp/train.log 2>&1 &
 Then check progress with \`bun /app/benchmark/shared/check_xp_rate.ts ${skillName}\` and \`tail /tmp/train.log\`.
 Do NOT use the \`timeout\` command — it sends SIGTERM which kills the game connection.
 
-RULES: Gain XP through legitimate in-game actions only. Do NOT modify server files, save files, or use cheat commands.${process.env.WIKI_REMINDER ? `
-
-TIP: A \`wiki/\` folder of game knowledge ships in your working directory (\`/app/wiki/\` — skill guides with training methods, item stats, NPC and shop locations). Consult it for efficient ${skillName} strategies, e.g. \`grep -ril ${skillName.toLowerCase()} /app/wiki\` then read the relevant guide before committing to an approach.
-
-REMEMBER THE METRIC: You are scored ONLY on your **peak XP rate** — the single best XP/min over any 15-second window. Not your total XP, not your average, not your final level. One short burst from a faster method beats 30 minutes of steady mediocre training. So do NOT settle for the first method that works: treat the whole run as a search for the highest-rate strategy you can find. Try many distinctly different approaches (different methods, locations, equipment, item-drop vs banking, AFK vs active), and after each one run \`bun /app/benchmark/shared/check_xp_rate.ts ${skillName}\` to see your current peak and whether the new approach actually beat it. If a strategy isn't beating your peak, abandon it and try something else.` : ''}`;
+RULES: Gain XP through legitimate in-game actions only. Do NOT modify server files, save files, or use cheat commands.`;
 
 function generateSkillXpVariants(horizonMinutes: number, sampleIntervalMs: number): VariantTask[] {
   const horizonLabel = `${horizonMinutes}m`;
