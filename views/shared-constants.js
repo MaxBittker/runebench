@@ -4,6 +4,8 @@
 const VIEWS_BASE = window.VIEWS_BASE || '';
 
 const MODEL_CONFIG = {
+  'fable-5':   { displayName: 'Claude Fable 5',   shortName: 'Fable 5',    color: '#c2703e', order: 0.1, icon: VIEWS_BASE + 'model-icons/anthropic.svg' },
+  'fable-5-xhigh': { displayName: 'Claude Fable 5 xhigh', shortName: 'Fable 5 xh', color: '#9c5226', order: 0.12, icon: VIEWS_BASE + 'model-icons/anthropic.svg' },
   'opus48':   { displayName: 'Claude Opus 4.8',   shortName: 'Opus 4.8',    color: '#7a6045', order: 0.3, icon: VIEWS_BASE + 'model-icons/anthropic.svg' },
   'opus48-max': { displayName: 'Claude Opus 4.8 max', shortName: 'Opus 4.8 max', color: '#2e1f10', order: 0.35, icon: VIEWS_BASE + 'model-icons/anthropic.svg' },
   'opus47':   { displayName: 'Claude Opus 4.7',   shortName: 'Opus 4.7',    color: '#6d5843', order: 0.5, icon: VIEWS_BASE + 'model-icons/anthropic.svg' },

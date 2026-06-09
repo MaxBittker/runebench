@@ -35,6 +35,9 @@ export interface ModelPricing {
 /** By internal label used in rs-bench2 (opus, sonnet46, gpt54, ...). */
 export const MODEL_PRICING: Record<string, ModelPricing> = {
   // Anthropic: cacheWrite = 1.25× input (5-min ephemeral cache).
+  // Fable 5: published rate card $10/M input, $50/M output (above Opus). Anthropic
+  // cache: read 0.1× input, 5-min cache write 1.25× input.
+  'fable-5':    { input: 10e-6,   cachedInput: 1e-6,     cacheWrite: 12.5e-6,  output: 50e-6 },
   opus48:       { input: 5e-6,    cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,  output: 25e-6 }, // same rate card as 4.7
   'opus48-max': { input: 5e-6,    cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,  output: 25e-6 },
   opus47:       { input: 5e-6,    cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,  output: 25e-6 },
@@ -66,6 +69,8 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
 
 /** By Harbor model ID (provider/name). Aliased to MODEL_PRICING entries. */
 export const HARBOR_MODEL_PRICING: Record<string, string> = {
+  'anthropic/claude-fable-5[1m]':      'fable-5',
+  'anthropic/claude-fable-5':          'fable-5',
   'anthropic/claude-opus-4-8':         'opus48',
   'anthropic/claude-opus-4-7':         'opus47',
   'anthropic/claude-opus-4-6':         'opus',

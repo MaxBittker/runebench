@@ -8,7 +8,7 @@
 
   // Models shown in the Peak XP Rate chart (subset of MODEL_CONFIG)
   const CHART_MODELS = new Set([
-    'gpt55', 'gemini35flash', 'opus48', 'gemini31',
+    'fable-5', 'gpt55', 'gemini35flash', 'opus48', 'gemini31',
     'sonnet46', 'kimi', 'gpt54mini', 'haiku', 'qwen3max',
   ]);
 
