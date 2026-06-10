@@ -18,9 +18,12 @@ function fmtTokens(n) {
   return String(Math.round(n));
 }
 
+const COLLAPSED_ROWS = 13;
+
 export function CostTable({ data }) {
   const [sortCol, setSortCol] = useState('logMean');
   const [sortAsc, setSortAsc] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   const rows = useMemo(() => {
     if (!data) return [];
@@ -96,20 +99,12 @@ export function CostTable({ data }) {
     return sortAsc ? ' \u25B2' : ' \u25BC';
   }
 
+  const visible = expanded ? sorted : sorted.slice(0, COLLAPSED_ROWS);
+  const hasMore = sorted.length > COLLAPSED_ROWS;
+
   return html`
-    <section className="section">
-      <div className="container is-max-widescreen">
-        <div className="columns is-centered has-text-centered">
-          <div className="column">
-            <h2 className="title is-3">Skill Cost Efficiency</h2>
-            <p className="subtitle is-6" style=${{ color: '#888' }}>
-              Average API cost per 30-min skill run vs. log-average performance across 16 skills.
-              <br />
-              ⟨ln⟩ averages ln(1 + peak XP/min).
-            </p>
-          </div>
-        </div>
-        <div className="heatmap-scroll">
+    <div>
+      <div className="heatmap-scroll">
           <table className="heatmap-table">
             <thead>
               <tr>
@@ -127,7 +122,7 @@ export function CostTable({ data }) {
               </tr>
             </thead>
             <tbody>
-              ${sorted.map(m => {
+              ${visible.map(m => {
                 const cfg = MODEL_CONFIG[m.key];
                 if (!cfg) return null;
                 return html`
@@ -142,10 +137,22 @@ export function CostTable({ data }) {
                   </tr>
                 `;
               })}
+              ${hasMore && html`
+                <tr key="expand-toggle">
+                  <td colSpan="4" style=${{ padding: 0 }}>
+                    <button
+                      className="button is-small is-ghost is-fullwidth"
+                      style=${{ fontSize: '11px', color: '#888', textDecoration: 'none' }}
+                      onClick=${() => setExpanded(!expanded)}
+                    >
+                      ${expanded ? `Show top ${COLLAPSED_ROWS} ▲` : `Show all ${sorted.length} models ▼`}
+                    </button>
+                  </td>
+                </tr>
+              `}
             </tbody>
           </table>
         </div>
-      </div>
-    </section>
+    </div>
   `;
 }

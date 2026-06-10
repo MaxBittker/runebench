@@ -8,6 +8,7 @@ import { Heatmap } from './Heatmap.js';
 import { GoldMatrix } from './GoldMatrix.js';
 import { GoldCostTable } from './GoldCostTable.js';
 import { CostTable } from './CostTable.js';
+import { CostScatter } from './CostScatter.js';
 import { AgentInterface } from './AgentInterface.js';
 import { Footer } from './Footer.js';
 import { TrajectoryModal } from './TrajectoryModal.js';
@@ -41,7 +42,21 @@ export function App() {
       <${AgentInterface} />
       <${CumulativeChart} data=${data} />
       <${Heatmap} data=${data} activeModel=${route.model} activeSkill=${route.skill} />
-      <${CostTable} data=${data} />
+      <section className="section">
+        <div className="container is-max-widescreen">
+          <div className="has-text-centered" style=${{ marginBottom: '2rem' }}>
+            <h2 className="title is-3">Cost vs. Performance</h2>
+          </div>
+          <div className="columns">
+            <div className="column is-half">
+              <${CostTable} data=${data} />
+            </div>
+            <div className="column is-half">
+              <${CostScatter} data=${data} />
+            </div>
+          </div>
+        </div>
+      </section>
       <!-- <${GoldMatrix} data=${goldData} /> -->
       <!-- <${GoldCostTable} data=${goldData} /> -->
         <${TrajectoryModal} model=${route.model || 'opus'} skill=${route.skill || 'woodcutting'} data=${data} seekTs=${route.seekTs} />
