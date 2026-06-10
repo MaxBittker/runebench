@@ -9,7 +9,7 @@
   // Models shown in the Peak XP Rate chart (subset of MODEL_CONFIG)
   const CHART_MODELS = new Set([
     'fable-5', 'gpt55', 'gemini35flash', 'opus48', 'gemini31',
-    'sonnet46', 'kimi', 'gpt54mini', 'haiku', 'qwen3max',
+    'sonnet46', 'kimi', 'gpt54mini', 'haiku', 'qwen3max', 'deepseek',
   ]);
 
   // Skill line colors for single-model view

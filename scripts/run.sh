@@ -2,7 +2,7 @@
 # Run the benchmark suite across models on Modal.
 #
 # Usage:
-#   run.sh                    # all models, woodcutting-xp-10m
+#   run.sh                    # all models, woodcutting-xp-15m
 #   run.sh -t woodcutting-xp-5m
 #   run.sh -m sonnet45        # single model
 #   run.sh -n 2               # 2 trials per model
@@ -28,13 +28,12 @@ gemini-cli|google/gemini-3-pro-preview|gemini
 gemini-cli|google/gemini-3-flash-preview|geminiflash
 glm-opencode|openrouter/z-ai/glm-5|glm
 kimi-opencode|openrouter/moonshotai/kimi-k2.5|kimi
-qwen3-opencode|openrouter/qwen/qwen3-coder-next|qwen3
 qwen35-opencode|openrouter/qwen/qwen3.5-35b-a3b|qwen35
 
 "
 
 # ── Defaults ──────────────────────────────────────────────────────
-TASK="woodcutting-xp-10m"
+TASK="woodcutting-xp-15m"
 SELECTED_MODELS=""
 N_TRIALS=1
 CONCURRENCY=2
@@ -50,8 +49,8 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
       echo "Usage: run.sh [-t task] [-m model] [-n trials] [-c concurrency]"
       echo ""
-      echo "Models: opus, sonnet46, sonnet45, haiku, codex, gpt55, gpt54, gpt54mini, gpt54nano, gemini, geminiflash, glm, kimi, qwen3, qwen35 (default: all)"
-      echo "Task:   any task dir name (default: woodcutting-xp-10m)"
+      echo "Models: opus, sonnet46, sonnet45, haiku, codex, gpt55, gpt54, gpt54mini, gpt54nano, gemini, geminiflash, glm, kimi, qwen35 (default: all)"
+      echo "Task:   any task dir name (default: woodcutting-xp-15m)"
       exit 0
       ;;
     *)
@@ -61,7 +60,7 @@ done
 
 # Default to all models if none specified
 if [ -z "$SELECTED_MODELS" ]; then
-  SELECTED_MODELS="sonnet46 sonnet45 opus haiku codex gpt55 gpt54 gpt54mini gpt54nano gemini geminiflash glm kimi qwen3 qwen35"
+  SELECTED_MODELS="sonnet46 sonnet45 opus haiku codex gpt55 gpt54 gpt54mini gpt54nano gemini geminiflash glm kimi qwen35"
 fi
 
 load_env "$REPO_ROOT/.env"
@@ -76,7 +75,7 @@ PIDS=""
 for name in $SELECTED_MODELS; do
   entry=$(lookup_model "$name" "$ALL_MODELS")
   if [ -z "$entry" ]; then
-    echo "Unknown model: $name (available: opus, sonnet46, sonnet45, haiku, codex, gpt55, gpt54, gpt54mini, gpt54nano, gemini, geminiflash, glm, kimi, qwen3, qwen35)"
+    echo "Unknown model: $name (available: opus, sonnet46, sonnet45, haiku, codex, gpt55, gpt54, gpt54mini, gpt54nano, gemini, geminiflash, glm, kimi, qwen35)"
     exit 1
   fi
 

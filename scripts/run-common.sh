@@ -62,14 +62,6 @@ configure_model_env() {
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'kimi_adapter:KimiOpenCode'"
       ;;
-    qwen3-opencode)
-      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
-        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
-        return 1
-      fi
-      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
-      AGENT_FLAG="--agent-import-path 'qwen3_adapter:Qwen3OpenCode'"
-      ;;
     qwen35-opencode)
       if [ -z "${OPENROUTER_API_KEY:-}" ]; then
         echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
@@ -85,6 +77,30 @@ configure_model_env() {
       fi
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'qwen3max_adapter:Qwen3MaxOpenCode'"
+      ;;
+    qwen37max-opencode)
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'qwen37max_adapter:Qwen37MaxOpenCode'"
+      ;;
+    deepseek-opencode)
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'deepseek_adapter:DeepSeekOpenCode'"
+      ;;
+    kimi26-opencode)
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'kimi26_adapter:Kimi26OpenCode'"
       ;;
     codex)
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"

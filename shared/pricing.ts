@@ -61,10 +61,14 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // thinking tokens (billed as output), it doesn't change the rate card.
   'gemini35flash-high': { input: 1.5e-6, cachedInput: 0.15e-6, cacheWrite: 1.5e-6, output: 9e-6 },
   glm:          { input: 0.72e-6,   cachedInput: 0,        cacheWrite: 0.72e-6,   output: 2.3e-6 },
-  kimi:         { input: 0.3827e-6, cachedInput: 0,        cacheWrite: 0.3827e-6, output: 1.72e-6 },
-  qwen3:        { input: 0.15e-6,   cachedInput: 0,        cacheWrite: 0.15e-6,   output: 0.8e-6 },
+  kimi:         { input: 0.6e-6,    cachedInput: 0.1e-6,   cacheWrite: 0.6e-6,    output: 3e-6 },
   qwen35:       { input: 0.1625e-6, cachedInput: 0,        cacheWrite: 0.1625e-6, output: 1.3e-6 },
   qwen3max:     { input: 0.78e-6,   cachedInput: 0,        cacheWrite: 0.78e-6,   output: 3.9e-6 },
+  // OpenRouter listed rates as of 2026-06-09.
+  // qwen3.7-max: Alibaba bills cache writes at 1.25× input (like Anthropic).
+  qwen37max:    { input: 1.25e-6,   cachedInput: 0.25e-6,  cacheWrite: 1.5625e-6, output: 3.75e-6 },
+  deepseek:     { input: 0.435e-6,  cachedInput: 0.003625e-6, cacheWrite: 0.435e-6, output: 0.87e-6 }, // deepseek-v4-pro
+  kimi26:       { input: 0.68e-6,   cachedInput: 0.34e-6,  cacheWrite: 0.68e-6,   output: 3.41e-6 },
 };
 
 /** By Harbor model ID (provider/name). Aliased to MODEL_PRICING entries. */
@@ -94,9 +98,11 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'gemini/gemini-3.5-flash':           'gemini35flash',
   'openrouter/z-ai/glm-5':             'glm',
   'openrouter/moonshotai/kimi-k2.5':   'kimi',
-  'openrouter/qwen/qwen3-coder-next':  'qwen3',
   'openrouter/qwen/qwen3.5-35b-a3b':   'qwen35',
   'openrouter/qwen/qwen3-max':         'qwen3max',
+  'openrouter/qwen/qwen3.7-max':       'qwen37max',
+  'openrouter/deepseek/deepseek-v4-pro': 'deepseek',
+  'openrouter/moonshotai/kimi-k2.6':   'kimi26',
 };
 
 /** Look up pricing by either internal label or Harbor model ID. */

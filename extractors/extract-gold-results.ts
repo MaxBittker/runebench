@@ -56,7 +56,6 @@ const MODEL_LABELS: Record<string, string> = {
   gemini35flash: 'Gemini 3.5 Flash',
   glm: 'GLM-5',
   kimi: 'Kimi K2.5',
-  qwen3: 'Qwen3 Coder Next',
   qwen35: 'Qwen3.5 35B',
 };
 

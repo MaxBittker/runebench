@@ -27,7 +27,6 @@ gemini-cli|google/gemini-3.1-pro-preview|gemini31
 gemini-cli|google/gemini-3-flash-preview|geminiflash
 glm-opencode|openrouter/z-ai/glm-5|glm
 kimi-opencode|openrouter/moonshotai/kimi-k2.5|kimi
-qwen3-opencode|openrouter/qwen/qwen3-coder-next|qwen3
 qwen35-opencode|openrouter/qwen/qwen3.5-35b-a3b|qwen35
 "
 
@@ -46,7 +45,7 @@ echo "Staggered 30m skill run — ${TIMESTAMP}"
 echo "Logs: $LOG_DIR"
 echo ""
 
-MODEL_LIST="opus opus45 sonnet46 sonnet45 haiku codex codex53 gpt54 gpt54mini gpt54nano gemini gemini31 geminiflash glm kimi qwen3 qwen35"
+MODEL_LIST="opus opus45 sonnet46 sonnet45 haiku codex codex53 gpt54 gpt54mini gpt54nano gemini gemini31 geminiflash glm kimi qwen35"
 PIDS=()
 MODEL_NAMES=()
 DELAY=0
@@ -74,7 +73,7 @@ for model_name in $MODEL_LIST; do
     codex|codex53|gpt54|gpt54mini|gpt54nano)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900"
       ;;
-    kimi|qwen3|qwen35)
+    kimi|qwen35)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1800"
       ;;
   esac
@@ -213,7 +212,7 @@ else
       codex|codex53|gpt54)
         MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900"
         ;;
-      kimi|qwen3|qwen35)
+      kimi|qwen35)
         MODEL_EXTRA_ARGS="--ak run_timeout_sec=1800"
         ;;
     esac

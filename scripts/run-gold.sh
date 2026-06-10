@@ -37,7 +37,6 @@ opencode|gemini/gemini-3-flash-preview|geminiflash
 opencode|gemini/gemini-3.5-flash|gemini35flash
 glm-opencode|openrouter/z-ai/glm-5|glm
 kimi-opencode|openrouter/moonshotai/kimi-k2.5|kimi
-qwen3-opencode|openrouter/qwen/qwen3-coder-next|qwen3
 qwen35-opencode|openrouter/qwen/qwen3.5-35b-a3b|qwen35
 "
 
@@ -62,7 +61,7 @@ while [[ $# -gt 0 ]]; do
       echo ""
       echo "Models:     opus47, opus, sonnet46, sonnet45, haiku, codex53, gpt55,"
       echo "            gpt54, gpt54mini, gpt54nano, gemini, geminiflash,"
-      echo "            gemini35flash, glm, kimi, qwen3, qwen35 (default: all)"
+      echo "            gemini35flash, glm, kimi, qwen35 (default: all)"
       echo "Conditions: vanilla, smith-alch, fish, fletch-alch (default: all four)"
       echo "Horizon:    15m or 30m (default: 15m)"
       exit 0
@@ -73,7 +72,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [ -z "$SELECTED_MODELS" ]; then
-  SELECTED_MODELS="opus47 opus sonnet46 sonnet45 haiku codex53 gpt55 gpt54 gpt54mini gpt54nano gemini geminiflash gemini35flash glm kimi qwen3 qwen35"
+  SELECTED_MODELS="opus47 opus sonnet46 sonnet45 haiku codex53 gpt55 gpt54 gpt54mini gpt54nano gemini geminiflash gemini35flash glm kimi qwen35"
 fi
 if [ -z "$SELECTED_CONDITIONS" ]; then
   SELECTED_CONDITIONS="$ALL_CONDITIONS"
