@@ -41,6 +41,7 @@ qwen3max-opencode|openrouter/qwen/qwen3-max|qwen3max
 qwen37max-opencode|openrouter/qwen/qwen3.7-max|qwen37max
 deepseek-opencode|openrouter/deepseek/deepseek-v4-pro|deepseek
 kimi26-opencode|openrouter/moonshotai/kimi-k2.6|kimi26
+kimi27-opencode|openrouter/moonshotai/kimi-k2.7-code|kimi27
 
 "
 
@@ -122,7 +123,7 @@ for model_name in $SELECTED_MODELS; do
     codex|codex53|gpt55|gpt54|gpt54mini|gpt54nano)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900"
       ;;
-    glm|kimi|kimi26|qwen35|qwen3max|qwen37max|deepseek)
+    glm|kimi|kimi26|kimi27|qwen35|qwen3max|qwen37max|deepseek)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1800"
       ;;
     gemini|gemini31|geminiflash|gemini35flash|gemini35flash-high)

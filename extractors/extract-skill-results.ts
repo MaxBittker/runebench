@@ -28,7 +28,7 @@ import {
 const JOBS_DIR = join(import.meta.dir, '..', 'jobs');
 const RESULTS_ROOT = join(import.meta.dir, '..', 'results');
 
-const KNOWN_MODELS = ['fable-5-xhigh', 'fable-5', 'opus48-max', 'opus48', 'opus47-xhigh', 'opus47', 'opus', 'opus45', 'sonnet46', 'sonnet45', 'haiku', 'codex53', 'gpt55-apikey', 'gpt55', 'gpt54mini', 'gpt54nano', 'gpt54', 'gemini31', 'gemini35flash-high', 'gemini35flash', 'geminiflash', 'gemini', 'glm', 'kimi26', 'kimi', 'deepseek', 'qwen37max', 'qwen3max', 'qwen35'];
+const KNOWN_MODELS = ['fable-5-xhigh', 'fable-5', 'opus48-max', 'opus48', 'opus47-xhigh', 'opus47', 'opus', 'opus45', 'sonnet46', 'sonnet45', 'haiku', 'codex53', 'gpt55-apikey', 'gpt55', 'gpt54mini', 'gpt54nano', 'gpt54', 'gemini31', 'gemini35flash-high', 'gemini35flash', 'geminiflash', 'gemini', 'glm', 'kimi27', 'kimi26', 'kimi', 'deepseek', 'qwen37max', 'qwen3max', 'qwen35'];
 
 const KNOWN_SKILLS = [
   'attack', 'defence', 'strength', 'hitpoints', 'ranged', 'prayer', 'magic',
@@ -516,6 +516,12 @@ for (const { dir, model } of allJobDirs) {
       console.log(`  skip: ${jobName}/${trialName} (can't detect skill)`);
       continue;
     }
+
+    // Early skip: once a model/skill has good tracking data (>5 samples), the
+    // merge logic below always keeps it and discards any later trial. Bail out
+    // here — before ffprobe/trajectory/JSON parsing — to avoid that wasted work.
+    const existingForSkill = combined[model]?.[skill];
+    if (existingForSkill && existingForSkill.sampleCount > 5) continue;
 
     const tracking = findTrackingInTrial(trialDir);
     const reward = findRewardInTrial(trialDir);
