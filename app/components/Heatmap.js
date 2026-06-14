@@ -48,7 +48,11 @@ export function Heatmap({ data, activeModel, activeSkill }) {
     models.sort((a, b) => b.logMean - a.logMean);
 
     const skillOrder = SKILL_ORDER.slice().sort((a, b) => {
-      // Order skills by average score (peak rate) across models, descending.
+      // Order skills by how many models scored zero (fewest zeros first).
+      const zeroA = models.filter(m => !(m.skills[a] > 0)).length;
+      const zeroB = models.filter(m => !(m.skills[b] > 0)).length;
+      if (zeroA !== zeroB) return zeroA - zeroB;
+      // tie-break by average rate
       const avgA = models.reduce((s, m) => s + m.skills[a], 0) / models.length;
       const avgB = models.reduce((s, m) => s + m.skills[b], 0) / models.length;
       return avgB - avgA;
