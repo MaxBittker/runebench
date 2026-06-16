@@ -4,8 +4,8 @@ import { makeLabelPlugin } from './scatter-labels.js';
 
 // High-effort ("xh") variants are folded into their base model: we never plot
 // the xh point on its own — instead, if the xh run scored higher than the base
-// run, the base model adopts the xh point (cost + score) but keeps the base
-// label, so no "xh" text appears.
+// run, the base model adopts the xh point (score) but keeps the base label, so
+// no "xh" text appears. (Release date is shared between base and xh.)
 const XH_TO_BASE = {
   'fable-5-xhigh': 'fable-5',
   'opus48-max': 'opus48',
@@ -14,22 +14,19 @@ const XH_TO_BASE = {
   'gemini35flash-high': 'gemini35flash',
 };
 
-// Models intentionally hidden from the cost scatter (older points that clutter
-// the frontier without adding signal).
-const EXCLUDED = new Set(['sonnet45', 'gemini', 'opus45']);
-
-// Reuse the same per-model aggregation as CostTable: log-average performance
-// (⟨ln⟩ of peak XP/min across the 16 skills) vs. average API cost per run.
+// Per-model aggregation: log-average performance (⟨ln⟩ of peak XP/min across
+// the 16 skills) vs. the model's release date (x-axis).
 function buildRows(data) {
   if (!data) return [];
   const out = [];
   for (const key of Object.keys(data)) {
-    if (!MODEL_CONFIG[key]) continue;
-    if (EXCLUDED.has(key)) continue;
+    const cfg = MODEL_CONFIG[key];
+    if (!cfg || !cfg.releaseDate) continue;
+    const releaseMs = Date.parse(cfg.releaseDate);
+    if (Number.isNaN(releaseMs)) continue;
+
     let logSum = 0;
     let rateCount = 0;
-    let totalCost = 0;
-    let runsWithCost = 0;
 
     for (const skill of SKILL_ORDER) {
       const sd = data[key]?.[skill];
@@ -37,20 +34,14 @@ function buildRows(data) {
       const rate = sd.peakXpRate || 0;
       logSum += Math.log(1 + rate);
       rateCount++;
-
-      const tu = sd.tokenUsage;
-      if (tu && tu.costUsd != null) {
-        totalCost += tu.costUsd;
-        runsWithCost++;
-      }
     }
 
-    if (rateCount === 0 || runsWithCost === 0) continue;
+    if (rateCount === 0) continue;
 
     out.push({
       key,
       logMean: logSum / rateCount,
-      avgCost: totalCost / runsWithCost,
+      releaseMs,
     });
   }
 
@@ -62,18 +53,21 @@ function buildRows(data) {
     byKey.delete(xhKey); // never plot the xh point on its own
     const base = byKey.get(baseKey);
     if (!base) {
-      // No base run — adopt the xh point under the base identity.
       byKey.set(baseKey, { ...xh, key: baseKey });
     } else if (xh.logMean > base.logMean) {
-      // xh scored higher — base adopts the xh point but keeps its own label.
       base.logMean = xh.logMean;
-      base.avgCost = xh.avgCost;
     }
   }
   return [...byKey.values()];
 }
 
-export function CostScatter({ data }) {
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function fmtDate(ms) {
+  const d = new Date(ms);
+  return `${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+}
+
+export function ReleaseScatter({ data }) {
   const canvasRef = useRef(null);
   const chartInstance = useRef(null);
 
@@ -89,7 +83,7 @@ export function CostScatter({ data }) {
       const img = new Image(20, 20);
       img.src = cfg.icon;
       return {
-        x: r.avgCost,
+        x: r.releaseMs,
         y: r.logMean,
         key: r.key,
         label: cfg.shortName,
@@ -103,7 +97,7 @@ export function CostScatter({ data }) {
       chartInstance.current = null;
     }
 
-    const labelPlugin = makeLabelPlugin(points, 'pointLabelsCost');
+    const labelPlugin = makeLabelPlugin(points, 'pointLabelsRelease');
 
     chartInstance.current = new Chart(canvasRef.current, {
       type: 'scatter',
@@ -133,10 +127,11 @@ export function CostScatter({ data }) {
         scales: {
           x: {
             type: 'linear',
-            beginAtZero: true,
-            title: { display: true, text: 'Avg API Cost / Run (USD)' },
+            title: { display: true, text: 'Model Release Date' },
             ticks: {
-              callback: (v) => '$' + v,
+              maxRotation: 0,
+              autoSkipPadding: 24,
+              callback: (v) => fmtDate(v),
             },
           },
           y: {
@@ -149,7 +144,7 @@ export function CostScatter({ data }) {
             callbacks: {
               label: (item) => {
                 const p = points[item.dataIndex];
-                return `${p.label}: $${p.x.toFixed(2)} / ⟨ln⟩ ${p.y.toFixed(1)}`;
+                return `${p.label}: ${fmtDate(p.x)} / ⟨ln⟩ ${p.y.toFixed(1)}`;
               },
             },
           },
@@ -168,8 +163,19 @@ export function CostScatter({ data }) {
   if (!data || rows.length === 0) return null;
 
   return html`
-    <div style=${{ position: 'relative', height: '480px' }}>
-      <canvas ref=${canvasRef}></canvas>
-    </div>
+    <section className="section">
+      <div className="container is-max-widescreen">
+        <div className="has-text-centered" style=${{ marginBottom: '2rem' }}>
+          <h2 className="title is-3">Performance vs. Release Date</h2>
+          <p className="subtitle is-6" style=${{ color: '#666' }}>
+            Log-averaged peak XP rate across 16 skills vs. each model's release date
+            (dates from <a href="https://models.dev/" target="_blank" rel="noopener">models.dev</a>)
+          </p>
+        </div>
+        <div style=${{ position: 'relative', height: '520px' }}>
+          <canvas ref=${canvasRef}></canvas>
+        </div>
+      </div>
+    </section>
   `;
 }

@@ -30,6 +30,7 @@ const MODEL_CONFIG = {
   'gpt54mini': { displayName: 'GPT-5.4 Mini',     shortName: 'GPT-5.4 Mini', color: '#15b886', order: 10.5, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-03-17' },
   'gpt54nano': { displayName: 'GPT-5.4 Nano',     shortName: 'GPT-5.4 Nano', color: '#20d6a2', order: 10.6, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-03-17' },
   'glm':      { displayName: 'GLM 5',             shortName: 'GLM 5',       color: '#6c5ce7', order: 11, icon: VIEWS_BASE + 'model-icons/zai.png', releaseDate: '2026-02-11' },
+  'glm52':    { displayName: 'GLM 5.2',           shortName: 'GLM 5.2',     color: '#4834d4', order: 11.2, icon: VIEWS_BASE + 'model-icons/zai.png', releaseDate: '2026-06-16' },
   'kimi':     { displayName: 'Kimi K2.5',         shortName: 'Kimi K2.5',   color: '#00b4d8', order: 12, icon: VIEWS_BASE + 'model-icons/kimi.png', releaseDate: '2026-01-15' },
   'kimi26':   { displayName: 'Kimi K2.6',         shortName: 'Kimi K2.6',   color: '#0077b6', order: 12.5, icon: VIEWS_BASE + 'model-icons/kimi.png', releaseDate: '2026-04-21' },
   'kimi27':   { displayName: 'Kimi K2.7 Code',    shortName: 'Kimi K2.7',   color: '#023e8a', order: 12.6, icon: VIEWS_BASE + 'model-icons/kimi.png', releaseDate: '2026-06-12' },

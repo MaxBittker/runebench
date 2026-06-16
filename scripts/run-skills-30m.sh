@@ -35,6 +35,7 @@ gemini-cli|google/gemini-3-flash-preview|geminiflash
 gemini-cli|google/gemini-3.5-flash|gemini35flash
 gemini-cli-high|google/gemini-3.5-flash|gemini35flash-high
 glm-opencode|openrouter/z-ai/glm-5|glm
+glm52-opencode|openrouter/z-ai/glm-5.2|glm52
 kimi-opencode|openrouter/moonshotai/kimi-k2.5|kimi
 qwen35-opencode|openrouter/qwen/qwen3.5-35b-a3b|qwen35
 qwen3max-opencode|openrouter/qwen/qwen3-max|qwen3max
@@ -123,7 +124,7 @@ for model_name in $SELECTED_MODELS; do
     codex|codex53|gpt55|gpt54|gpt54mini|gpt54nano)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900"
       ;;
-    glm|kimi|kimi26|kimi27|qwen35|qwen3max|qwen37max|deepseek)
+    glm|glm52|kimi|kimi26|kimi27|qwen35|qwen3max|qwen37max|deepseek)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1800"
       ;;
     gemini|gemini31|geminiflash|gemini35flash|gemini35flash-high)

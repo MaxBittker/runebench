@@ -61,6 +61,7 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // thinking tokens (billed as output), it doesn't change the rate card.
   'gemini35flash-high': { input: 1.5e-6, cachedInput: 0.15e-6, cacheWrite: 1.5e-6, output: 9e-6 },
   glm:          { input: 0.72e-6,   cachedInput: 0,        cacheWrite: 0.72e-6,   output: 2.3e-6 },
+  glm52:        { input: 1.4e-6,    cachedInput: 0,        cacheWrite: 1.4e-6,    output: 4.4e-6 }, // z-ai/glm-5.2, OpenRouter 2026-06-16
   kimi:         { input: 0.6e-6,    cachedInput: 0.1e-6,   cacheWrite: 0.6e-6,    output: 3e-6 },
   qwen35:       { input: 0.1625e-6, cachedInput: 0,        cacheWrite: 0.1625e-6, output: 1.3e-6 },
   qwen3max:     { input: 0.78e-6,   cachedInput: 0,        cacheWrite: 0.78e-6,   output: 3.9e-6 },
@@ -98,6 +99,7 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'gemini/gemini-3-flash-preview':     'geminiflash',
   'gemini/gemini-3.5-flash':           'gemini35flash',
   'openrouter/z-ai/glm-5':             'glm',
+  'openrouter/z-ai/glm-5.2':           'glm52',
   'openrouter/moonshotai/kimi-k2.5':   'kimi',
   'openrouter/qwen/qwen3.5-35b-a3b':   'qwen35',
   'openrouter/qwen/qwen3-max':         'qwen3max',
