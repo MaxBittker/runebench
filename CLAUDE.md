@@ -9,7 +9,7 @@ All task directories are **generated** — never edit them directly.
 
 | Path | Purpose |
 |------|---------|
-| `generate-tasks.ts` | Generates all task directories (16 skills × {15m,30m} + 4 gold conditions × {15m,30m}) |
+| `generate-tasks.ts` | Generates all task directories (16 skills × {15m,30m} + 4 gold conditions × {15m,30m} + a 5m smoke task) |
 | `shared/check_skill_xp.ts` | XP verifier for single-skill tasks (embeds tracking data) |
 | `shared/check_gold.ts` | Gold verifier — reads the save file directly, counts coins in inventory + bank |
 | `shared/extract-utils.ts` | Shared utilities for extract scripts |
@@ -22,15 +22,20 @@ All task directories are **generated** — never edit them directly.
 
 ```
 RuneBench/
-├── scripts/              ← run.sh, run-skills-10m.sh, run-skills-30m.sh, run-common.sh
+├── scripts/              ← run.sh, run-skills-15m.sh, run-skills-30m.sh, run-gold.sh, run-common.sh
 ├── extractors/           ← extract-skill-results.ts, extract-gold-results.ts
-├── agents/               ← kimi_adapter.py, qwen3_adapter.py, opencode_adapter.py, install-opencode.sh.j2
-├── views/                ← graph-skills.html, graph-gold.html, model-icons/, skill-icons/
+├── agents/               ← opencode_adapter.py, per-provider adapters, install-opencode.sh.j2
+├── app/                  ← components for the results website (loaded by index.html)
+├── views/                ← graph-skills.html, graph-gold.html (local viewers), model-icons/, skill-icons/
+├── wiki/                 ← game-wiki markdown given to agents + generator scripts
 ├── shared/               ← verifiers + extract-utils.ts
 ├── docker/               ← shared Docker image source
 ├── results/              ← generated result artifacts
-├── tasks/                ← generated task directories
+├── jobs/                 ← raw harbor job outputs (gitignored)
+├── tasks/                ← generated task directories (gitignored)
 ├── generate-tasks.ts     ← source of truth for task generation
+├── index.html            ← results website (GitHub Pages; prerendered by scripts/prerender.ts)
+├── dataset.toml          ← Harbor dataset manifest (harbor add / harbor publish)
 ├── package.json
 ├── CLAUDE.md
 └── .gitignore
@@ -48,7 +53,7 @@ Run this before `harbor run`. Generated directories are gitignored.
 
 ```bash
 # Per-skill XP benchmarks
-./scripts/run-skills-10m.sh
+./scripts/run-skills-15m.sh
 ./scripts/run-skills-30m.sh
 
 # Gold benchmarks (4 starting conditions × all models, unified opencode agent)
@@ -57,7 +62,7 @@ Run this before `harbor run`. Generated directories are gitignored.
 ./scripts/run-gold.sh -m opus -c smith-alch
 
 # Ad-hoc single-task run (all models)
-./scripts/run.sh -t woodcutting-xp-10m
+./scripts/run.sh -t woodcutting-xp-15m
 ```
 
 Gold tasks use the unified OpenCode adapter (`agents/opencode_adapter.py`) for every
@@ -71,8 +76,8 @@ Each task has an `environment/Dockerfile` that `FROM`s the pre-built GHCR image,
 
 ```bash
 bun scripts/postprocess-costs.ts                     # backfill cost_usd on jobs/
-bun extractors/extract-skill-results.ts --horizon 10m
-bun extractors/extract-skill-results.ts              # 30m (default)
+bun extractors/extract-skill-results.ts              # 15m (default)
+bun extractors/extract-skill-results.ts --horizon 30m
 bun extractors/extract-gold-results.ts               # gold: keyed by condition-horizon
 ```
 
@@ -86,7 +91,7 @@ bun extractors/extract-gold-results.ts               # gold: keyed by condition-
 
 The Docker setup is split into two images to keep Modal pulls fast:
 
-- **Base image** (`rs-agent-benchmark-base:v1`) — Debian, chromium, JRE, ffmpeg, bun (~1.6GB). Rarely changes.
+- **Base image** (`rs-agent-benchmark-base:v2`) — Debian, chromium, JRE, ffmpeg, pulseaudio, bun (~1.6GB). Rarely changes.
 - **App image** (`rs-agent-benchmark:vXX`) — rs-sdk, workspace deps, Claude CLI, config (~1GB on top of base). Changes per version bump.
 
 All tasks `FROM` the app image. Variant tasks that need different env settings use a thin `FROM` layer on top.
@@ -96,8 +101,8 @@ Build and push:
 cd docker
 
 # Base image (only when system deps change — should be rare)
-PUSH=1 IMAGE_TAG=v1 ./build.sh --base
+PUSH=1 IMAGE_TAG=v2 ./build.sh --base
 
 # App image (bump tag for each new version)
-PUSH=1 IMAGE_TAG=v26 ./build.sh
+PUSH=1 IMAGE_TAG=v41 ./build.sh
 ```

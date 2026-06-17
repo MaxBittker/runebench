@@ -1,4 +1,4 @@
-ARG BASE_IMAGE=ghcr.io/maxbittker/rs-agent-benchmark-base:v1
+ARG BASE_IMAGE=ghcr.io/maxbittker/rs-agent-benchmark-base:v2
 FROM ${BASE_IMAGE}
 
 # 8x faster game simulation (50ms ticks vs default 420ms)

@@ -31,7 +31,10 @@ async function main() {
             '--disable-gpu',
             '--disable-dev-shm-usage',
             '--disable-accelerated-2d-canvas',
-            '--mute-audio',
+            // Audio stays unmuted so the recording can capture music/sfx;
+            // without the autoplay flag chromium suspends the AudioContext
+            // until a user gesture (which a bot never produces).
+            '--autoplay-policy=no-user-gesture-required',
             '--disable-extensions',
             '--disable-background-timer-throttling',
             '--window-size=800,600',
@@ -56,6 +59,9 @@ async function main() {
         }
     }
     console.log(`[launch-bot] Bot "${BOT_NAME}" is in-game`);
+
+    // Belt-and-braces: resume Web Audio in case the autoplay flag was ignored.
+    await page.evaluate(() => (window as any).audioContext?.resume?.());
 
     // Randomize character appearance
     await page.evaluate(() => {

@@ -30,11 +30,10 @@ jobs:
 
       - name: Assemble site
         run: |
-          mkdir -p _site/views _site/app _site/results/skills-10m _site/results/skills-30m _site/results/gold
+          mkdir -p _site/views _site/app _site/results/skills-30m _site/results/gold
           cp index.html _site/
           cp -r app/* _site/app/
           cp -r views/* _site/views/
-          cp results/skills-10m/_data.js _site/results/skills-10m/_data.js || true
           cp results/skills-30m/_data.js _site/results/skills-30m/_data.js || true
           cp results/gold/_data.js _site/results/gold/_data.js || true
 

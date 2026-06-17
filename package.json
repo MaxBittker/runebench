@@ -6,7 +6,7 @@
     "generate": "bun generate-tasks.ts",
     "prerender": "bun scripts/prerender.ts",
     "extract:skills": "bun extractors/extract-skill-results.ts",
-    "extract:skills:10m": "bun extractors/extract-skill-results.ts --horizon 10m",
+    "extract:skills:30m": "bun extractors/extract-skill-results.ts --horizon 30m",
     "extract:gold": "bun extractors/extract-gold-results.ts"
   }
 }

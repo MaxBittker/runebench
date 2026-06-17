@@ -18,7 +18,7 @@ Built for [Harbor](https://harborframework.com/), an open-source framework for r
 
 **16 Skill XP tasks (30 min)** — Extended versions with time-series tracking
 
-**3 Gold accumulation tasks** (15 min / 30 min / 2 hr) — Maximize total coins using any strategy
+**8 Gold accumulation tasks** (4 starting conditions × 15 min / 30 min) — Maximize total coins using any strategy
 
 All task directories are generated from `generate-tasks.ts` and should not be edited directly.
 

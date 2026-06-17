@@ -8,6 +8,27 @@ XVFB_PID=$!
 export DISPLAY=:99
 sleep 1
 
+# ── PulseAudio (lets ffmpeg capture the game client's music/sfx) ─
+# Explicit socket + PULSE_SERVER so chromium (started later, inherits
+# this env) and ffmpeg talk to the same daemon regardless of XDG dirs.
+echo "[entrypoint] Starting PulseAudio..."
+export PULSE_SERVER=unix:/tmp/pulse.sock
+pulseaudio -D --exit-idle-time=-1 \
+    --load="module-native-protocol-unix auth-anonymous=1 socket=/tmp/pulse.sock" \
+    > /dev/null 2>&1 || true
+AUDIO_OK=false
+for i in $(seq 1 10); do
+    if pactl info > /dev/null 2>&1; then AUDIO_OK=true; break; fi
+    sleep 1
+done
+if $AUDIO_OK; then
+    pactl load-module module-null-sink sink_name=game > /dev/null
+    pactl set-default-sink game
+    echo "[entrypoint] PulseAudio ready (null sink 'game')"
+else
+    echo "[entrypoint] WARNING: PulseAudio failed to start — recording will have no audio"
+fi
+
 # ── Helper: start engine and wait for readiness ──────────────────
 start_engine() {
     cd /app/server/engine && bun run src/app.ts &
@@ -87,11 +108,23 @@ RECORD_VIDEO="${RECORD_VIDEO:-1}"
 FFMPEG_PID=""
 mkdir -p /logs/verifier
 if [ "$RECORD_VIDEO" = "1" ]; then
-    echo "[entrypoint] Starting screen recording (1 fps, 400x300, h264)..."
-    ffmpeg -f x11grab -framerate 1 -video_size 800x600 -i :99 \
+    # Capture game audio off the null sink's monitor when pulse is up;
+    # fall back to video-only so a dead daemon never kills the recording.
+    AUDIO_IN=()
+    AUDIO_OUT=()
+    if pactl info > /dev/null 2>&1; then
+        AUDIO_IN=(-f pulse -thread_queue_size 1024 -i game.monitor)
+        AUDIO_OUT=(-c:a aac -b:a 64k -ac 1)
+        echo "[entrypoint] Starting screen recording (1 fps, 400x300, h264 + aac audio)..."
+    else
+        echo "[entrypoint] Starting screen recording (1 fps, 400x300, h264, no audio)..."
+    fi
+    ffmpeg -f x11grab -thread_queue_size 1024 -framerate 1 -video_size 800x600 -i :99 \
+        "${AUDIO_IN[@]}" \
         -vf scale=400:300 \
         -c:v libx264 -preset ultrafast -crf 38 \
         -pix_fmt yuv420p \
+        "${AUDIO_OUT[@]}" \
         -movflags +frag_keyframe+empty_moov \
         /logs/verifier/recording.mp4 \
         > /logs/verifier/ffmpeg.log 2>&1 &
