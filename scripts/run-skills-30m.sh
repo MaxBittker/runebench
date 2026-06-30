@@ -20,6 +20,7 @@ ALL_MODELS="
 claude-code|anthropic/claude-opus-4-7|opus47
 claude-code|anthropic/claude-opus-4-6|opus
 claude-code|anthropic/claude-opus-4-5|opus45
+claude-code|anthropic/claude-sonnet-5|sonnet5
 claude-code|anthropic/claude-sonnet-4-6|sonnet46
 claude-code|anthropic/claude-sonnet-4-5|sonnet45
 claude-code|anthropic/claude-haiku-4-5|haiku
@@ -63,7 +64,7 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
       echo "Usage: run-skills-30m.sh [-m model] [-s skill] [-k trials]"
       echo ""
-      echo "Models: opus47, opus, opus45, sonnet46, sonnet45, haiku, codex, codex53, gpt55, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, gemini35flash, gemini35flash-high, glm, kimi, qwen35 (default: all)"
+      echo "Models: opus47, opus, opus45, sonnet5, sonnet46, sonnet45, haiku, codex, codex53, gpt55, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, gemini35flash, gemini35flash-high, glm, kimi, qwen35 (default: all)"
       echo "Skills: attack, defence, strength, hitpoints, ranged, prayer, magic,"
       echo "        woodcutting, fishing, mining, cooking, fletching, crafting,"
       echo "        smithing, firemaking, thieving (default: all sixteen)"

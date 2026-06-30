@@ -43,6 +43,11 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   opus47:       { input: 5e-6,    cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,  output: 25e-6 },
   opus:         { input: 5e-6,    cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,  output: 25e-6 },
   opus45:       { input: 5e-6,    cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,  output: 25e-6 },
+  // Sonnet 5: standard rate card $3/M in, $15/M out (intro $2/$10 runs through 2026-08-31).
+  // Anthropic cache: read 0.1× input, 5-min cache write 1.25× input.
+  sonnet5:      { input: 3e-6,    cachedInput: 0.3e-6,   cacheWrite: 3.75e-6,  output: 15e-6 },
+  // Same rate card as sonnet5 — xhigh effort just emits more thinking (billed as output).
+  'sonnet5-xhigh': { input: 3e-6, cachedInput: 0.3e-6,   cacheWrite: 3.75e-6,  output: 15e-6 },
   sonnet46:     { input: 3e-6,    cachedInput: 0.3e-6,   cacheWrite: 3.75e-6,  output: 15e-6 },
   sonnet45:     { input: 3e-6,    cachedInput: 0.3e-6,   cacheWrite: 3.75e-6,  output: 15e-6 },
   haiku:        { input: 1e-6,    cachedInput: 0.1e-6,   cacheWrite: 1.25e-6,  output: 5e-6 },
@@ -81,6 +86,8 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'anthropic/claude-opus-4-7':         'opus47',
   'anthropic/claude-opus-4-6':         'opus',
   'anthropic/claude-opus-4-5':         'opus45',
+  'anthropic/claude-sonnet-5':         'sonnet5',
+  'anthropic/claude-sonnet-5-xhigh':   'sonnet5-xhigh',
   'anthropic/claude-sonnet-4-6':       'sonnet46',
   'anthropic/claude-sonnet-4-5':       'sonnet45',
   'anthropic/claude-haiku-4-5':        'haiku',

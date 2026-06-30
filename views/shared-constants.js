@@ -14,6 +14,8 @@ const MODEL_CONFIG = {
   'opus47-xhigh': { displayName: 'Claude Opus 4.7 xhigh', shortName: 'Opus 4.7 xh', color: '#4a3320', order: 0.55, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-04-16' },
   'opus':     { displayName: 'Claude Opus 4.6',   shortName: 'Opus 4.6',    color: '#8b7355', order: 1, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-03-13' },
   'opus45':   { displayName: 'Claude Opus 4.5',   shortName: 'Opus 4.5',    color: '#a08060', order: 2, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2025-11-24' },
+  'sonnet5':  { displayName: 'Claude Sonnet 5',   shortName: 'Sonnet 5',    color: '#b91c1c', order: 2.7, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-06-30' },
+  'sonnet5-xhigh': { displayName: 'Claude Sonnet 5 xhigh', shortName: 'Sonnet 5 xh', color: '#7f1010', order: 2.75, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-06-30' },
   'sonnet46': { displayName: 'Claude Sonnet 4.6', shortName: 'Sonnet 4.6',  color: '#d4442a', order: 3, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-03-13' },
   'sonnet45': { displayName: 'Claude Sonnet 4.5', shortName: 'Sonnet 4.5',  color: '#e07850', order: 4, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2025-09-29' },
   'gemini':   { displayName: 'Gemini 3 Pro',      shortName: 'Gemini 3 Pro',    color: '#4285f4', order: 5, icon: VIEWS_BASE + 'model-icons/gemini.webp', releaseDate: '2025-11-18' },
