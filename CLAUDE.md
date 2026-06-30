@@ -104,5 +104,5 @@ cd docker
 PUSH=1 IMAGE_TAG=v2 ./build.sh --base
 
 # App image (bump tag for each new version)
-PUSH=1 IMAGE_TAG=v41 ./build.sh
+PUSH=1 IMAGE_TAG=v42 ./build.sh
 ```
