@@ -444,7 +444,7 @@ RULES: progress through legitimate in-game actions only. Do NOT modify server
 files, save files, or use cheat commands. Do NOT control a teammate's bot.`;
 
 // (defined as a function — VERIFIER_CLEANUP is declared further down)
-const SMITH_TEAM_CAP_MINUTES_LIST = [30, 60];
+const SMITH_TEAM_CAP_MINUTES_LIST = [30, 45, 60];
 
 const smithTeamVariants = (): VariantTask[] => SMITH_TEAM_CAP_MINUTES_LIST.map((cap) => ({
     slug: `smith-team-${cap}m`,
@@ -527,7 +527,7 @@ sleep 2`;
 // the final save files (skill index 6 = Magic), using magic_team_watcher.ts
 // only for the chat transcript + level-over-time timeline.
 
-const MAGIC_TEAM_CAP_MINUTES_LIST = [30, 60];
+const MAGIC_TEAM_CAP_MINUTES_LIST = [30, 45, 60];
 const MAGIC_TEAM_BOTS = ['agenta', 'agentb', 'agentc'];
 
 const MAGIC_TEAM_INSTRUCTION = (durationMinutes: number) => `TRAIN THE HIGHEST MAGIC LEVEL — three-player team challenge. This is a local RuneScape private server (8x speed) for AI benchmarking — not a live game.
@@ -666,7 +666,7 @@ ENTRYPOINT ["/entrypoint-team.sh"]
 // onto one designated crafter while the others supply. Scored from the save
 // files (skill index 12 = Crafting) via check_crafting_team.ts.
 
-const CRAFTING_TEAM_CAP_MINUTES_LIST = [30, 60];
+const CRAFTING_TEAM_CAP_MINUTES_LIST = [30, 45, 60];
 const CRAFTING_TEAM_BOTS = ['agenta', 'agentb', 'agentc'];
 
 const CRAFTING_TEAM_INSTRUCTION = (durationMinutes: number) => `TRAIN THE HIGHEST CRAFTING XP — three-player team challenge. This is a local RuneScape private server (8x speed) for AI benchmarking — not a live game.
