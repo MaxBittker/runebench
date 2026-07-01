@@ -231,24 +231,8 @@ class OpenCodeAdapter(BaseInstalledAgent):
                 env["GOOGLE_GENERATIVE_AI_API_KEY"] = key_value
         return env
 
-    async def run(
-        self,
-        instruction: str,
-        environment: BaseEnvironment,
-        context: AgentContext,
-    ) -> None:
-        self._last_instruction = instruction
-        escaped_instruction = shlex.quote(instruction)
-
-        env = self._resolve_api_key_env()
-        env["OPENCODE_YOLO"] = "true"
-        env["OPENCODE_DANGEROUSLY_SKIP_PERMISSIONS"] = "true"
-        env = {k: v for k, v in env.items() if v}
-
-        opencode_config = self._build_opencode_config()
-        config_json = json.dumps(opencode_config, indent=2)
-        escaped_config = shlex.quote(config_json)
-
+    def _resolved_model_name(self) -> str:
+        """Model name with the provider prefix remapped for the OpenCode CLI."""
         model_name = self.model_name or self._default_model
         # Remap provider prefix for OpenCode CLI (e.g. gemini/ → google/)
         if "/" in model_name:
@@ -256,17 +240,23 @@ class OpenCodeAdapter(BaseInstalledAgent):
             remapped = self._PROVIDER_REMAP.get(raw_provider)
             if remapped:
                 model_name = f"{remapped}/{model_suffix}"
+        return model_name
 
-        prefix = self._log_prefix
-        log_file = self._log_file
+    def _compose_run_command(
+        self,
+        model_name: str,
+        instruction: str,
+        prefix: str,
+        log_file: str,
+        bash_timeout: int,
+    ) -> str:
+        """Build the opencode restart-loop bash command for one session.
 
-        setup_command = (
-            f"echo {escaped_config} > /app/opencode.json && "
-            f"echo '[{prefix}-setup] Wrote /app/opencode.json'"
-        )
-
-        await self.exec_as_agent(environment, command=setup_command, env=env)
-
+        `prefix` namespaces the log messages and bash variables, so two
+        sessions composed into one command (see opencode_duo_adapter) don't
+        clobber each other's loop state.
+        """
+        escaped_instruction = shlex.quote(instruction)
         escaped_model = shlex.quote(model_name)
         continue_instruction = shlex.quote(
             "You were previously working on this task but stopped early. "
@@ -275,14 +265,12 @@ class OpenCodeAdapter(BaseInstalledAgent):
             "keep grinding. " + instruction
         )
 
-        # Variable prefix for the restart loop (uppercase of log_prefix)
-        vp = prefix.upper()
+        # Variable prefix for the restart loop (bash-identifier-safe)
+        vp = prefix.upper().replace("-", "_")
 
-        # Use run_timeout_sec if provided, otherwise fall back to env var / 1620s default
-        bash_timeout = self._run_timeout_sec or 1620
         bash_timeout_expr = f"{vp}_TIMEOUT=${{{vp}_TIMEOUT:-{bash_timeout}}}; "
 
-        run_command = (
+        return (
             f"echo '[{prefix}-setup] Starting opencode'; "
             # Source NVM so the nvm-installed opencode binary is on PATH
             "export NVM_DIR=\"$HOME/.nvm\"; "
@@ -326,6 +314,44 @@ class OpenCodeAdapter(BaseInstalledAgent):
             f"  if [ ${vp}_RUN_DUR -lt 10 ]; then {vp}_FAST_FAILS=$(({vp}_FAST_FAILS + 1)); else {vp}_FAST_FAILS=0; fi; "
             "done; "
             f"echo \"[{prefix}-loop] Finished after ${vp}_RUN runs\" | tee -a /logs/agent/{log_file}"
+        )
+
+    def _agent_env(self) -> dict[str, str]:
+        env = self._resolve_api_key_env()
+        env["OPENCODE_YOLO"] = "true"
+        env["OPENCODE_DANGEROUSLY_SKIP_PERMISSIONS"] = "true"
+        return {k: v for k, v in env.items() if v}
+
+    async def _write_opencode_config(self, environment: BaseEnvironment, env: dict[str, str]) -> None:
+        opencode_config = self._build_opencode_config()
+        config_json = json.dumps(opencode_config, indent=2)
+        escaped_config = shlex.quote(config_json)
+        setup_command = (
+            f"echo {escaped_config} > /app/opencode.json && "
+            f"echo '[{self._log_prefix}-setup] Wrote /app/opencode.json'"
+        )
+        await self.exec_as_agent(environment, command=setup_command, env=env)
+
+    async def run(
+        self,
+        instruction: str,
+        environment: BaseEnvironment,
+        context: AgentContext,
+    ) -> None:
+        self._last_instruction = instruction
+
+        env = self._agent_env()
+        await self._write_opencode_config(environment, env)
+
+        # Use run_timeout_sec if provided, otherwise fall back to env var / 1620s default
+        bash_timeout = self._run_timeout_sec or 1620
+
+        run_command = self._compose_run_command(
+            model_name=self._resolved_model_name(),
+            instruction=instruction,
+            prefix=self._log_prefix,
+            log_file=self._log_file,
+            bash_timeout=bash_timeout,
         )
 
         # Set Modal-level timeout as backstop: bash timeout + 60s buffer

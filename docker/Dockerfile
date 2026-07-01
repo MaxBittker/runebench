@@ -4,10 +4,23 @@ FROM ${BASE_IMAGE}
 # 8x faster game simulation (50ms ticks vs default 420ms)
 ENV NODE_TICKRATE=50
 
+# Bot-friendly engine tuning (rs-sdk config, plumbed via NODE_* env vars):
+#   maxMessageLength — allow long chat messages so bots can coordinate freely
+#   objRevealTicks 0 — dropped items are immediately visible to the other bot
+#   objDespawnScale 20000 — ground items linger ~200x longer so hand-offs don't
+#     despawn before the other bot picks them up
+ENV NODE_MAX_MESSAGE_LENGTH=500
+ENV NODE_OBJ_REVEAL_TICKS=0
+ENV NODE_OBJ_DESPAWN_SCALE=20000
+
 # Clone rs-sdk (shallow clone, then delete .git to save ~50MB)
 ARG RS_SDK_REPO=https://github.com/MaxBittker/rs-sdk.git
 ARG RS_SDK_REF=main
-RUN git clone --depth 1 --branch $RS_SDK_REF $RS_SDK_REPO /app \
+# build.sh sets this to the remote HEAD SHA so a new rs-sdk commit busts the
+# clone layer's cache (same-value rebuilds stay fully cached).
+ARG RS_SDK_COMMIT=unknown
+RUN echo "rs-sdk @ $RS_SDK_COMMIT" \
+    && git clone --depth 1 --branch $RS_SDK_REF $RS_SDK_REPO /app \
     && rm -rf /app/.git
 WORKDIR /app
 
@@ -56,6 +69,7 @@ RUN chmod +x /entrypoint.sh
 # SAMPLE_INTERVAL_MS can be overridden per task via ENV in the thin FROM layer.
 COPY skill_tracker.ts /app/benchmark/shared/skill_tracker.ts
 COPY check_xp_rate.ts /app/benchmark/shared/check_xp_rate.ts
+COPY save-parser.ts /app/benchmark/shared/save-parser.ts
 
 # Ensure bot.env has SERVER=localhost so scripts connect to the local gateway
 RUN echo 'SERVER=localhost' >> /app/bots/agent/bot.env

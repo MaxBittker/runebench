@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="skill-icons/attack.png">
+<title>Shield of Arrav — Duo Runs</title>
+<script src="shared-constants.js"></script>
+<script src="../results/arrav/_data.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #fff;
+    color: #1a1a1a;
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 290px;
+    min-width: 290px;
+    border-right: 1px solid #e5e5e5;
+    overflow-y: auto;
+    padding: 18px 0;
+  }
+  .sidebar h1 { font-size: 16px; font-weight: 600; padding: 0 16px 2px; }
+  .sidebar .subtitle { font-size: 12px; color: #999; padding: 0 16px 12px; }
+  .sweep-group { margin-bottom: 6px; }
+  .sweep-label {
+    font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 8px 16px 4px; position: sticky; top: 0; background: #fff;
+  }
+  .run-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 16px; cursor: pointer; border-left: 3px solid transparent;
+  }
+  .run-item:hover { background: #f6f6f6; }
+  .run-item.active { background: #f0f0f0; border-left-color: #1a1a1a; }
+  .run-item img { width: 18px; height: 18px; border-radius: 4px; }
+  .run-item .name { font-size: 13px; font-weight: 500; flex: 1; white-space: nowrap; }
+  .run-item .stage { font-size: 11px; color: #999; white-space: nowrap; }
+  .run-item .stage.done { color: #1a8f4d; font-weight: 600; }
+
+  /* ── Main panel ── */
+  .main { flex: 1; overflow-y: auto; padding: 22px 36px 60px; }
+  .run-header { margin-bottom: 4px; display: flex; align-items: center; gap: 10px; }
+  .run-header img { width: 26px; height: 26px; border-radius: 6px; }
+  .run-header h2 { font-size: 19px; font-weight: 600; }
+  .run-meta { font-size: 13px; color: #888; margin-bottom: 18px; }
+  .run-meta .badge {
+    display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 12px;
+    font-weight: 600; margin-right: 8px;
+  }
+  .badge.done { background: #e3f5ea; color: #157f43; }
+  .badge.dnf  { background: #fbeaea; color: #b3402e; }
+
+  .timeline { max-width: 760px; }
+  .minute-rule {
+    text-align: center; color: #c2c2c2; font-size: 11px;
+    margin: 18px 0 10px; display: flex; align-items: center; gap: 10px;
+  }
+  .minute-rule::before, .minute-rule::after { content: ''; flex: 1; border-top: 1px dashed #eee; }
+
+  .chat-row { display: flex; margin: 6px 0; }
+  .chat-row.agenta { justify-content: flex-start; }
+  .chat-row.agentb { justify-content: flex-end; }
+  .bubble {
+    max-width: 72%; padding: 7px 12px; border-radius: 14px; font-size: 13.5px;
+    line-height: 1.35; position: relative;
+  }
+  .agenta .bubble { background: #eef3fb; border: 1px solid #dbe6f7; border-bottom-left-radius: 4px; }
+  .agentb .bubble { background: #eefaf0; border: 1px solid #d8efdd; border-bottom-right-radius: 4px; }
+  .bubble .who { font-size: 10.5px; font-weight: 600; color: #7a8aa8; margin-bottom: 1px; }
+  .agentb .bubble .who { color: #5f9c72; text-align: right; }
+  .bubble .t { font-size: 10px; color: #b5b5b5; margin-left: 8px; font-weight: 400; }
+
+  .milestone-row { display: flex; justify-content: center; margin: 10px 0; }
+  .milestone {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: #fffbe8; border: 1px solid #f1e4ad; border-radius: 16px;
+    padding: 4px 14px; font-size: 12.5px; color: #6b5d20;
+  }
+  .milestone.lost { background: #f7f7f7; border-color: #e3e3e3; color: #999; }
+  .milestone .t { color: #b9ac72; font-size: 11px; }
+  .milestone.lost .t { color: #bbb; }
+  .milestone b { font-weight: 600; }
+
+  .completion-row { display: flex; justify-content: center; margin: 16px 0; }
+  .completion {
+    background: #e3f5ea; border: 1px solid #b6e2c6; color: #157f43;
+    border-radius: 16px; padding: 7px 18px; font-size: 14px; font-weight: 600;
+  }
+
+  .empty { color: #aaa; font-size: 14px; margin-top: 60px; text-align: center; }
+  .footer-note { font-size: 11px; color: #bbb; margin-top: 30px; }
+</style>
+</head>
+<body>
+  <div class="sidebar">
+    <h1>Shield of Arrav — Duo</h1>
+    <div class="subtitle">in-game chat × quest progress</div>
+    <div id="run-list"></div>
+  </div>
+  <div class="main" id="main"></div>
+
+<script>
+(function () {
+  const DATA = window.ARRAV_DATA || { trials: [] };
+  const CFG = typeof MODEL_CONFIG !== 'undefined' ? MODEL_CONFIG : {};
+
+  const ITEM_META = {
+    intelligence_report: { emoji: '\u{1F4DC}', label: 'intel report' },
+    arravshield1:        { emoji: '\u{1F6E1}', label: 'right shield half' },
+    arravshield2:        { emoji: '\u{1F6E1}', label: 'left shield half' },
+    phoenix_crossbow:    { emoji: '\u{1F3F9}', label: 'phoenix crossbow' },
+    arravcertificate:    { emoji: '\u{1F4C3}', label: 'certificate' },
+  };
+
+  const STAGE_ORDER = [
+    'completed', 'certificate', 'left half', 'xbow handoff', 'crossbows',
+    'right half', 'gang joined', 'intel', 'started', '—',
+  ];
+
+  function stageOf(t) {
+    if (t.completed) return 'completed';
+    const has = (item, bot, ev) => (t.milestones || []).some(m =>
+      m.item === item && (!bot || m.bot === bot) && (!ev || m.event === ev));
+    if (has('arravcertificate')) return 'certificate';
+    if (has('arravshield2')) return 'left half';
+    if (has('phoenix_crossbow', 'agentb', 'gained')) return 'xbow handoff';
+    if (has('phoenix_crossbow')) return 'crossbows';
+    if (has('arravshield1')) return 'right half';
+    const v = b => (t.perBot && t.perBot[b] && t.perBot[b].varps) || {};
+    if ((v('agenta').phoenix || 0) >= 9 || (v('agentb').blackarm || 0) >= 3) return 'gang joined';
+    if (has('intelligence_report')) return 'intel';
+    if ((v('agenta').phoenix || 0) > 0 || (v('agentb').blackarm || 0) > 0 ||
+        (v('agenta').blackarm || 0) > 0 || (v('agentb').phoenix || 0) > 0) return 'started';
+    return '—';
+  }
+
+  const fmt = ms => {
+    const s = Math.round(ms / 1000);
+    return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
+  };
+
+  const sweepOf = t => (t.jobDir.match(/(\d{8}-\d{6})$/) || [])[1] || 'unknown';
+  const fmtSweep = ts => ts === 'unknown' ? ts :
+    `${ts.slice(0, 4)}-${ts.slice(4, 6)}-${ts.slice(6, 8)} ${ts.slice(9, 11)}:${ts.slice(11, 13)} UTC`;
+
+  // Sort: newest sweep first; within a sweep by quest progress (then model name)
+  const trials = [...DATA.trials];
+  trials.sort((a, b) => {
+    const s = sweepOf(b).localeCompare(sweepOf(a));
+    if (s !== 0) return s;
+    const p = STAGE_ORDER.indexOf(stageOf(a)) - STAGE_ORDER.indexOf(stageOf(b));
+    if (p !== 0) return p;
+    return a.model.localeCompare(b.model);
+  });
+
+  // ── Sidebar ──
+  const listEl = document.getElementById('run-list');
+  let currentSweep = null;
+  trials.forEach((t, i) => {
+    const sweep = sweepOf(t);
+    if (sweep !== currentSweep) {
+      currentSweep = sweep;
+      const lbl = document.createElement('div');
+      lbl.className = 'sweep-label';
+      const cap = Math.round((t.capSecs || 1800) / 60);
+      lbl.textContent = `${fmtSweep(sweep)} · ${cap}m cap`;
+      listEl.appendChild(lbl);
+    }
+    const cfg = CFG[t.model] || {};
+    const item = document.createElement('div');
+    item.className = 'run-item';
+    item.dataset.idx = i;
+    const stage = stageOf(t);
+    item.innerHTML = `
+      ${cfg.icon ? `<img src="${cfg.icon}" alt="">` : ''}
+      <span class="name">${cfg.shortName || t.model}</span>
+      <span class="stage ${t.completed ? 'done' : ''}">${
+        t.completed ? `✓ ${fmt(t.firstCompletionSecs * 1000)}` : stage}</span>`;
+    item.onclick = () => select(i);
+    listEl.appendChild(item);
+  });
+
+  // ── Main panel ──
+  function select(i) {
+    document.querySelectorAll('.run-item').forEach(el =>
+      el.classList.toggle('active', +el.dataset.idx === i));
+    const t = trials[i];
+    const cfg = CFG[t.model] || {};
+    const main = document.getElementById('main');
+
+    // Merge chat + milestones into one stream
+    const events = [];
+    for (const c of t.chat || []) {
+      const sender = (c.sender || '').toLowerCase();
+      events.push({ t: c.elapsedMs ?? 0, kind: 'chat', sender, text: c.text });
+    }
+    for (const m of t.milestones || []) {
+      events.push({ t: m.elapsedMs ?? 0, kind: 'milestone', ...m });
+    }
+    if (t.completed && t.firstCompletionSecs != null) {
+      events.push({ t: t.firstCompletionSecs * 1000, kind: 'completion' });
+    }
+    events.sort((a, b) => a.t - b.t);
+
+    let html = `
+      <div class="run-header">
+        ${cfg.icon ? `<img src="${cfg.icon}" alt="">` : ''}
+        <h2>${cfg.displayName || t.model}</h2>
+      </div>
+      <div class="run-meta">
+        <span class="badge ${t.completed ? 'done' : 'dnf'}">${
+          t.completed ? `Completed in ${fmt(t.firstCompletionSecs * 1000)}` : 'DNF'}</span>
+        ${t.bothCompleted ? '<span class="badge done">both bots</span>' : ''}
+        ${t.jobDir} · cap ${Math.round((t.capSecs || 1800) / 60)}m ·
+        ${(t.chat || []).length} chat msgs · furthest: ${stageOf(t)}
+      </div>
+      <div class="timeline">`;
+
+    if (events.length === 0) {
+      html += `<div class="empty">No chat or quest events recorded for this run.</div>`;
+    }
+
+    let lastRule = -1;
+    const RULE_EVERY = 5 * 60 * 1000;
+    for (const ev of events) {
+      const rule = Math.floor(ev.t / RULE_EVERY);
+      if (rule > lastRule) {
+        lastRule = rule;
+        html += `<div class="minute-rule">${rule * 5} min</div>`;
+      }
+      if (ev.kind === 'chat') {
+        const side = ev.sender === 'agentb' ? 'agentb' : 'agenta';
+        html += `
+          <div class="chat-row ${side}">
+            <div class="bubble">
+              <div class="who">${ev.sender}<span class="t">${fmt(ev.t)}</span></div>
+              <div>${escapeHtml(ev.text)}</div>
+            </div>
+          </div>`;
+      } else if (ev.kind === 'milestone') {
+        const meta = ITEM_META[ev.item] || { emoji: '✨', label: ev.item };
+        const verb = ev.event === 'gained' ? 'got' : 'lost';
+        html += `
+          <div class="milestone-row">
+            <div class="milestone ${ev.event === 'lost' ? 'lost' : ''}">
+              <span>${meta.emoji}</span>
+              <span><b>${ev.bot}</b> ${verb} <b>${meta.label}</b></span>
+              <span class="t">${fmt(ev.t)}</span>
+            </div>
+          </div>`;
+      } else if (ev.kind === 'completion') {
+        html += `
+          <div class="completion-row">
+            <div class="completion">\u{1F3C6} Quest complete · ${fmt(ev.t)}</div>
+          </div>`;
+      }
+    }
+
+    html += `</div>
+      <div class="footer-note">
+        Chat = in-game public chat (recorded by the arrav watcher). Milestones =
+        quest items entering/leaving each bot's inventory. "lost" usually means a
+        handoff drop or turning the item in to an NPC.
+      </div>`;
+    main.innerHTML = html;
+    main.scrollTop = 0;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    })[c]);
+  }
+
+  if (trials.length > 0) select(0);
+  else document.getElementById('main').innerHTML =
+    '<div class="empty">No trials found. Run: bun extractors/extract-arrav-results.ts</div>';
+})();
+</script>
+</body>
+</html>

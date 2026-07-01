@@ -1,0 +1,1382 @@
+[
+  {
+    "name": "bronze_dart_tip",
+    "id": 819,
+    "cost": 1,
+    "level": 4,
+    "method": "anvil",
+    "input": "bronze_bar",
+    "inputAmount": 1,
+    "productAmount": 10
+  },
+  {
+    "name": "bronze_arrowheads",
+    "id": 39,
+    "cost": 1,
+    "level": 5,
+    "method": "anvil",
+    "input": "bronze_bar",
+    "inputAmount": 1,
+    "productAmount": 15
+  },
+  {
+    "name": "bronze_knife",
+    "id": 864,
+    "cost": 1,
+    "level": 7,
+    "method": "anvil",
+    "input": "bronze_bar",
+    "inputAmount": 1,
+    "productAmount": 5
+  },
+  {
+    "name": "iron_arrowheads",
+    "id": 40,
+    "cost": 2,
+    "level": 20,
+    "method": "anvil",
+    "input": "iron_bar",
+    "inputAmount": 1,
+    "productAmount": 15
+  },
+  {
+    "name": "iron_dart_tip",
+    "id": 820,
+    "cost": 3,
+    "level": 19,
+    "method": "anvil",
+    "input": "iron_bar",
+    "inputAmount": 1,
+    "productAmount": 10
+  },
+  {
+    "name": "iron_knife",
+    "id": 863,
+    "cost": 3,
+    "level": 22,
+    "method": "anvil",
+    "input": "iron_bar",
+    "inputAmount": 1,
+    "productAmount": 5
+  },
+  {
+    "name": "nails",
+    "id": 1539,
+    "cost": 3,
+    "level": 34,
+    "method": "anvil",
+    "input": "steel_bar",
+    "inputAmount": 1,
+    "productAmount": 2
+  },
+  {
+    "name": "steel_dart_tip",
+    "id": 821,
+    "cost": 5,
+    "level": 34,
+    "method": "anvil",
+    "input": "steel_bar",
+    "inputAmount": 1,
+    "productAmount": 10
+  },
+  {
+    "name": "steel_arrowheads",
+    "id": 41,
+    "cost": 6,
+    "level": 35,
+    "method": "anvil",
+    "input": "steel_bar",
+    "inputAmount": 1,
+    "productAmount": 15
+  },
+  {
+    "name": "bronze_bar",
+    "id": 2349,
+    "cost": 8,
+    "level": 1,
+    "method": "furnace",
+    "input": "copper_ore",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "bronze_dagger",
+    "id": 1205,
+    "cost": 10,
+    "level": 1,
+    "method": "anvil",
+    "input": "bronze_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "steel_knife",
+    "id": 865,
+    "cost": 11,
+    "level": 37,
+    "method": "anvil",
+    "input": "steel_bar",
+    "inputAmount": 1,
+    "productAmount": 5
+  },
+  {
+    "name": "mithril_dart_tip",
+    "id": 822,
+    "cost": 12,
+    "level": 54,
+    "method": "anvil",
+    "input": "mithril_bar",
+    "inputAmount": 1,
+    "productAmount": 10
+  },
+  {
+    "name": "bronze_claws",
+    "id": 3095,
+    "cost": 15,
+    "level": 13,
+    "method": "anvil",
+    "input": "bronze_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "bronze_axe",
+    "id": 1351,
+    "cost": 16,
+    "level": 1,
+    "method": "anvil",
+    "input": "bronze_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "mithril_arrowheads",
+    "id": 42,
+    "cost": 16,
+    "level": 55,
+    "method": "anvil",
+    "input": "mithril_bar",
+    "inputAmount": 1,
+    "productAmount": 15
+  },
+  {
+    "name": "bronze_mace",
+    "id": 1422,
+    "cost": 18,
+    "level": 2,
+    "method": "anvil",
+    "input": "bronze_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "bronzecraftwire",
+    "id": 1794,
+    "cost": 20,
+    "level": 4,
+    "method": "anvil",
+    "input": "bronze_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "bronze_med_helm",
+    "id": 1139,
+    "cost": 24,
+    "level": 3,
+    "method": "anvil",
+    "input": "bronze_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "bronze_sword",
+    "id": 1277,
+    "cost": 26,
+    "level": 4,
+    "method": "anvil",
+    "input": "bronze_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "mithril_knife",
+    "id": 866,
+    "cost": 27,
+    "level": 57,
+    "method": "anvil",
+    "input": "mithril_bar",
+    "inputAmount": 1,
+    "productAmount": 5
+  },
+  {
+    "name": "iron_bar",
+    "id": 2351,
+    "cost": 28,
+    "level": 15,
+    "method": "furnace",
+    "input": "iron_ore",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "bronze_scimitar",
+    "id": 1321,
+    "cost": 32,
+    "level": 5,
+    "method": "anvil",
+    "input": "bronze_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "iron_dagger",
+    "id": 1203,
+    "cost": 35,
+    "level": 15,
+    "method": "anvil",
+    "input": "iron_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "adamant_dart_tip",
+    "id": 823,
+    "cost": 36,
+    "level": 74,
+    "method": "anvil",
+    "input": "adamantite_bar",
+    "inputAmount": 1,
+    "productAmount": 10
+  },
+  {
+    "name": "bronze_longsword",
+    "id": 1291,
+    "cost": 40,
+    "level": 6,
+    "method": "anvil",
+    "input": "bronze_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "adamant_arrowheads",
+    "id": 43,
+    "cost": 40,
+    "level": 75,
+    "method": "anvil",
+    "input": "adamantite_bar",
+    "inputAmount": 1,
+    "productAmount": 15
+  },
+  {
+    "name": "bronze_full_helm",
+    "id": 1155,
+    "cost": 44,
+    "level": 7,
+    "method": "anvil",
+    "input": "bronze_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "bronze_warhammer",
+    "id": 1337,
+    "cost": 47,
+    "level": 9,
+    "method": "anvil",
+    "input": "bronze_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "bronze_sq_shield",
+    "id": 1173,
+    "cost": 48,
+    "level": 8,
+    "method": "anvil",
+    "input": "bronze_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "iron_claws",
+    "id": 3096,
+    "cost": 50,
+    "level": 28,
+    "method": "anvil",
+    "input": "iron_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "bronze_battleaxe",
+    "id": 1375,
+    "cost": 52,
+    "level": 10,
+    "method": "anvil",
+    "input": "bronze_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "iron_axe",
+    "id": 1349,
+    "cost": 56,
+    "level": 16,
+    "method": "anvil",
+    "input": "iron_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "bronze_chainbody",
+    "id": 1103,
+    "cost": 60,
+    "level": 11,
+    "method": "anvil",
+    "input": "bronze_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "iron_mace",
+    "id": 1420,
+    "cost": 63,
+    "level": 17,
+    "method": "anvil",
+    "input": "iron_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "adamant_knife",
+    "id": 867,
+    "cost": 66,
+    "level": 77,
+    "method": "anvil",
+    "input": "adamantite_bar",
+    "inputAmount": 1,
+    "productAmount": 5
+  },
+  {
+    "name": "bronze_kiteshield",
+    "id": 1189,
+    "cost": 68,
+    "level": 12,
+    "method": "anvil",
+    "input": "bronze_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "bronze_2h_sword",
+    "id": 1307,
+    "cost": 80,
+    "level": 14,
+    "method": "anvil",
+    "input": "bronze_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "bronze_platelegs",
+    "id": 1075,
+    "cost": 80,
+    "level": 16,
+    "method": "anvil",
+    "input": "bronze_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "bronze_plateskirt",
+    "id": 1087,
+    "cost": 80,
+    "level": 16,
+    "method": "anvil",
+    "input": "bronze_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "iron_med_helm",
+    "id": 1137,
+    "cost": 84,
+    "level": 18,
+    "method": "anvil",
+    "input": "iron_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "iron_sword",
+    "id": 1279,
+    "cost": 91,
+    "level": 19,
+    "method": "anvil",
+    "input": "iron_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "steel_bar",
+    "id": 2353,
+    "cost": 100,
+    "level": 30,
+    "method": "furnace",
+    "input": "iron_ore",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "iron_scimitar",
+    "id": 1323,
+    "cost": 112,
+    "level": 20,
+    "method": "anvil",
+    "input": "iron_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "steel_dagger",
+    "id": 1207,
+    "cost": 125,
+    "level": 30,
+    "method": "anvil",
+    "input": "steel_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "iron_longsword",
+    "id": 1293,
+    "cost": 140,
+    "level": 21,
+    "method": "anvil",
+    "input": "iron_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "studs",
+    "id": 2370,
+    "cost": 150,
+    "level": 36,
+    "method": "anvil",
+    "input": "steel_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "silver_bar",
+    "id": 2355,
+    "cost": 150,
+    "level": 20,
+    "method": "furnace",
+    "input": "silver_ore",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "iron_full_helm",
+    "id": 1153,
+    "cost": 154,
+    "level": 22,
+    "method": "anvil",
+    "input": "iron_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "bronze_platebody",
+    "id": 1117,
+    "cost": 160,
+    "level": 18,
+    "method": "anvil",
+    "input": "bronze_bar",
+    "inputAmount": 5,
+    "productAmount": 1
+  },
+  {
+    "name": "rune_knife",
+    "id": 868,
+    "cost": 167,
+    "level": 92,
+    "method": "anvil",
+    "input": "runite_bar",
+    "inputAmount": 1,
+    "productAmount": 5
+  },
+  {
+    "name": "iron_sq_shield",
+    "id": 1175,
+    "cost": 168,
+    "level": 23,
+    "method": "anvil",
+    "input": "iron_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "iron_warhammer",
+    "id": 1335,
+    "cost": 173,
+    "level": 24,
+    "method": "anvil",
+    "input": "iron_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "rune_dart_tip",
+    "id": 824,
+    "cost": 175,
+    "level": 89,
+    "method": "anvil",
+    "input": "runite_bar",
+    "inputAmount": 1,
+    "productAmount": 10
+  },
+  {
+    "name": "steel_claws",
+    "id": 3097,
+    "cost": 175,
+    "level": 43,
+    "method": "anvil",
+    "input": "steel_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "iron_battleaxe",
+    "id": 1363,
+    "cost": 182,
+    "level": 25,
+    "method": "anvil",
+    "input": "iron_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "steel_axe",
+    "id": 1353,
+    "cost": 200,
+    "level": 31,
+    "method": "anvil",
+    "input": "steel_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "rune_arrowheads",
+    "id": 44,
+    "cost": 200,
+    "level": 90,
+    "method": "anvil",
+    "input": "runite_bar",
+    "inputAmount": 1,
+    "productAmount": 15
+  },
+  {
+    "name": "iron_chainbody",
+    "id": 1101,
+    "cost": 210,
+    "level": 26,
+    "method": "anvil",
+    "input": "iron_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "steel_mace",
+    "id": 1424,
+    "cost": 225,
+    "level": 32,
+    "method": "anvil",
+    "input": "steel_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "iron_kiteshield",
+    "id": 1191,
+    "cost": 238,
+    "level": 27,
+    "method": "anvil",
+    "input": "iron_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "iron_2h_sword",
+    "id": 1309,
+    "cost": 280,
+    "level": 29,
+    "method": "anvil",
+    "input": "iron_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "iron_platelegs",
+    "id": 1067,
+    "cost": 280,
+    "level": 31,
+    "method": "anvil",
+    "input": "iron_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "iron_plateskirt",
+    "id": 1081,
+    "cost": 280,
+    "level": 31,
+    "method": "anvil",
+    "input": "iron_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "steel_med_helm",
+    "id": 1141,
+    "cost": 300,
+    "level": 33,
+    "method": "anvil",
+    "input": "steel_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "gold_bar",
+    "id": 2357,
+    "cost": 300,
+    "level": 40,
+    "method": "furnace",
+    "input": "gold_ore",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "mithril_bar",
+    "id": 2359,
+    "cost": 300,
+    "level": 50,
+    "method": "furnace",
+    "input": "mithril_ore",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "perfect_gold_bar",
+    "id": 2365,
+    "cost": 300,
+    "level": 40,
+    "method": "furnace",
+    "input": "perfect_gold_ore",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "mithril_dagger",
+    "id": 1209,
+    "cost": 325,
+    "level": 50,
+    "method": "anvil",
+    "input": "mithril_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "steel_sword",
+    "id": 1281,
+    "cost": 325,
+    "level": 34,
+    "method": "anvil",
+    "input": "steel_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "steel_scimitar",
+    "id": 1325,
+    "cost": 400,
+    "level": 35,
+    "method": "anvil",
+    "input": "steel_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "mithril_claws",
+    "id": 3099,
+    "cost": 475,
+    "level": 63,
+    "method": "anvil",
+    "input": "mithril_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "steel_longsword",
+    "id": 1295,
+    "cost": 500,
+    "level": 36,
+    "method": "anvil",
+    "input": "steel_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "mithril_axe",
+    "id": 1355,
+    "cost": 520,
+    "level": 51,
+    "method": "anvil",
+    "input": "mithril_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "steel_full_helm",
+    "id": 1157,
+    "cost": 550,
+    "level": 37,
+    "method": "anvil",
+    "input": "steel_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "iron_platebody",
+    "id": 1115,
+    "cost": 560,
+    "level": 33,
+    "method": "anvil",
+    "input": "iron_bar",
+    "inputAmount": 5,
+    "productAmount": 1
+  },
+  {
+    "name": "mithril_mace",
+    "id": 1428,
+    "cost": 585,
+    "level": 52,
+    "method": "anvil",
+    "input": "mithril_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "steel_sq_shield",
+    "id": 1177,
+    "cost": 600,
+    "level": 38,
+    "method": "anvil",
+    "input": "steel_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "steel_warhammer",
+    "id": 1339,
+    "cost": 640,
+    "level": 39,
+    "method": "anvil",
+    "input": "steel_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "adamantite_bar",
+    "id": 2361,
+    "cost": 640,
+    "level": 70,
+    "method": "furnace",
+    "input": "adamantite_ore",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "steel_battleaxe",
+    "id": 1365,
+    "cost": 650,
+    "level": 40,
+    "method": "anvil",
+    "input": "steel_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "steel_chainbody",
+    "id": 1105,
+    "cost": 750,
+    "level": 41,
+    "method": "anvil",
+    "input": "steel_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "mithril_med_helm",
+    "id": 1143,
+    "cost": 780,
+    "level": 53,
+    "method": "anvil",
+    "input": "mithril_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "adamant_dagger",
+    "id": 1211,
+    "cost": 800,
+    "level": 70,
+    "method": "anvil",
+    "input": "adamantite_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "mithril_sword",
+    "id": 1285,
+    "cost": 845,
+    "level": 54,
+    "method": "anvil",
+    "input": "mithril_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "steel_kiteshield",
+    "id": 1193,
+    "cost": 850,
+    "level": 42,
+    "method": "anvil",
+    "input": "steel_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "steel_2h_sword",
+    "id": 1311,
+    "cost": 1000,
+    "level": 44,
+    "method": "anvil",
+    "input": "steel_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "steel_platelegs",
+    "id": 1069,
+    "cost": 1000,
+    "level": 46,
+    "method": "anvil",
+    "input": "steel_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "steel_plateskirt",
+    "id": 1083,
+    "cost": 1000,
+    "level": 46,
+    "method": "anvil",
+    "input": "steel_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "mithril_scimitar",
+    "id": 1329,
+    "cost": 1040,
+    "level": 55,
+    "method": "anvil",
+    "input": "mithril_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "adamant_claws",
+    "id": 3100,
+    "cost": 1200,
+    "level": 83,
+    "method": "anvil",
+    "input": "adamantite_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "adamant_axe",
+    "id": 1357,
+    "cost": 1280,
+    "level": 71,
+    "method": "anvil",
+    "input": "adamantite_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "mithril_longsword",
+    "id": 1299,
+    "cost": 1300,
+    "level": 56,
+    "method": "anvil",
+    "input": "mithril_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "mithril_full_helm",
+    "id": 1159,
+    "cost": 1430,
+    "level": 57,
+    "method": "anvil",
+    "input": "mithril_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "adamant_mace",
+    "id": 1430,
+    "cost": 1440,
+    "level": 72,
+    "method": "anvil",
+    "input": "adamantite_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "mithril_sq_shield",
+    "id": 1181,
+    "cost": 1560,
+    "level": 58,
+    "method": "anvil",
+    "input": "mithril_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "mithril_warhammer",
+    "id": 1343,
+    "cost": 1660,
+    "level": 59,
+    "method": "anvil",
+    "input": "mithril_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "mithril_battleaxe",
+    "id": 1369,
+    "cost": 1690,
+    "level": 60,
+    "method": "anvil",
+    "input": "mithril_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "adamant_med_helm",
+    "id": 1145,
+    "cost": 1920,
+    "level": 73,
+    "method": "anvil",
+    "input": "adamantite_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "mithril_chainbody",
+    "id": 1109,
+    "cost": 1950,
+    "level": 61,
+    "method": "anvil",
+    "input": "mithril_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "steel_platebody",
+    "id": 1119,
+    "cost": 2000,
+    "level": 48,
+    "method": "anvil",
+    "input": "steel_bar",
+    "inputAmount": 5,
+    "productAmount": 1
+  },
+  {
+    "name": "adamant_sword",
+    "id": 1287,
+    "cost": 2080,
+    "level": 74,
+    "method": "anvil",
+    "input": "adamantite_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "mithril_kiteshield",
+    "id": 1197,
+    "cost": 2210,
+    "level": 62,
+    "method": "anvil",
+    "input": "mithril_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "adamant_scimitar",
+    "id": 1331,
+    "cost": 2560,
+    "level": 75,
+    "method": "anvil",
+    "input": "adamantite_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "mithril_2h_sword",
+    "id": 1315,
+    "cost": 2600,
+    "level": 64,
+    "method": "anvil",
+    "input": "mithril_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "mithril_platelegs",
+    "id": 1071,
+    "cost": 2600,
+    "level": 66,
+    "method": "anvil",
+    "input": "mithril_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "mithril_plateskirt",
+    "id": 1085,
+    "cost": 2600,
+    "level": 66,
+    "method": "anvil",
+    "input": "mithril_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "adamant_longsword",
+    "id": 1301,
+    "cost": 3200,
+    "level": 76,
+    "method": "anvil",
+    "input": "adamantite_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "adamant_full_helm",
+    "id": 1161,
+    "cost": 3520,
+    "level": 77,
+    "method": "anvil",
+    "input": "adamantite_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "adamant_sq_shield",
+    "id": 1183,
+    "cost": 3840,
+    "level": 78,
+    "method": "anvil",
+    "input": "adamantite_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "adamnt_warhammer",
+    "id": 1345,
+    "cost": 4120,
+    "level": 79,
+    "method": "anvil",
+    "input": "adamantite_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "adamant_battleaxe",
+    "id": 1371,
+    "cost": 4160,
+    "level": 80,
+    "method": "anvil",
+    "input": "adamantite_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "adamant_chainbody",
+    "id": 1111,
+    "cost": 4800,
+    "level": 81,
+    "method": "anvil",
+    "input": "adamantite_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "runite_bar",
+    "id": 2363,
+    "cost": 5000,
+    "level": 85,
+    "method": "furnace",
+    "input": "runite_ore",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "mithril_platebody",
+    "id": 1121,
+    "cost": 5200,
+    "level": 68,
+    "method": "anvil",
+    "input": "mithril_bar",
+    "inputAmount": 5,
+    "productAmount": 1
+  },
+  {
+    "name": "adamant_kiteshield",
+    "id": 1199,
+    "cost": 5440,
+    "level": 82,
+    "method": "anvil",
+    "input": "adamantite_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "adamant_2h_sword",
+    "id": 1317,
+    "cost": 6400,
+    "level": 84,
+    "method": "anvil",
+    "input": "adamantite_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "adamant_platelegs",
+    "id": 1073,
+    "cost": 6400,
+    "level": 86,
+    "method": "anvil",
+    "input": "adamantite_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "adamant_plateskirt",
+    "id": 1091,
+    "cost": 6400,
+    "level": 86,
+    "method": "anvil",
+    "input": "adamantite_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "rune_dagger",
+    "id": 1213,
+    "cost": 8000,
+    "level": 85,
+    "method": "anvil",
+    "input": "runite_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "rune_claws",
+    "id": 3101,
+    "cost": 12000,
+    "level": 98,
+    "method": "anvil",
+    "input": "runite_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "rune_axe",
+    "id": 1359,
+    "cost": 12800,
+    "level": 86,
+    "method": "anvil",
+    "input": "runite_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "adamant_platebody",
+    "id": 1123,
+    "cost": 12800,
+    "level": 88,
+    "method": "anvil",
+    "input": "adamantite_bar",
+    "inputAmount": 5,
+    "productAmount": 1
+  },
+  {
+    "name": "rune_mace",
+    "id": 1432,
+    "cost": 14400,
+    "level": 87,
+    "method": "anvil",
+    "input": "runite_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "rune_med_helm",
+    "id": 1147,
+    "cost": 19200,
+    "level": 88,
+    "method": "anvil",
+    "input": "runite_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "rune_sword",
+    "id": 1289,
+    "cost": 20800,
+    "level": 89,
+    "method": "anvil",
+    "input": "runite_bar",
+    "inputAmount": 1,
+    "productAmount": 1
+  },
+  {
+    "name": "rune_scimitar",
+    "id": 1333,
+    "cost": 25600,
+    "level": 90,
+    "method": "anvil",
+    "input": "runite_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "rune_longsword",
+    "id": 1303,
+    "cost": 32000,
+    "level": 91,
+    "method": "anvil",
+    "input": "runite_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "rune_full_helm",
+    "id": 1163,
+    "cost": 35200,
+    "level": 92,
+    "method": "anvil",
+    "input": "runite_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "rune_sq_shield",
+    "id": 1185,
+    "cost": 38400,
+    "level": 93,
+    "method": "anvil",
+    "input": "runite_bar",
+    "inputAmount": 2,
+    "productAmount": 1
+  },
+  {
+    "name": "rune_warhammer",
+    "id": 1347,
+    "cost": 41500,
+    "level": 94,
+    "method": "anvil",
+    "input": "runite_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "rune_battleaxe",
+    "id": 1373,
+    "cost": 41600,
+    "level": 95,
+    "method": "anvil",
+    "input": "runite_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "rune_chainbody",
+    "id": 1113,
+    "cost": 50000,
+    "level": 96,
+    "method": "anvil",
+    "input": "runite_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "rune_kiteshield",
+    "id": 1201,
+    "cost": 54400,
+    "level": 97,
+    "method": "anvil",
+    "input": "runite_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "rune_2h_sword",
+    "id": 1319,
+    "cost": 64000,
+    "level": 99,
+    "method": "anvil",
+    "input": "runite_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "rune_platelegs",
+    "id": 1079,
+    "cost": 64000,
+    "level": 99,
+    "method": "anvil",
+    "input": "runite_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "rune_plateskirt",
+    "id": 1093,
+    "cost": 64000,
+    "level": 99,
+    "method": "anvil",
+    "input": "runite_bar",
+    "inputAmount": 3,
+    "productAmount": 1
+  },
+  {
+    "name": "rune_platebody",
+    "id": 1127,
+    "cost": 65000,
+    "level": 99,
+    "method": "anvil",
+    "input": "runite_bar",
+    "inputAmount": 5,
+    "productAmount": 1
+  }
+]
