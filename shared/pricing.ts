@@ -58,6 +58,14 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   gpt54mini:    { input: 0.75e-6, cachedInput: 0.075e-6, cacheWrite: 0.75e-6,  output: 4.5e-6 },
   gpt54nano:    { input: 0.2e-6,  cachedInput: 0.02e-6,  cacheWrite: 0.2e-6,   output: 1.25e-6 },
   gpt55:        { input: 5e-6,    cachedInput: 0.5e-6,   cacheWrite: 5e-6,     output: 30e-6 },
+  // gpt-5.6 family, released 2026-07-09. Sol matches gpt-5.5's $5/$30 rate card;
+  // Luna is the new $1/$6 tier. 5.6 introduces a 1.25× cache-write premium
+  // (inert unless usage reports a write bucket). xhigh variants share the base
+  // rate card — higher effort just emits more reasoning tokens (billed as output).
+  gpt56:        { input: 5e-6,    cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,  output: 30e-6 },
+  'gpt56-xhigh': { input: 5e-6,   cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,  output: 30e-6 },
+  gpt56luna:    { input: 1e-6,    cachedInput: 0.1e-6,   cacheWrite: 1.25e-6,  output: 6e-6 },
+  'gpt56luna-xhigh': { input: 1e-6, cachedInput: 0.1e-6, cacheWrite: 1.25e-6,  output: 6e-6 },
   gemini:       { input: 2e-6,    cachedInput: 0.2e-6,   cacheWrite: 2e-6,     output: 12e-6 },
   gemini31:     { input: 2e-6,    cachedInput: 0.2e-6,   cacheWrite: 2e-6,     output: 12e-6 },
   geminiflash:  { input: 0.5e-6,  cachedInput: 0.05e-6,  cacheWrite: 0.5e-6,   output: 3e-6 },
@@ -76,6 +84,13 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   deepseek:     { input: 0.435e-6,  cachedInput: 0.003625e-6, cacheWrite: 0.435e-6, output: 0.87e-6 }, // deepseek-v4-pro
   kimi26:       { input: 0.68e-6,   cachedInput: 0.34e-6,  cacheWrite: 0.68e-6,   output: 3.41e-6 },
   kimi27:       { input: 0.75e-6,   cachedInput: 0.16e-6,  cacheWrite: 0.75e-6,   output: 3.5e-6 }, // kimi-k2.7-code, OpenRouter 2026-06-14
+  // x-ai/grok-4.5, OpenRouter 2026-07-09. ≤200k-context rates; xAI doubles
+  // rates past 200k input but our runs stay well under that.
+  grok45:       { input: 2e-6,      cachedInput: 0.5e-6,   cacheWrite: 2e-6,      output: 6e-6 },
+  // Same rate card — xhigh effort just emits more reasoning tokens (billed as output).
+  'grok45-xhigh': { input: 2e-6,    cachedInput: 0.5e-6,   cacheWrite: 2e-6,      output: 6e-6 },
+  // x-ai/grok-4.3, OpenRouter/models.dev 2026-07-09. ≤200k-context rates (2× past 200k).
+  grok43:       { input: 1.25e-6,   cachedInput: 0.2e-6,   cacheWrite: 1.25e-6,   output: 2.5e-6 },
 };
 
 /** By Harbor model ID (provider/name). Aliased to MODEL_PRICING entries. */
@@ -97,6 +112,9 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'openai/gpt-5.4-mini':               'gpt54mini',
   'openai/gpt-5.4-nano':               'gpt54nano',
   'openai/gpt-5.5':                    'gpt55',
+  'openai/gpt-5.6-sol':                'gpt56',
+  'openai/gpt-5.6':                    'gpt56', // alias — routes to Sol
+  'openai/gpt-5.6-luna':               'gpt56luna',
   'google/gemini-3-pro-preview':       'gemini',
   'google/gemini-3.1-pro-preview':     'gemini31',
   'google/gemini-3-flash-preview':     'geminiflash',
@@ -114,6 +132,8 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'openrouter/deepseek/deepseek-v4-pro': 'deepseek',
   'openrouter/moonshotai/kimi-k2.6':   'kimi26',
   'openrouter/moonshotai/kimi-k2.7-code': 'kimi27',
+  'openrouter/x-ai/grok-4.5':          'grok45',
+  'openrouter/x-ai/grok-4.3':          'grok43',
 };
 
 /** Look up pricing by either internal label or Harbor model ID. */
