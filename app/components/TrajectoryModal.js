@@ -30,6 +30,35 @@ function formatTimestamp(seconds) {
   return m + ':' + String(s).padStart(2, '0');
 }
 
+function trajectoryUrl(model, skill, seconds) {
+  const base = window.location.href.split('#')[0];
+  const ts = seconds == null || isNaN(seconds) ? '' : '@' + Math.round(seconds);
+  return base + '#/trajectory/' + model + '/' + skill + ts;
+}
+
+async function copyText(text) {
+  let clipboardError = null;
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return;
+    } catch (err) {
+      clipboardError = err;
+    }
+  }
+
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'fixed';
+  textarea.style.left = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.select();
+  const copied = document.execCommand('copy');
+  document.body.removeChild(textarea);
+  if (!copied) throw clipboardError || new Error('Copy command was not accepted');
+}
+
 function findSkillLevel(sample, skillKey) {
   if (!sample?.skills) return 1;
   const skillName = SKILL_DISPLAY[skillKey] || skillKey;
@@ -261,6 +290,7 @@ export function TrajectoryModal({ model, skill, data, seekTs }) {
   }, [data, model, skill, modelsForSkill, skillsForModel]);
 
   const [videoOffset, setVideoOffset] = useState(0);
+  const [copiedTs, setCopiedTs] = useState(null);
 
   const containerRef = useRef(null);
   const videoRef = useRef(null);
@@ -321,12 +351,29 @@ export function TrajectoryModal({ model, skill, data, seekTs }) {
   const handleStepClick = useCallback((e) => {
     if (e.target.closest('.traj-tool-code')) return;
     if (e.target.closest('.traj-tool-detail-header')) return;
+    if (e.target.closest('[data-copy-ts]')) return;
     const target = e.target.closest('[data-ts]');
     if (!target) return;
     const ts = parseFloat(target.dataset.ts);
     if (isNaN(ts)) return;
     seekVideo(ts);
   }, [seekVideo]);
+
+  const handleCopyLink = useCallback(async (e) => {
+    const target = e.target.closest('[data-copy-ts]');
+    if (!target) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const ts = parseFloat(target.dataset.copyTs);
+    const copyKey = Math.round(ts);
+    try {
+      await copyText(trajectoryUrl(model, skill, ts));
+      setCopiedTs(copyKey);
+      window.setTimeout(() => setCopiedTs(curr => curr === copyKey ? null : curr), 1400);
+    } catch (err) {
+      console.warn('Could not copy trajectory link', err);
+    }
+  }, [model, skill]);
 
   // Handle hover on transcript step → show ghost playhead on charts
   const handleStepHover = useCallback((e) => {
@@ -976,6 +1023,14 @@ export function TrajectoryModal({ model, skill, data, seekTs }) {
                         <div key=${i} className="traj-step agent" data-ts=${step.ts != null ? String(step.ts) : undefined}>
                           ${step.ts != null && html`
                             <span className="traj-timestamp">${formatTimestamp(step.ts)}</span>
+                            <button
+                              type="button"
+                              className="traj-copy-link"
+                              title="Copy link to this moment"
+                              aria-label="Copy link to this moment"
+                              data-copy-ts=${String(step.ts)}
+                              onClick=${handleCopyLink}
+                            >${copiedTs === Math.round(step.ts) ? 'copied' : 'link'}</button>
                           `}
                           ${step.text}
                         </div>
@@ -984,6 +1039,16 @@ export function TrajectoryModal({ model, skill, data, seekTs }) {
                     if (step.type === 'tool-group') {
                       return html`
                         <div key=${i} className="traj-tool-group" data-ts=${step.ts != null ? String(step.ts) : undefined}>
+                          ${step.ts != null && html`
+                            <button
+                              type="button"
+                              className="traj-copy-link"
+                              title="Copy link to this moment"
+                              aria-label="Copy link to this moment"
+                              data-copy-ts=${String(step.ts)}
+                              onClick=${handleCopyLink}
+                            >${copiedTs === Math.round(step.ts) ? 'copied' : 'link'}</button>
+                          `}
                           ${step.tools.map((t, j) => html`
                             <span key=${j} className="traj-tool-chip">${t}</span>
                           `)}
@@ -992,7 +1057,17 @@ export function TrajectoryModal({ model, skill, data, seekTs }) {
                     }
                     if (step.type === 'tool-detail') {
                       return html`
-                        <div key=${i} data-ts=${step.ts != null ? String(step.ts) : undefined}>
+                        <div key=${i} className="traj-tool-detail-row" data-ts=${step.ts != null ? String(step.ts) : undefined}>
+                          ${step.ts != null && html`
+                            <button
+                              type="button"
+                              className="traj-copy-link"
+                              title="Copy link to this moment"
+                              aria-label="Copy link to this moment"
+                              data-copy-ts=${String(step.ts)}
+                              onClick=${handleCopyLink}
+                            >${copiedTs === Math.round(step.ts) ? 'copied' : 'link'}</button>
+                          `}
                           <${ToolDetail} label=${step.label} detail=${step.detail} />
                         </div>
                       `;
