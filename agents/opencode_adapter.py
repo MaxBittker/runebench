@@ -17,6 +17,7 @@ Subclasses only need to override:
 import json
 import logging
 import os
+import re
 import shlex
 import uuid
 from datetime import datetime, timezone
@@ -265,8 +266,10 @@ class OpenCodeAdapter(BaseInstalledAgent):
             "keep grinding. " + instruction
         )
 
-        # Variable prefix for the restart loop (bash-identifier-safe)
-        vp = prefix.upper().replace("-", "_")
+        # Variable prefix for the restart loop (bash-identifier-safe).
+        # Sanitize ALL non-alphanumerics: a hyphen or dot (e.g. "grok45-xhigh")
+        # would make invalid shell variable names and silently break the loop.
+        vp = re.sub(r"[^A-Za-z0-9_]", "_", prefix.upper())
 
         bash_timeout_expr = f"{vp}_TIMEOUT=${{{vp}_TIMEOUT:-{bash_timeout}}}; "
 

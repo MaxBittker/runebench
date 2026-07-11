@@ -345,6 +345,19 @@ async function processVideo(video: VideoEntry): Promise<void> {
     return;
   }
 
+  // Integrity check: fully decode the encoded file and fail on any stream
+  // error. Concurrent batch encodes have produced files with corrupt NAL
+  // units that upload fine but don't play — catch them before upload.
+  const integrity = await run([
+    "ffmpeg", "-v", "error", "-xerror", "-i", tmpFile, "-f", "null", "-",
+  ]);
+  if (!integrity.ok || integrity.stderr.trim()) {
+    console.error(`  FAIL integrity (corrupt encode): ${label}`);
+    failed++;
+    done++;
+    return;
+  }
+
   // Check if the video is mostly black (sample a frame from 25% in)
   const blackCheck = await run([
     "ffmpeg", "-i", tmpFile, "-vf", "select=eq(n\\,30),signalstats", "-frames:v", "1", "-f", "null", "-",
@@ -358,14 +371,20 @@ async function processVideo(video: VideoEntry): Promise<void> {
     return;
   }
 
-  // Upload to R2
-  const uploadResult = await run(
-    ["wrangler", "r2", "object", "put", `${R2_BUCKET}/${r2Key}`, "--file", tmpFile, "--content-type", "video/mp4"],
-    { CLOUDFLARE_ACCOUNT_ID: CF_ACCOUNT_ID },
-  );
+  // Upload to R2 — retry a few times; wrangler intermittently dies with
+  // "fetch failed" on large concurrent uploads.
+  let uploadResult: Awaited<ReturnType<typeof run>> | undefined;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    uploadResult = await run(
+      ["wrangler", "r2", "object", "put", `${R2_BUCKET}/${r2Key}`, "--file", tmpFile, "--content-type", "video/mp4"],
+      { CLOUDFLARE_ACCOUNT_ID: CF_ACCOUNT_ID },
+    );
+    if (uploadResult.ok) break;
+    if (attempt < 3) await new Promise(r => setTimeout(r, 2000 * attempt));
+  }
 
-  if (!uploadResult.ok) {
-    console.error(`  FAIL upload: ${label}`);
+  if (!uploadResult!.ok) {
+    console.error(`  FAIL upload: ${label} — ${uploadResult!.stderr.trim().split("\n").pop()}`);
     failed++;
     done++;
     return;

@@ -28,7 +28,7 @@ import {
 const JOBS_DIR = join(import.meta.dir, '..', 'jobs');
 const RESULTS_ROOT = join(import.meta.dir, '..', 'results');
 
-const KNOWN_MODELS = ['fable-5-xhigh', 'fable-5', 'opus48-max', 'opus48', 'opus47-xhigh', 'opus47', 'opus', 'opus45', 'sonnet5-xhigh', 'sonnet5', 'sonnet46', 'sonnet45', 'haiku', 'codex53', 'gpt55-apikey', 'gpt55', 'gpt54mini', 'gpt54nano', 'gpt54', 'gemini31', 'gemini35flash-high', 'gemini35flash', 'geminiflash', 'gemini', 'glm52', 'glm', 'kimi27', 'kimi26', 'kimi', 'deepseek', 'qwen37max', 'qwen3max', 'qwen35'];
+const KNOWN_MODELS = ['fable-5-xhigh', 'fable-5', 'opus48-max', 'opus48', 'opus47-xhigh', 'opus47', 'opus', 'opus45', 'sonnet5-xhigh', 'sonnet5', 'sonnet46', 'sonnet45', 'haiku', 'codex53', 'gpt56luna-xhigh', 'gpt56luna', 'gpt56-xhigh', 'gpt56', 'gpt55-apikey', 'gpt55', 'gpt54mini', 'gpt54nano', 'gpt54', 'gemini31', 'gemini35flash-high', 'gemini35flash', 'geminiflash', 'gemini', 'glm52', 'glm', 'kimi27', 'kimi26', 'kimi', 'deepseek', 'qwen37max', 'qwen3max', 'qwen35', 'grok45-xhigh', 'grok45', 'grok43'];
 
 const KNOWN_SKILLS = [
   'attack', 'defence', 'strength', 'hitpoints', 'ranged', 'prayer', 'magic',
@@ -128,11 +128,13 @@ function truncateLines(text: string, maxLines: number, maxChars: number): string
 function extractToolStep(toolCall: any, ts?: number): TrajectoryStep | null {
   const toolName = toolCall?.function_name || 'unknown';
   const args = toolCall?.arguments || {};
+  // OpenCode records lowercase tool names (bash/read/write); Claude capitalizes.
+  const toolLower = toolName.toLowerCase();
 
   let text = toolName;
   let detail: string | undefined;
 
-  if (toolName === 'Bash' || toolName === 'run_shell_command' || toolName === 'exec_command') {
+  if (toolLower === 'bash' || toolName === 'run_shell_command' || toolName === 'exec_command') {
     const cmd: string = args.command || args.cmd || '';
     // Detect heredoc file writes: cat << 'EOF' > filename.ts
     const heredocMatch = cmd.match(/^cat\s+<<\s*'?EOF'?\s*>\s*(.+)/);
@@ -148,22 +150,28 @@ function extractToolStep(toolCall: any, ts?: number): TrajectoryStep | null {
     } else {
       text = `bash: ${cmd.slice(0, 300)}`;
     }
+  } else if (toolName.endsWith('execute_code')) {
+    // rs-agent MCP tool — the bot-control code is the interesting part
+    const code: string = args.code || '';
+    const firstLine = code.split('\n')[0] || '';
+    text = `execute_code: ${firstLine.slice(0, 120)}`;
+    if (code) detail = truncateLines(code, 25, 2000);
   } else if (toolName === 'write_stdin') {
     const chars: string = args.chars || '';
     if (!chars) return null; // skip empty stdin polls (just waiting for output)
     // Show control characters readably
     const display = chars.replace(/\x03/g, '^C').replace(/\x04/g, '^D').replace(/\r/g, '\\r').replace(/\n/g, '\\n');
     text = `stdin: ${display.slice(0, 300)}`;
-  } else if (toolName === 'Write' || toolName === 'write_file') {
-    text = `write: ${args.file_path || args.path || ''}`;
+  } else if (toolLower === 'write' || toolName === 'write_file') {
+    text = `write: ${args.file_path || args.filePath || args.path || ''}`;
     const content = args.content || '';
     if (content) detail = truncateLines(content, 25, 2000);
-  } else if (toolName === 'Edit') {
-    text = `edit: ${args.file_path || ''}`;
-    const newStr = args.new_string || '';
+  } else if (toolLower === 'edit') {
+    text = `edit: ${args.file_path || args.filePath || ''}`;
+    const newStr = args.new_string || args.newString || '';
     if (newStr) detail = truncateLines(newStr, 25, 2000);
-  } else if (toolName === 'Read' || toolName === 'read_file') {
-    text = `read: ${args.file_path || args.path || ''}`;
+  } else if (toolLower === 'read' || toolName === 'read_file') {
+    text = `read: ${args.file_path || args.filePath || args.path || ''}`;
   }
 
   return { source: 'tool', text, ...(ts !== undefined ? { ts } : {}), ...(detail ? { detail } : {}) };
@@ -188,7 +196,10 @@ function parseClaudeTrajectory(traj: any): { steps: TrajectoryStep[]; firstStepA
     const src = step.source;
     if (src !== 'agent') continue;
 
-    const msg: string = step.message || '';
+    // Harbor writes a literal "(no text)" placeholder when the model emitted
+    // no narration — treat it as empty rather than showing it as agent text.
+    const rawMsg: string = step.message || '';
+    const msg = rawMsg === '(no text)' ? '' : rawMsg;
     const toolCalls: any[] = step.tool_calls || [];
 
     // Skip steps with no message and no tool calls

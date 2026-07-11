@@ -140,6 +140,14 @@ bun extractors/extract-arrav-results.ts              # arrav duo: completion tim
 2. If it's a new provider prefix, add a credential case to `configure_model_env`
 3. Add pricing to `shared/pricing.ts` and a display label to the extractors
 
+## Local harbor patches
+
+The run scripts depend on two local modifications to the machine-global harbor
+install (`sandbox_region` support + bounded artifact transfers in `modal.py`;
+`xhigh`/`max` effort enum in `claude_code.py`). They live in site-packages and
+are **lost on every `uv tool upgrade harbor`** — re-apply from
+`patches/harbor-local.patch` (see `patches/README.md`).
+
 ## Docker image
 
 The Docker setup is split into two images to keep Modal pulls fast:

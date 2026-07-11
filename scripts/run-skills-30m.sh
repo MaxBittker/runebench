@@ -30,6 +30,10 @@ codex|openai/gpt-5.4|gpt54
 codex|openai/gpt-5.4-mini|gpt54mini
 codex|openai/gpt-5.4-nano|gpt54nano
 codex|openai/gpt-5.5|gpt55
+codex|openai/gpt-5.6-sol|gpt56
+codex|openai/gpt-5.6-sol|gpt56-xhigh
+codex|openai/gpt-5.6-luna|gpt56luna
+codex|openai/gpt-5.6-luna|gpt56luna-xhigh
 gemini-cli|google/gemini-3-pro-preview|gemini
 gemini-cli|google/gemini-3.1-pro-preview|gemini31
 gemini-cli|google/gemini-3-flash-preview|geminiflash
@@ -44,6 +48,9 @@ qwen37max-opencode|openrouter/qwen/qwen3.7-max|qwen37max
 deepseek-opencode|openrouter/deepseek/deepseek-v4-pro|deepseek
 kimi26-opencode|openrouter/moonshotai/kimi-k2.6|kimi26
 kimi27-opencode|openrouter/moonshotai/kimi-k2.7-code|kimi27
+grok45-opencode|openrouter/x-ai/grok-4.5|grok45
+grok45-xhigh-opencode|openrouter/x-ai/grok-4.5|grok45-xhigh
+grok43-opencode|openrouter/x-ai/grok-4.3|grok43
 
 "
 
@@ -64,7 +71,7 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
       echo "Usage: run-skills-30m.sh [-m model] [-s skill] [-k trials]"
       echo ""
-      echo "Models: opus47, opus, opus45, sonnet5, sonnet46, sonnet45, haiku, codex, codex53, gpt55, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, gemini35flash, gemini35flash-high, glm, kimi, qwen35 (default: all)"
+      echo "Models: opus47, opus, opus45, sonnet5, sonnet46, sonnet45, haiku, codex, codex53, gpt55, gpt56, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, gemini35flash, gemini35flash-high, glm, kimi, qwen35 (default: all)"
       echo "Skills: attack, defence, strength, hitpoints, ranged, prayer, magic,"
       echo "        woodcutting, fishing, mining, cooking, fletching, crafting,"
       echo "        smithing, firemaking, thieving (default: all sixteen)"
@@ -100,7 +107,7 @@ TOTAL_FAILED=0
 for model_name in $SELECTED_MODELS; do
   entry=$(lookup_model "$model_name" "$ALL_MODELS")
   if [ -z "$entry" ]; then
-    echo "Unknown model: $model_name (available: opus, opus45, sonnet46, sonnet45, haiku, codex, codex53, gpt55, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, gemini35flash, gemini35flash-high, glm, kimi, qwen35)"
+    echo "Unknown model: $model_name (available: opus, opus45, sonnet46, sonnet45, haiku, codex, codex53, gpt55, gpt56, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, gemini35flash, gemini35flash-high, glm, kimi, qwen35)"
     exit 1
   fi
 
@@ -122,11 +129,20 @@ for model_name in $SELECTED_MODELS; do
   #   - For opencode agents: sets the bash loop timeout (game time)
   #   - For codex: sets the Modal exec timeout (must be < harbor's 1920s agent timeout)
   case "$model_name" in
-    codex|codex53|gpt55|gpt54|gpt54mini|gpt54nano)
+    codex|codex53|gpt55|gpt56|gpt56luna|gpt54|gpt54mini|gpt54nano)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900"
+      ;;
+    gpt56-xhigh|gpt56luna-xhigh)
+      MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900 --ak reasoning_effort=xhigh"
       ;;
     glm|glm52|kimi|kimi26|kimi27|qwen35|qwen3max|qwen37max|deepseek)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1800"
+      ;;
+    grok45|grok45-xhigh|grok43)
+      # xAI blocks grok models for EU-origin requests (403 "not available in
+      # your region") — pin the Modal sandbox to a US region so OpenRouter sees
+      # a US client. Requires the sandbox_region patch in harbor's modal.py.
+      MODEL_EXTRA_ARGS="--ak run_timeout_sec=1800 --ek sandbox_region=us-east"
       ;;
     gemini|gemini31|geminiflash|gemini35flash|gemini35flash-high)
       # gemini-cli ≥0.39 switched session storage from session-*.json to

@@ -26,6 +26,10 @@ const MODEL_CONFIG = {
   'haiku':    { displayName: 'Claude Haiku 4.5',   shortName: 'Haiku 4.5',  color: '#e06090', order: 7, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2025-10-15' },
   'codex':    { displayName: 'Codex CLI 5.2',       shortName: 'Codex 5.2', color: '#10a37f', order: 8, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2025-12-11' },
   'codex53':  { displayName: 'Codex CLI 5.3',       shortName: 'Codex 5.3', color: '#0d8c6b', order: 9, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-02-05' },
+  'gpt56':    { displayName: 'GPT-5.6 Sol',          shortName: 'GPT-5.6 Sol', color: '#044f36', order: 9.4, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-07-09' },
+  'gpt56-xhigh': { displayName: 'GPT-5.6 Sol xhigh', shortName: 'GPT-5.6 Sol xh', color: '#022c1e', order: 9.42, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-07-09' },
+  'gpt56luna': { displayName: 'GPT-5.6 Luna',        shortName: 'GPT-5.6 Luna', color: '#12a56f', order: 9.44, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-07-09' },
+  'gpt56luna-xhigh': { displayName: 'GPT-5.6 Luna xhigh', shortName: 'GPT-5.6 Luna xh', color: '#0b7a50', order: 9.46, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-07-09' },
   'gpt55':    { displayName: 'GPT-5.5',             shortName: 'GPT-5.5',  color: '#066f4a', order: 9.5, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-04-23' },
   'gpt55-apikey': { displayName: 'GPT-5.5 xhigh',  shortName: 'GPT-5.5 xh', color: '#02392a', order: 9.6, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-04-23' },
   'gpt54':    { displayName: 'GPT-5.4',             shortName: 'GPT-5.4',  color: '#0a7a5a', order: 10, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-03-05' },
@@ -40,6 +44,9 @@ const MODEL_CONFIG = {
   'qwen35':   { displayName: 'Qwen3.5 35B',     shortName: 'Qwen3.5 35B', color: '#818cf8', order: 14, icon: VIEWS_BASE + 'model-icons/qwen.webp', releaseDate: '2026-02-16' },
   'qwen3max': { displayName: 'Qwen3 Max',       shortName: 'Qwen3 Max',   color: '#a5b4fc', order: 15, icon: VIEWS_BASE + 'model-icons/qwen.webp', releaseDate: '2025-09-23' },
   'qwen37max': { displayName: 'Qwen3.7 Max',    shortName: 'Qwen3.7 Max', color: '#4f46e5', order: 15.5, icon: VIEWS_BASE + 'model-icons/qwen.webp', releaseDate: '2026-05-21' },
+  'grok45':   { displayName: 'Grok 4.5',        shortName: 'Grok 4.5',    color: '#1c1c1c', order: 16, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-07-08' },
+  'grok45-xhigh': { displayName: 'Grok 4.5 xhigh', shortName: 'Grok 4.5 xh', color: '#555555', order: 16.1, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-07-08' },
+  'grok43':   { displayName: 'Grok 4.3',        shortName: 'Grok 4.3',    color: '#8a8a8a', order: 16.2, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-04-17' },
 };
 
 const SKILL_ORDER = [
