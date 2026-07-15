@@ -60,7 +60,7 @@ export function App() {
       <section className="section">
         <div className="container is-max-widescreen">
           <div className="has-text-centered" style=${{ marginBottom: '2rem' }}>
-            <h2 className="title is-3">Cost &amp; Token Usage</h2>
+            <h2 className="title is-3">Cost & Token Usage</h2>
           </div>
           <${CostTable} data=${data} />
         </div>
