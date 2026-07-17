@@ -167,5 +167,24 @@ cd docker
 PUSH=1 IMAGE_TAG=v2 ./build.sh --base
 
 # App image (bump tag for each new version)
-PUSH=1 IMAGE_TAG=v42 ./build.sh
+PUSH=1 IMAGE_TAG=v52 ./build.sh
+```
+
+`build.sh` resolves `rs-sdk` `main` to a SHA (`git ls-remote`) and passes it as a cache-bust
+build-arg, so the clone layer can't go stale — a plain build always ships current `main`, and the
+build hard-fails if the baked SHA doesn't match. The commit is recorded in the image at
+`/app/.rs-sdk-commit`, so any run can prove which SDK it used:
+
+```bash
+docker run --rm ghcr.io/maxbittker/rs-agent-benchmark:v52 cat /app/.rs-sdk-commit
+```
+
+**Pick the next FREE tag** — this image repo is shared with `rs-bench3`, so tags can already exist
+above the one this repo pins. Check before building:
+
+```bash
+curl -s "https://ghcr.io/token?scope=repository:maxbittker/rs-agent-benchmark:pull&service=ghcr.io" \
+  | python3 -c 'import json,sys;print(json.load(sys.stdin)["token"])' \
+  | xargs -I{} curl -s -H "Authorization: Bearer {}" \
+      https://ghcr.io/v2/maxbittker/rs-agent-benchmark/tags/list
 ```
