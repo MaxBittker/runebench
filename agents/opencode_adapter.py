@@ -84,6 +84,9 @@ _PROVIDER_KEY_MAP = {
     "gemini": "GEMINI_API_KEY",
     "google": "GEMINI_API_KEY",
     "openrouter": "OPENROUTER_API_KEY",
+    # Tinker (Thinking Machines) — custom openai-compatible provider declared by
+    # inkling_adapter; the key is referenced as {env:TINKER_API_KEY} in opencode.json.
+    "tinker": "TINKER_API_KEY",
 }
 
 
@@ -213,7 +216,13 @@ class OpenCodeAdapter(BaseInstalledAgent):
     # Snapshot env vars at class-load time
     _original_env = {
         k: os.environ.get(k, "")
-        for k in ["OPENROUTER_API_KEY", "ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GEMINI_API_KEY"]
+        for k in [
+            "OPENROUTER_API_KEY",
+            "ANTHROPIC_API_KEY",
+            "OPENAI_API_KEY",
+            "GEMINI_API_KEY",
+            "TINKER_API_KEY",
+        ]
     }
 
     def _resolve_api_key_env(self) -> dict[str, str]:
