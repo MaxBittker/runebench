@@ -156,7 +156,9 @@ COPY agent.sav /app/server/engine/data/players/main/agent.sav
 
 const SKILL_XP_INSTRUCTION = (skillName: string, durationMinutes: number) => `Train ${skillName} as efficiently as possible for ${durationMinutes} minutes. This is a local RuneScape private server (8x speed) for AI benchmarking.
 
-Your score is your **peak XP rate** — the best XP/min measured in any 15-second window. Optimize for training speed and try different approaches.
+Your score is your **peak real-game XP rate** — the best XP/min over a single 15-second sampling window. Optimize for training speed and try different approaches.
+
+Scoring is normalized to real-game rates: raw XP is divided by 8 (the 8x game speed) and by 25 (the server's 25x XP multiplier), so **the raw XP you see in-game is ~200x your score**. That factor is expected, not a bug — do not go looking for it. Samples are taken on a fixed 15s cadence, so windows are aligned to that clock rather than sliding.
 
 Check your peak rate anytime: \`bun /app/benchmark/shared/check_xp_rate.ts ${skillName}\`
 
