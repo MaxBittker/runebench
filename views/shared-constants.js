@@ -3,6 +3,10 @@
 
 const VIEWS_BASE = window.VIEWS_BASE || '';
 
+// XP score normalization: raw server XP ÷ 8 (game speed) ÷ 25 (server xpRate) = real-game XP.
+// scripts/check-xp-normalization-sync.ts guards this against drift.
+const XP_NORMALIZATION_DIVISOR = 8 * 25;
+
 // releaseDate (YYYY-MM-DD) sourced from https://models.dev/. xhigh variants
 // inherit their base model's date.
 const MODEL_CONFIG = {
@@ -147,7 +151,7 @@ function extractPeakRatePoints(skillData, skill, horizonMinutes) {
       const deltaXp = getXp(s) - getXp(prev);
       const deltaMs = s.elapsedMs - prev.elapsedMs;
       if (deltaMs > 0 && deltaXp > 0) {
-        const rate = (deltaXp / deltaMs) * 60000 / 8 / 25; // real-game XP/min
+        const rate = (deltaXp / deltaMs) * 60000 / XP_NORMALIZATION_DIVISOR; // real-game XP/min
         if (rate > peakRate) peakRate = rate;
       }
     }

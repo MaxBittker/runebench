@@ -29,6 +29,7 @@ gemini-cli|google/gemini-3-flash-preview|geminiflash
 glm-opencode|openrouter/z-ai/glm-5|glm
 kimi-opencode|openrouter/moonshotai/kimi-k2.5|kimi
 qwen35-opencode|openrouter/qwen/qwen3.5-35b-a3b|qwen35
+muse-opencode|openrouter/meta/muse-spark-1.1|muse
 
 "
 
