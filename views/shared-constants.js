@@ -44,6 +44,7 @@ const MODEL_CONFIG = {
   'kimi':     { displayName: 'Kimi K2.5',         shortName: 'Kimi K2.5',   color: '#00b4d8', order: 12, icon: VIEWS_BASE + 'model-icons/kimi.png', releaseDate: '2026-01-15' },
   'kimi26':   { displayName: 'Kimi K2.6',         shortName: 'Kimi K2.6',   color: '#0077b6', order: 12.5, icon: VIEWS_BASE + 'model-icons/kimi.png', releaseDate: '2026-04-21' },
   'kimi27':   { displayName: 'Kimi K2.7 Code',    shortName: 'Kimi K2.7',   color: '#023e8a', order: 12.6, icon: VIEWS_BASE + 'model-icons/kimi.png', releaseDate: '2026-06-12' },
+  'kimi3':    { displayName: 'Kimi K3',           shortName: 'Kimi K3',     color: '#03045e', order: 12.7, icon: VIEWS_BASE + 'model-icons/kimi.png', releaseDate: '2026-07-16' },
   'deepseek': { displayName: 'DeepSeek V4 Pro',   shortName: 'DeepSeek V4', color: '#4d6bfe', order: 12.8, icon: VIEWS_BASE + 'model-icons/deepseek.png', releaseDate: '2026-04-24' },
   'qwen35':   { displayName: 'Qwen3.5 35B',     shortName: 'Qwen3.5 35B', color: '#818cf8', order: 14, icon: VIEWS_BASE + 'model-icons/qwen.webp', releaseDate: '2026-02-16' },
   'qwen3max': { displayName: 'Qwen3 Max',       shortName: 'Qwen3 Max',   color: '#a5b4fc', order: 15, icon: VIEWS_BASE + 'model-icons/qwen.webp', releaseDate: '2025-09-23' },
@@ -51,6 +52,8 @@ const MODEL_CONFIG = {
   'grok45':   { displayName: 'Grok 4.5',        shortName: 'Grok 4.5',    color: '#1c1c1c', order: 16, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-07-08' },
   'grok45-xhigh': { displayName: 'Grok 4.5 xhigh', shortName: 'Grok 4.5 xh', color: '#555555', order: 16.1, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-07-08' },
   'grok43':   { displayName: 'Grok 4.3',        shortName: 'Grok 4.3',    color: '#8a8a8a', order: 16.2, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-04-17' },
+  'muse':     { displayName: 'Muse Spark 1.1',  shortName: 'Muse Spark',  color: '#0064e0', order: 18, icon: VIEWS_BASE + 'model-icons/meta.svg', releaseDate: '2026-07-09' },
+  'inkling':  { displayName: 'Inkling',         shortName: 'Inkling',     color: '#343a40', order: 17, icon: VIEWS_BASE + 'model-icons/thinkingmachines.png', releaseDate: '2026-07-15' },
 };
 
 const SKILL_ORDER = [

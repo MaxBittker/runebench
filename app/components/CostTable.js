@@ -37,6 +37,8 @@ export function CostTable({ data }) {
       let runsWithCost = 0;
       let totalInput = 0;
       let totalOutput = 0;
+      let totalTurns = 0;
+      let runsWithTurns = 0;
 
       for (const skill of SKILL_ORDER) {
         const sd = data[key]?.[skill];
@@ -52,6 +54,16 @@ export function CostTable({ data }) {
           totalInput += tu.inputTokens || 0;
           totalOutput += tu.outputTokens || 0;
         }
+
+        // Prefer the exact extract-time count (pre-cap); fall back to counting
+        // the (200-step-capped) embedded trajectory for older extracts.
+        if (sd.toolCalls != null) {
+          totalTurns += sd.toolCalls;
+          runsWithTurns++;
+        } else if (Array.isArray(sd.trajectory) && sd.trajectory.length > 0) {
+          totalTurns += sd.trajectory.filter((s) => s.source === 'tool').length;
+          runsWithTurns++;
+        }
       }
 
       if (rateCount === 0) continue;
@@ -66,6 +78,7 @@ export function CostTable({ data }) {
         totalInput,
         totalOutput,
         runsWithCost,
+        avgTurns: runsWithTurns > 0 ? totalTurns / runsWithTurns : 0,
       });
     }
     return out;
@@ -119,6 +132,10 @@ export function CostTable({ data }) {
                     title="Average input / output tokens per run">
                   Avg Tokens/Run (in/out)${sortIndicator('totalInput')}
                 </th>
+                <th className="sort-header" onClick=${() => handleSort('avgTurns')}
+                    title="Average tool calls per run">
+                  Avg Tool Calls/Run${sortIndicator('avgTurns')}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -134,12 +151,13 @@ export function CostTable({ data }) {
                     <td style=${{ fontVariantNumeric: 'tabular-nums' }}>${m.logMean.toFixed(1)}</td>
                     <td style=${{ fontVariantNumeric: 'tabular-nums' }}>${fmt$(m.avgCost)}</td>
                     <td style=${{ fontVariantNumeric: 'tabular-nums', fontSize: '11px' }}>${m.runsWithCost > 0 ? fmtTokens(m.totalInput / m.runsWithCost) : '—'} / ${m.runsWithCost > 0 ? fmtTokens(m.totalOutput / m.runsWithCost) : '—'}</td>
+                    <td style=${{ fontVariantNumeric: 'tabular-nums' }}>${m.avgTurns > 0 ? Math.round(m.avgTurns) : '—'}</td>
                   </tr>
                 `;
               })}
               ${hasMore && html`
                 <tr key="expand-toggle">
-                  <td colSpan="4" style=${{ padding: 0 }}>
+                  <td colSpan="5" style=${{ padding: 0 }}>
                     <button
                       className="button is-small is-ghost is-fullwidth"
                       style=${{ fontSize: '11px', color: '#888', textDecoration: 'none' }}

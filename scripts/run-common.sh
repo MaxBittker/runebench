@@ -118,6 +118,30 @@ configure_model_env() {
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'kimi27_adapter:Kimi27OpenCode'"
       ;;
+    kimi3-opencode)
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'kimi3_adapter:Kimi3OpenCode'"
+      ;;
+    kimi3-low-opencode)
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'kimi3_adapter:Kimi3LowOpenCode'"
+      ;;
+    muse-opencode)
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'muse_adapter:MuseSparkOpenCode'"
+      ;;
     grok45-opencode)
       if [ -z "${OPENROUTER_API_KEY:-}" ]; then
         echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
@@ -141,6 +165,17 @@ configure_model_env() {
       fi
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'grok45_adapter:Grok45XhighOpenCode'"
+      ;;
+    inkling-opencode)
+      # Tinker (Thinking Machines) — not an OpenRouter model; needs TINKER_API_KEY.
+      # OpenCode substitutes an unset {env:TINKER_API_KEY} to an empty string
+      # silently, so guard here rather than burning a run on a 401.
+      if [ -z "${TINKER_API_KEY:-}" ]; then
+        echo "  WARNING: TINKER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'inkling_adapter:InklingOpenCode'"
       ;;
     codex)
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"

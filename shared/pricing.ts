@@ -84,6 +84,7 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   deepseek:     { input: 0.435e-6,  cachedInput: 0.003625e-6, cacheWrite: 0.435e-6, output: 0.87e-6 }, // deepseek-v4-pro
   kimi26:       { input: 0.68e-6,   cachedInput: 0.34e-6,  cacheWrite: 0.68e-6,   output: 3.41e-6 },
   kimi27:       { input: 0.75e-6,   cachedInput: 0.16e-6,  cacheWrite: 0.75e-6,   output: 3.5e-6 }, // kimi-k2.7-code, OpenRouter 2026-06-14
+  kimi3:        { input: 3e-6,      cachedInput: 0.3e-6,   cacheWrite: 3e-6,      output: 15e-6 }, // kimi-k3, OpenRouter 2026-07-16 (no cache-write premium listed)
   // x-ai/grok-4.5, OpenRouter 2026-07-09. ≤200k-context rates; xAI doubles
   // rates past 200k input but our runs stay well under that.
   grok45:       { input: 2e-6,      cachedInput: 0.5e-6,   cacheWrite: 2e-6,      output: 6e-6 },
@@ -91,6 +92,23 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   'grok45-xhigh': { input: 2e-6,    cachedInput: 0.5e-6,   cacheWrite: 2e-6,      output: 6e-6 },
   // x-ai/grok-4.3, OpenRouter/models.dev 2026-07-09. ≤200k-context rates (2× past 200k).
   grok43:       { input: 1.25e-6,   cachedInput: 0.2e-6,   cacheWrite: 1.25e-6,   output: 2.5e-6 },
+  // Inkling (Thinking Machines) via Tinker — thinkingmachines/Inkling:peft:262144,
+  // the 256K variant (exactly 2× the 64K row of $1.87/$0.374/$4.68).
+  // Tinker bills three meters — prefill / sample / train: prefill → input,
+  // sample → output, train is N/A here (inference only). Cached prefill = 80% off.
+  // No cache-write premium → cacheWrite = input (inert).
+  // Rates read from https://tinker-docs.thinkingmachines.ai/tinker/models/ on
+  // 2026-07-15, during a "limited-time 50% discount".
+  // CAVEAT: that page also announces a ~50% prefill/sample increase effective
+  // 2026-07-17 and does not state whether these figures are pre- or post-increase.
+  // Re-check after 07-17; if they moved, update here AND the per-1M `cost` block
+  // in agents/inkling_adapter.py, then re-extract. Note OpenCode reports real
+  // cost_usd for Inkling (cost is declared in its opencode.json), so
+  // postprocess-costs needs --force to override it.
+  // meta/muse-spark-1.1, OpenRouter 2026-07-16. $1.25/$4.25 per 1M; cache read
+  // $0.15/1M. No cache-write premium listed → cacheWrite = input (inert).
+  muse:         { input: 1.25e-6,   cachedInput: 0.15e-6,  cacheWrite: 1.25e-6,   output: 4.25e-6 },
+  inkling:      { input: 3.74e-6,   cachedInput: 0.748e-6, cacheWrite: 3.74e-6,   output: 9.36e-6 },
 };
 
 /** By Harbor model ID (provider/name). Aliased to MODEL_PRICING entries. */
@@ -132,8 +150,11 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'openrouter/deepseek/deepseek-v4-pro': 'deepseek',
   'openrouter/moonshotai/kimi-k2.6':   'kimi26',
   'openrouter/moonshotai/kimi-k2.7-code': 'kimi27',
+  'openrouter/moonshotai/kimi-k3':     'kimi3',
   'openrouter/x-ai/grok-4.5':          'grok45',
   'openrouter/x-ai/grok-4.3':          'grok43',
+  'openrouter/meta/muse-spark-1.1':    'muse',
+  'tinker/thinkingmachines/Inkling:peft:262144': 'inkling',
 };
 
 /** Look up pricing by either internal label or Harbor model ID. */

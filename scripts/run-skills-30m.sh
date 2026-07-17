@@ -48,9 +48,12 @@ qwen37max-opencode|openrouter/qwen/qwen3.7-max|qwen37max
 deepseek-opencode|openrouter/deepseek/deepseek-v4-pro|deepseek
 kimi26-opencode|openrouter/moonshotai/kimi-k2.6|kimi26
 kimi27-opencode|openrouter/moonshotai/kimi-k2.7-code|kimi27
+kimi3-opencode|openrouter/moonshotai/kimi-k3|kimi3
 grok45-opencode|openrouter/x-ai/grok-4.5|grok45
 grok45-xhigh-opencode|openrouter/x-ai/grok-4.5|grok45-xhigh
 grok43-opencode|openrouter/x-ai/grok-4.3|grok43
+muse-opencode|openrouter/meta/muse-spark-1.1|muse
+inkling-opencode|tinker/thinkingmachines/Inkling:peft:262144|inkling
 
 "
 
@@ -135,13 +138,17 @@ for model_name in $SELECTED_MODELS; do
     gpt56-xhigh|gpt56luna-xhigh)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900 --ak reasoning_effort=xhigh"
       ;;
-    glm|glm52|kimi|kimi26|kimi27|qwen35|qwen3max|qwen37max|deepseek)
+    glm|glm52|kimi|kimi26|kimi27|kimi3|kimi3-low|qwen35|qwen3max|qwen37max|deepseek|inkling)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1800"
       ;;
-    grok45|grok45-xhigh|grok43)
+    grok45|grok45-xhigh|grok43|muse)
       # xAI blocks grok models for EU-origin requests (403 "not available in
       # your region") — pin the Modal sandbox to a US region so OpenRouter sees
       # a US client. Requires the sandbox_region patch in harbor's modal.py.
+      #
+      # muse: Meta returns the same class of 403 ("This model is only available
+      # in the United States") for non-US sandboxes. Unpinned, ~5 of 16 skills
+      # landed outside the US and fast-fail aborted with 0 tokens.
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1800 --ek sandbox_region=us-east"
       ;;
     gemini|gemini31|geminiflash|gemini35flash|gemini35flash-high)
