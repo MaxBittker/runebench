@@ -29,7 +29,7 @@ import {
 const JOBS_DIR = join(import.meta.dir, '..', 'jobs');
 const RESULTS_ROOT = join(import.meta.dir, '..', 'results');
 
-const KNOWN_MODELS = ['fable-5-xhigh', 'fable-5', 'opus48-max', 'opus48', 'opus47-xhigh', 'opus47', 'opus', 'opus45', 'sonnet5-xhigh', 'sonnet5', 'sonnet46', 'sonnet45', 'haiku', 'codex53', 'gpt56luna-xhigh', 'gpt56luna', 'gpt56-xhigh', 'gpt56', 'gpt55-apikey', 'gpt55', 'gpt54mini', 'gpt54nano', 'gpt54', 'gemini31', 'gemini35flash-high', 'gemini35flash', 'geminiflash', 'gemini', 'glm52', 'glm', 'kimi27', 'kimi26', 'kimi', 'deepseek', 'qwen37max', 'qwen3max', 'qwen35', 'grok45-xhigh', 'grok45', 'grok43'];
+const KNOWN_MODELS = ['fable-5-xhigh', 'fable-5', 'opus48-max', 'opus48', 'opus47-xhigh', 'opus47', 'opus', 'opus45', 'sonnet5-xhigh', 'sonnet5', 'sonnet46', 'sonnet45', 'haiku', 'codex53', 'gpt56luna-xhigh', 'gpt56luna', 'gpt56-xhigh', 'gpt56', 'gpt55-apikey', 'gpt55', 'gpt54mini', 'gpt54nano', 'gpt54', 'gemini31', 'gemini35flash-high', 'gemini35flash', 'geminiflash', 'gemini', 'glm52', 'glm', 'kimi3-low', 'kimi3', 'kimi27', 'kimi26', 'kimi', 'deepseek', 'qwen37max', 'qwen3max', 'qwen35', 'grok45-xhigh', 'grok45', 'grok43', 'inkling', 'muse'];
 
 const KNOWN_SKILLS = [
   'attack', 'defence', 'strength', 'hitpoints', 'ranged', 'prayer', 'magic',
@@ -76,7 +76,12 @@ interface TrajectoryStep {
   detail?: string; // code content for Write/Edit tools
 }
 
-function extractTrajectoryFromTrial(trialDir: string): { steps: TrajectoryStep[]; firstStepAt?: string } | null {
+/** Tool-call count over the FULL step list (before the 200-step display cap). */
+function countToolSteps(steps: TrajectoryStep[]): number {
+  return steps.filter(s => s.source === 'tool').length;
+}
+
+function extractTrajectoryFromTrial(trialDir: string): { steps: TrajectoryStep[]; firstStepAt?: string; toolCalls?: number } | null {
   const agentDir = join(trialDir, 'agent');
   if (!existsSync(agentDir)) return null;
 
@@ -178,7 +183,7 @@ function extractToolStep(toolCall: any, ts?: number): TrajectoryStep | null {
   return { source: 'tool', text, ...(ts !== undefined ? { ts } : {}), ...(detail ? { detail } : {}) };
 }
 
-function parseClaudeTrajectory(traj: any): { steps: TrajectoryStep[]; firstStepAt?: string } {
+function parseClaudeTrajectory(traj: any): { steps: TrajectoryStep[]; firstStepAt?: string; toolCalls: number } {
   const rawSteps = traj.steps || [];
   const steps: TrajectoryStep[] = [];
 
@@ -230,10 +235,10 @@ function parseClaudeTrajectory(traj: any): { steps: TrajectoryStep[]; firstStepA
     }
   }
 
-  return { steps: steps.slice(0, 200), firstStepAt };
+  return { steps: steps.slice(0, 200), firstStepAt, toolCalls: countToolSteps(steps) };
 }
 
-function parseCodexLog(content: string): { steps: TrajectoryStep[] } {
+function parseCodexLog(content: string): { steps: TrajectoryStep[]; toolCalls: number } {
   const steps: TrajectoryStep[] = [];
 
   for (const line of content.split('\n')) {
@@ -272,10 +277,10 @@ function parseCodexLog(content: string): { steps: TrajectoryStep[] } {
     } catch {}
   }
 
-  return { steps: steps.slice(0, 200) };
+  return { steps: steps.slice(0, 200), toolCalls: countToolSteps(steps) };
 }
 
-function parseKimiLog(content: string): { steps: TrajectoryStep[] } {
+function parseKimiLog(content: string): { steps: TrajectoryStep[]; toolCalls: number } {
   const steps: TrajectoryStep[] = [];
 
   for (const line of content.split('\n')) {
@@ -307,10 +312,10 @@ function parseKimiLog(content: string): { steps: TrajectoryStep[] } {
     } catch {}
   }
 
-  return { steps: steps.slice(0, 200) };
+  return { steps: steps.slice(0, 200), toolCalls: countToolSteps(steps) };
 }
 
-function parseGeminiCliLog(content: string): { steps: TrajectoryStep[] } {
+function parseGeminiCliLog(content: string): { steps: TrajectoryStep[]; toolCalls: number } {
   const steps: TrajectoryStep[] = [];
   const lines = content.split('\n');
 
@@ -377,7 +382,7 @@ function parseGeminiCliLog(content: string): { steps: TrajectoryStep[] } {
 
   flushBashBlock();
   const trimmed = steps.slice(0, 200);
-  return { steps: trimmed };
+  return { steps: trimmed, toolCalls: countToolSteps(steps) };
 }
 
 // ── Main ─────────────────────────────────────────────────────────
@@ -413,6 +418,7 @@ const combined: Record<string, Record<string, {
   sampleCount: number;
   samples: Sample[];
   tokenUsage?: TokenUsage;
+  toolCalls?: number;
   trimmedSamples?: number;
   trialDir?: string;
   videoAvailable?: boolean;
@@ -661,6 +667,7 @@ for (const { dir, model } of allJobDirs) {
       samples: slimSamples,
       ...(tokenUsage ? { tokenUsage } : {}),
       ...(trajectory ? { trajectory: trajectory.steps } : {}),
+      ...(trajectory?.toolCalls != null ? { toolCalls: trajectory.toolCalls } : {}),
       ...(trajectory?.firstStepAt ? { firstStepAt: trajectory.firstStepAt } : {}),
       ...(trimmedCount > 0 ? { trimmedSamples: trimmedCount } : {}),
       trialDir: relTrialDir,
