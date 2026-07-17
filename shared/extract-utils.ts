@@ -10,6 +10,10 @@ import { readdirSync, readFileSync, writeFileSync, mkdirSync, existsSync } from 
 import { join, basename } from 'path';
 import { computeCost } from './pricing';
 
+// XP score normalization: raw server XP ÷ 8 (game speed) ÷ 25 (server xpRate) = real-game XP.
+// scripts/check-xp-normalization-sync.ts guards this against drift.
+export const XP_NORMALIZATION_DIVISOR = 8 * 25;
+
 // ── Shared interfaces ────────────────────────────────────────────
 
 export interface Sample {

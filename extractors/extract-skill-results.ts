@@ -23,6 +23,7 @@ import {
   findTrackingInTrial, findRewardInTrial, findTokenUsageInTrial,
   trimSamplesToHorizon,
   parseCLIArgs, resolveJobDirs, writeResults,
+  XP_NORMALIZATION_DIVISOR,
 } from '../shared/extract-utils';
 
 const JOBS_DIR = join(import.meta.dir, '..', 'jobs');
@@ -432,7 +433,7 @@ function computePeakXpRate(samples: Sample[], skill: string): number {
     const deltaXp = currXp - prevXp;
     const deltaMs = curr.elapsedMs - prev.elapsedMs;
     if (deltaMs <= 0 || deltaXp <= 0) continue;
-    const rate = (deltaXp / deltaMs) * 60000 / 8 / 25; // real-game XP/min
+    const rate = (deltaXp / deltaMs) * 60000 / XP_NORMALIZATION_DIVISOR; // real-game XP/min
     if (rate > peak) peak = rate;
   }
   return Math.round(peak);

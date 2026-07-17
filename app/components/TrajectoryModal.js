@@ -62,7 +62,7 @@ function computeRateData(samples, skillKey) {
     const dxp = findSkillXp(curr, skillKey) - findSkillXp(prev, skillKey);
     const dms = curr.elapsedMs - prev.elapsedMs;
     if (dms <= 0) continue;
-    const rate = (dxp / dms) * 60000 / 8 / 25; // real-game XP/min
+    const rate = (dxp / dms) * 60000 / XP_NORMALIZATION_DIVISOR; // global from views/shared-constants.js
     const mins = curr.elapsedMs / 60000;
     rates.push({ x: mins, y: Math.max(0, rate) });
     peak = Math.max(peak, rate);
