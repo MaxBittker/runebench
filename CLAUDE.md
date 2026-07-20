@@ -18,6 +18,14 @@ All task directories are **generated** — never edit them directly.
 | `shared/agent-gold-{vanilla,fish,fletch-alch,smith-alch}.sav` | Starting save files for the four gold-task conditions |
 | `docker/` | Shared Docker image source (pre-built, pushed to GHCR) |
 
+The game wiki agents read at `/app/wiki` lives in **rs-sdk**, not here — this repo keeps no copy.
+The website's copy is the generated `app/wiki-data.js`; refresh it when the image's rs-sdk pin moves:
+
+```bash
+bun scripts/build-wiki-data.ts          # reads ../rs-sdk/wiki, stamps the commit into the file
+RS_SDK_PATH=/path/to/rs-sdk bun scripts/build-wiki-data.ts
+```
+
 ## Directory structure
 
 ```
@@ -27,7 +35,6 @@ RuneBench/
 ├── agents/               ← opencode_adapter.py, per-provider adapters, install-opencode.sh.j2
 ├── app/                  ← components for the results website (loaded by index.html)
 ├── views/                ← graph-skills.html, graph-gold.html (local viewers), model-icons/, skill-icons/
-├── wiki/                 ← game-wiki markdown given to agents + generator scripts
 ├── shared/               ← verifiers + extract-utils.ts
 ├── docker/               ← shared Docker image source
 ├── results/              ← generated result artifacts
