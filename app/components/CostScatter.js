@@ -134,6 +134,7 @@ export function CostScatter({ data }) {
           x: {
             type: 'linear',
             beginAtZero: true,
+            reverse: true,
             title: { display: true, text: 'Avg API Cost / Run (USD)' },
             ticks: {
               callback: (v) => '$' + v,
