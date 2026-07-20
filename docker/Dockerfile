@@ -64,8 +64,8 @@ RUN cd server/engine && bun run build
 # that the client cache endpoints actually serve. This guard turns an incomplete pack
 # into a failed build instead of a silent night of all-zero benchmark runs.
 # NOTE on shell mechanics: background the engine with plain `&` in THIS shell (not a
-# `( ... &)` subshell) so `jobs -p` can find and kill it below. A detached subshell
-# hides the engine from job control and the RUN step hangs forever waiting on it.
+# `( ... &)` subshell) so `jobs -p` can reap it below. A detached subshell leaves the
+# engine unreapable and the RUN step hangs forever waiting on it.
 RUN cd server/engine && \
     bun run src/app.ts > /tmp/engine.log 2>&1 & \
     for i in $(seq 1 300); do \
