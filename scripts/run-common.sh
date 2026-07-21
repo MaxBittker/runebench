@@ -62,6 +62,30 @@ configure_model_env() {
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'glm52_adapter:Glm52OpenCode'"
       ;;
+    glm52-wandb-opencode)
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'glm52wandb_adapter:Glm52WandbOpenCode'"
+      ;;
+    gemma4-opencode)
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'gemma4_adapter:Gemma4OpenCode'"
+      ;;
+    gptoss120b-opencode)
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'gptoss_adapter:GptOss120bOpenCode'"
+      ;;
     kimi-opencode)
       if [ -z "${OPENROUTER_API_KEY:-}" ]; then
         echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
@@ -165,6 +189,23 @@ configure_model_env() {
       fi
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'grok45_adapter:Grok45XhighOpenCode'"
+      ;;
+    gemini36flash-opencode)
+      # Google API direct (not OpenRouter) — needs GEMINI_API_KEY.
+      if [ -z "${GEMINI_API_KEY:-}" ]; then
+        echo "  WARNING: GEMINI_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'gemini_oc_adapter:Gemini36FlashOpenCode'"
+      ;;
+    gemini35flashlite-opencode)
+      if [ -z "${GEMINI_API_KEY:-}" ]; then
+        echo "  WARNING: GEMINI_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'gemini_oc_adapter:Gemini35FlashLiteOpenCode'"
       ;;
     inkling-opencode)
       # Tinker (Thinking Machines) — not an OpenRouter model; needs TINKER_API_KEY.

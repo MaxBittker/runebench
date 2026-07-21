@@ -73,8 +73,22 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // Same per-token rates as gemini35flash — thinking_level=high just emits more
   // thinking tokens (billed as output), it doesn't change the rate card.
   'gemini35flash-high': { input: 1.5e-6, cachedInput: 0.15e-6, cacheWrite: 1.5e-6, output: 9e-6 },
+  // gemini-3.6-flash / gemini-3.5-flash-lite, launched 2026-07-21 (Google blog +
+  // models.dev). 3.6 keeps 3.5 Flash's input rate but drops output $9 → $7.50.
+  // Run via OpenCode (google provider) which reports native cost_usd from the
+  // same models.dev rates — these entries are for display/backfill parity only.
+  gemini36flash:     { input: 1.5e-6, cachedInput: 0.15e-6, cacheWrite: 1.5e-6, output: 7.5e-6 },
+  gemini35flashlite: { input: 0.3e-6, cachedInput: 0.03e-6, cacheWrite: 0.3e-6, output: 2.5e-6 },
   glm:          { input: 0.72e-6,   cachedInput: 0,        cacheWrite: 0.72e-6,   output: 2.3e-6 },
   glm52:        { input: 1.4e-6,    cachedInput: 0,        cacheWrite: 1.4e-6,    output: 4.4e-6 }, // z-ai/glm-5.2, OpenRouter 2026-06-16
+  // z-ai/glm-5.2 pinned to the WandB fp4 endpoint, OpenRouter 2026-07-17.
+  // Native OpenCode cost is accurate (rates declared in glm52wandb_adapter.py).
+  'glm52-wandb': { input: 1.39e-6,  cachedInput: 0.26e-6,  cacheWrite: 1.39e-6,   output: 4.4e-6 },
+  // google/gemma-4-31b-it pinned to Cerebras fp16, OpenRouter 2026-07-17 (cache read = full
+  // input price). Friendli was the original pick but its endpoint rejects tool calls.
+  gemma4:       { input: 0.99e-6,   cachedInput: 0.99e-6,  cacheWrite: 0.99e-6,   output: 1.49e-6 },
+  // openai/gpt-oss-120b pinned to Cerebras fp16, OpenRouter 2026-07-17 (cache read = full input price).
+  gptoss120b:   { input: 0.35e-6,   cachedInput: 0.35e-6,  cacheWrite: 0.35e-6,   output: 0.75e-6 },
   kimi:         { input: 0.6e-6,    cachedInput: 0.1e-6,   cacheWrite: 0.6e-6,    output: 3e-6 },
   qwen35:       { input: 0.1625e-6, cachedInput: 0,        cacheWrite: 0.1625e-6, output: 1.3e-6 },
   qwen3max:     { input: 0.78e-6,   cachedInput: 0,        cacheWrite: 0.78e-6,   output: 3.9e-6 },
@@ -137,12 +151,19 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'google/gemini-3.1-pro-preview':     'gemini31',
   'google/gemini-3-flash-preview':     'geminiflash',
   'google/gemini-3.5-flash':           'gemini35flash',
+  'google/gemini-3.6-flash':           'gemini36flash',
+  'google/gemini-3.5-flash-lite':      'gemini35flashlite',
   'gemini/gemini-3-pro-preview':       'gemini',
   'gemini/gemini-3.1-pro-preview':     'gemini31',
   'gemini/gemini-3-flash-preview':     'geminiflash',
   'gemini/gemini-3.5-flash':           'gemini35flash',
   'openrouter/z-ai/glm-5':             'glm',
+  // NOTE: 'openrouter/z-ai/glm-5.2' maps to the z-ai-pinned baseline; the
+  // glm52-wandb row shares the model ID so it can't be keyed here — its
+  // adapter declares endpoint cost, so OpenCode-native cost_usd is correct.
   'openrouter/z-ai/glm-5.2':           'glm52',
+  'openrouter/google/gemma-4-31b-it':  'gemma4',
+  'openrouter/openai/gpt-oss-120b':    'gptoss120b',
   'openrouter/moonshotai/kimi-k2.5':   'kimi',
   'openrouter/qwen/qwen3.5-35b-a3b':   'qwen35',
   'openrouter/qwen/qwen3-max':         'qwen3max',

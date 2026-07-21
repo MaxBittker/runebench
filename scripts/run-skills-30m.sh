@@ -39,8 +39,13 @@ gemini-cli|google/gemini-3.1-pro-preview|gemini31
 gemini-cli|google/gemini-3-flash-preview|geminiflash
 gemini-cli|google/gemini-3.5-flash|gemini35flash
 gemini-cli-high|google/gemini-3.5-flash|gemini35flash-high
+gemini36flash-opencode|google/gemini-3.6-flash|gemini36flash
+gemini35flashlite-opencode|google/gemini-3.5-flash-lite|gemini35flashlite
 glm-opencode|openrouter/z-ai/glm-5|glm
 glm52-opencode|openrouter/z-ai/glm-5.2|glm52
+glm52-wandb-opencode|openrouter/z-ai/glm-5.2|glm52-wandb
+gemma4-opencode|openrouter/google/gemma-4-31b-it|gemma4
+gptoss120b-opencode|openrouter/openai/gpt-oss-120b|gptoss120b
 kimi-opencode|openrouter/moonshotai/kimi-k2.5|kimi
 qwen35-opencode|openrouter/qwen/qwen3.5-35b-a3b|qwen35
 qwen3max-opencode|openrouter/qwen/qwen3-max|qwen3max
@@ -138,7 +143,7 @@ for model_name in $SELECTED_MODELS; do
     gpt56-xhigh|gpt56luna-xhigh)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900 --ak reasoning_effort=xhigh"
       ;;
-    glm|glm52|kimi|kimi26|kimi27|kimi3|kimi3-low|qwen35|qwen3max|qwen37max|deepseek|inkling)
+    glm|glm52|glm52-wandb|gemma4|gptoss120b|kimi|kimi26|kimi27|kimi3|kimi3-low|qwen35|qwen3max|qwen37max|deepseek|inkling|gemini36flash|gemini35flashlite)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1800"
       ;;
     grok45|grok45-xhigh|grok43|muse)
