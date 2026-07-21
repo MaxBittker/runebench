@@ -47,16 +47,23 @@ export function Heatmap({ data, activeModel, activeSkill }) {
 
     models.sort((a, b) => b.logMean - a.logMean);
 
-    const skillOrder = SKILL_ORDER.slice().sort((a, b) => {
-      // Order skills by how many models scored zero (fewest zeros first).
-      const zeroA = models.filter(m => !(m.skills[a] > 0)).length;
-      const zeroB = models.filter(m => !(m.skills[b] > 0)).length;
-      if (zeroA !== zeroB) return zeroA - zeroB;
-      // tie-break by average rate
-      const avgA = models.reduce((s, m) => s + m.skills[a], 0) / models.length;
-      const avgB = models.reduce((s, m) => s + m.skills[b], 0) / models.length;
-      return avgB - avgA;
-    });
+    // Skills stay grouped with their category; categories and skills within
+    // each category are both ordered by difficulty (fewest model zeros first).
+    const SKILL_GROUPS = [
+      ['attack', 'strength', 'hitpoints', 'defence'],
+      ['magic', 'ranged'],
+      ['woodcutting', 'thieving', 'mining', 'fishing', 'prayer', 'fletching'],
+      ['firemaking', 'cooking', 'smithing', 'crafting'],
+    ];
+    const zeros = skill => models.filter(m => !(m.skills[skill] > 0)).length;
+    const avgRate = skill => models.reduce((s, m) => s + m.skills[skill], 0) / models.length;
+    const bySkillDifficulty = (a, b) =>
+      (zeros(a) - zeros(b)) || (avgRate(b) - avgRate(a));
+    const zeroAvg = g => g.reduce((s, sk) => s + zeros(sk), 0) / g.length;
+    const skillOrder = SKILL_GROUPS
+      .map(group => group.slice().sort(bySkillDifficulty))
+      .sort((ga, gb) => zeroAvg(ga) - zeroAvg(gb))
+      .flat();
 
     const skillMax = {};
     const skillPad = {};

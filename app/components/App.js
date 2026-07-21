@@ -3,7 +3,6 @@ import { useRoute } from '../router.js';
 import { Hero } from './Hero.js';
 import { PromoPlayer } from './PromoPlayer.js';
 import { Overview } from './Overview.js';
-import { CumulativeChart } from './CumulativeChart.js';
 import { Heatmap } from './Heatmap.js';
 import { GoldMatrix } from './GoldMatrix.js';
 import { GoldCostTable } from './GoldCostTable.js';
@@ -41,7 +40,6 @@ export function App() {
       <${PromoPlayer} data=${data} />
       <${Overview} />
       <${AgentInterface} />
-      <${CumulativeChart} data=${data} />
       <${Heatmap} data=${data} activeModel=${route.model} activeSkill=${route.skill} />
       <section className="section">
         <div className="container is-max-widescreen">

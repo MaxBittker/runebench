@@ -16,7 +16,7 @@ const XH_TO_BASE = {
 
 // Models intentionally hidden from the cost scatter (older points that clutter
 // the frontier without adding signal).
-const EXCLUDED = new Set(['sonnet45', 'gemini', 'opus45']);
+const EXCLUDED = new Set(['sonnet45', 'gemini', 'opus45', 'kimi26', 'muse', 'codex53', 'qwen3max', 'qwen37max', 'gpt55', 'gpt55-apikey', 'gptoss120b']);
 
 // Reuse the same per-model aggregation as CostTable: log-average performance
 // (⟨ln⟩ of peak XP/min across the 16 skills) vs. average API cost per run.
