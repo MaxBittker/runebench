@@ -36,6 +36,8 @@ const MODEL_CONFIG = {
   'codex53':  { displayName: 'Codex CLI 5.3',       shortName: 'Codex 5.3', color: '#0d8c6b', order: 9, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-02-05' },
   'gpt56':    { displayName: 'GPT-5.6 Sol',          shortName: 'GPT-5.6 Sol', color: '#044f36', order: 9.4, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-07-09' },
   'gpt56-xhigh': { displayName: 'GPT-5.6 Sol xhigh', shortName: 'GPT-5.6 Sol xh', color: '#022c1e', order: 9.42, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-07-09' },
+  'gpt56terra': { displayName: 'GPT-5.6 Terra',      shortName: 'GPT-5.6 Terra', color: '#0c8a5b', order: 9.43, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-07-09' },
+  'gpt56terra-xhigh': { displayName: 'GPT-5.6 Terra xhigh', shortName: 'GPT-5.6 Terra xh', color: '#06603d', order: 9.435, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-07-09' },
   'gpt56luna': { displayName: 'GPT-5.6 Luna',        shortName: 'GPT-5.6 Luna', color: '#12a56f', order: 9.44, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-07-09' },
   'gpt56luna-xhigh': { displayName: 'GPT-5.6 Luna xhigh', shortName: 'GPT-5.6 Luna xh', color: '#0b7a50', order: 9.46, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-07-09' },
   'gpt55':    { displayName: 'GPT-5.5',             shortName: 'GPT-5.5',  color: '#066f4a', order: 9.5, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-04-23' },

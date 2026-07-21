@@ -208,11 +208,8 @@ configure_model_env() {
       AGENT_FLAG="--agent-import-path 'gemini_oc_adapter:Gemini35FlashLiteOpenCode'"
       ;;
     inkling-opencode)
-      # Tinker (Thinking Machines) — not an OpenRouter model; needs TINKER_API_KEY.
-      # OpenCode substitutes an unset {env:TINKER_API_KEY} to an empty string
-      # silently, so guard here rather than burning a run on a 401.
-      if [ -z "${TINKER_API_KEY:-}" ]; then
-        echo "  WARNING: TINKER_API_KEY not found in .env, skipping $model_name"
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
         return 1
       fi
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"

@@ -59,11 +59,14 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   gpt54nano:    { input: 0.2e-6,  cachedInput: 0.02e-6,  cacheWrite: 0.2e-6,   output: 1.25e-6 },
   gpt55:        { input: 5e-6,    cachedInput: 0.5e-6,   cacheWrite: 5e-6,     output: 30e-6 },
   // gpt-5.6 family, released 2026-07-09. Sol matches gpt-5.5's $5/$30 rate card;
-  // Luna is the new $1/$6 tier. 5.6 introduces a 1.25× cache-write premium
-  // (inert unless usage reports a write bucket). xhigh variants share the base
-  // rate card — higher effort just emits more reasoning tokens (billed as output).
+  // Terra is the $2.50/$15 middle tier; Luna is the new $1/$6 tier. 5.6
+  // introduces a 1.25× cache-write premium (inert unless usage reports a write
+  // bucket). xhigh variants share the base rate card — higher effort just
+  // emits more reasoning tokens (billed as output).
   gpt56:        { input: 5e-6,    cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,  output: 30e-6 },
   'gpt56-xhigh': { input: 5e-6,   cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,  output: 30e-6 },
+  gpt56terra:   { input: 2.5e-6,  cachedInput: 0.25e-6,  cacheWrite: 3.125e-6, output: 15e-6 },
+  'gpt56terra-xhigh': { input: 2.5e-6, cachedInput: 0.25e-6, cacheWrite: 3.125e-6, output: 15e-6 },
   gpt56luna:    { input: 1e-6,    cachedInput: 0.1e-6,   cacheWrite: 1.25e-6,  output: 6e-6 },
   'gpt56luna-xhigh': { input: 1e-6, cachedInput: 0.1e-6, cacheWrite: 1.25e-6,  output: 6e-6 },
   gemini:       { input: 2e-6,    cachedInput: 0.2e-6,   cacheWrite: 2e-6,     output: 12e-6 },
@@ -106,23 +109,16 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   'grok45-xhigh': { input: 2e-6,    cachedInput: 0.5e-6,   cacheWrite: 2e-6,      output: 6e-6 },
   // x-ai/grok-4.3, OpenRouter/models.dev 2026-07-09. ≤200k-context rates (2× past 200k).
   grok43:       { input: 1.25e-6,   cachedInput: 0.2e-6,   cacheWrite: 1.25e-6,   output: 2.5e-6 },
-  // Inkling (Thinking Machines) via Tinker — thinkingmachines/Inkling:peft:262144,
-  // the 256K variant (exactly 2× the 64K row of $1.87/$0.374/$4.68).
-  // Tinker bills three meters — prefill / sample / train: prefill → input,
-  // sample → output, train is N/A here (inference only). Cached prefill = 80% off.
-  // No cache-write premium → cacheWrite = input (inert).
-  // Rates read from https://tinker-docs.thinkingmachines.ai/tinker/models/ on
-  // 2026-07-15, during a "limited-time 50% discount".
-  // CAVEAT: that page also announces a ~50% prefill/sample increase effective
-  // 2026-07-17 and does not state whether these figures are pre- or post-increase.
-  // Re-check after 07-17; if they moved, update here AND the per-1M `cost` block
-  // in agents/inkling_adapter.py, then re-extract. Note OpenCode reports real
-  // cost_usd for Inkling (cost is declared in its opencode.json), so
-  // postprocess-costs needs --force to override it.
   // meta/muse-spark-1.1, OpenRouter 2026-07-16. $1.25/$4.25 per 1M; cache read
   // $0.15/1M. No cache-write premium listed → cacheWrite = input (inert).
   muse:         { input: 1.25e-6,   cachedInput: 0.15e-6,  cacheWrite: 1.25e-6,   output: 4.25e-6 },
-  inkling:      { input: 3.74e-6,   cachedInput: 0.748e-6, cacheWrite: 3.74e-6,   output: 9.36e-6 },
+  // thinkingmachines/inkling, OpenRouter (Together endpoint, the model's only
+  // provider) 2026-07-21. No cache-write premium → cacheWrite = input (inert).
+  // Keep in sync with the per-1M `cost` block in agents/inkling_adapter.py —
+  // cost is declared in opencode.json, so OpenCode reports real cost_usd and
+  // postprocess-costs needs --force to override it. (Earlier Tinker-direct runs
+  // at $3.74/$9.36 were deleted and re-benchmarked on OpenRouter.)
+  inkling:      { input: 1.0e-6,    cachedInput: 0.17e-6,  cacheWrite: 1.0e-6,    output: 4.05e-6 },
 };
 
 /** By Harbor model ID (provider/name). Aliased to MODEL_PRICING entries. */
@@ -146,6 +142,7 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'openai/gpt-5.5':                    'gpt55',
   'openai/gpt-5.6-sol':                'gpt56',
   'openai/gpt-5.6':                    'gpt56', // alias — routes to Sol
+  'openai/gpt-5.6-terra':              'gpt56terra',
   'openai/gpt-5.6-luna':               'gpt56luna',
   'google/gemini-3-pro-preview':       'gemini',
   'google/gemini-3.1-pro-preview':     'gemini31',
@@ -175,7 +172,7 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'openrouter/x-ai/grok-4.5':          'grok45',
   'openrouter/x-ai/grok-4.3':          'grok43',
   'openrouter/meta/muse-spark-1.1':    'muse',
-  'tinker/thinkingmachines/Inkling:peft:262144': 'inkling',
+  'openrouter/thinkingmachines/inkling': 'inkling',
 };
 
 /** Look up pricing by either internal label or Harbor model ID. */

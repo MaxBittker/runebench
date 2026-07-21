@@ -84,9 +84,6 @@ _PROVIDER_KEY_MAP = {
     "gemini": "GEMINI_API_KEY",
     "google": "GEMINI_API_KEY",
     "openrouter": "OPENROUTER_API_KEY",
-    # Tinker (Thinking Machines) — custom openai-compatible provider declared by
-    # inkling_adapter; the key is referenced as {env:TINKER_API_KEY} in opencode.json.
-    "tinker": "TINKER_API_KEY",
 }
 
 
@@ -221,7 +218,6 @@ class OpenCodeAdapter(BaseInstalledAgent):
             "ANTHROPIC_API_KEY",
             "OPENAI_API_KEY",
             "GEMINI_API_KEY",
-            "TINKER_API_KEY",
         ]
     }
 

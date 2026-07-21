@@ -34,6 +34,8 @@ codex|openai/gpt-5.6-sol|gpt56
 codex|openai/gpt-5.6-sol|gpt56-xhigh
 codex|openai/gpt-5.6-luna|gpt56luna
 codex|openai/gpt-5.6-luna|gpt56luna-xhigh
+codex|openai/gpt-5.6-terra|gpt56terra
+codex|openai/gpt-5.6-terra|gpt56terra-xhigh
 gemini-cli|google/gemini-3-pro-preview|gemini
 gemini-cli|google/gemini-3.1-pro-preview|gemini31
 gemini-cli|google/gemini-3-flash-preview|geminiflash
@@ -58,7 +60,7 @@ grok45-opencode|openrouter/x-ai/grok-4.5|grok45
 grok45-xhigh-opencode|openrouter/x-ai/grok-4.5|grok45-xhigh
 grok43-opencode|openrouter/x-ai/grok-4.3|grok43
 muse-opencode|openrouter/meta/muse-spark-1.1|muse
-inkling-opencode|tinker/thinkingmachines/Inkling:peft:262144|inkling
+inkling-opencode|openrouter/thinkingmachines/inkling|inkling
 
 "
 
@@ -137,10 +139,10 @@ for model_name in $SELECTED_MODELS; do
   #   - For opencode agents: sets the bash loop timeout (game time)
   #   - For codex: sets the Modal exec timeout (must be < harbor's 1920s agent timeout)
   case "$model_name" in
-    codex|codex53|gpt55|gpt56|gpt56luna|gpt54|gpt54mini|gpt54nano)
+    codex|codex53|gpt55|gpt56|gpt56luna|gpt56terra|gpt54|gpt54mini|gpt54nano)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900"
       ;;
-    gpt56-xhigh|gpt56luna-xhigh)
+    gpt56-xhigh|gpt56luna-xhigh|gpt56terra-xhigh)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900 --ak reasoning_effort=xhigh"
       ;;
     glm|glm52|glm52-wandb|gemma4|gptoss120b|kimi|kimi26|kimi27|kimi3|kimi3-low|qwen35|qwen3max|qwen37max|deepseek|inkling|gemini36flash|gemini35flashlite)
