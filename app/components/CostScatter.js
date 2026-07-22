@@ -134,16 +134,21 @@ export function CostScatter({ data }) {
       const img = new Image(20, 20);
       img.src = cfg.icon;
       const dimmed = frontierOnly && !frontier.has(r.key);
+      const dimImg = dimmed ? makeFadedIcon(img, repaint) : null;
       return {
         x: r.avgCost,
         y: r.logMean,
         key: r.key,
         label: cfg.shortName,
         color: dimmed ? '#b6b6b6' : cfg.color,
-        img: dimmed ? makeFadedIcon(img, repaint) : img,
+        img: dimmed ? dimImg : img,
         big: frontierOnly && frontier.has(r.key),
         alpha: dimmed ? 0.3 : 1,
         ghost: dimmed,
+        // Kept for hover: a greyed point temporarily regains its full look.
+        fullImg: img,
+        fullColor: cfg.color,
+        dimImg,
       };
     });
 
@@ -207,7 +212,53 @@ export function CostScatter({ data }) {
       },
     });
 
+    // Hovering a greyed-out point — or its label — restores the pair's full
+    // color until the pointer moves away. Layout is untouched (same size), so
+    // the cached label placements are reused and nothing shifts.
+    const canvas = canvasRef.current;
+    let hoverIdx = -1;
+    const applyHover = (idx) => {
+      if (idx === hoverIdx) return;
+      const chart = chartInstance.current;
+      if (!chart) return;
+      const styles = chart.data.datasets[0].pointStyle;
+      const set = (i, on) => {
+        const p = points[i];
+        if (!p || !p.ghost) return false;
+        p.color = on ? p.fullColor : '#b6b6b6';
+        p.alpha = on ? 1 : 0.3;
+        styles[i] = on ? p.fullImg : p.dimImg;
+        return true;
+      };
+      const changed = set(hoverIdx, false) | set(idx, true);
+      hoverIdx = idx;
+      if (changed) chart.update('none');
+    };
+    const onMove = (e) => {
+      const chart = chartInstance.current;
+      if (!chart) return;
+      const els = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, true);
+      let idx = els.length ? els[0].index : -1;
+      if (idx === -1) {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        for (const L of labelPlugin.getLabels() || []) {
+          if (x >= L.left - 2 && x <= L.left + L.w + 2 && Math.abs(y - L.y) <= L.h / 2 + 2) {
+            idx = L.idx;
+            break;
+          }
+        }
+      }
+      applyHover(idx);
+    };
+    const onLeave = () => applyHover(-1);
+    canvas.addEventListener('mousemove', onMove);
+    canvas.addEventListener('mouseleave', onLeave);
+
     return () => {
+      canvas.removeEventListener('mousemove', onMove);
+      canvas.removeEventListener('mouseleave', onLeave);
       if (chartInstance.current) {
         chartInstance.current.destroy();
         chartInstance.current = null;

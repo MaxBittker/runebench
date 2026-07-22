@@ -246,6 +246,9 @@ export function makeLabelPlugin(points, id = 'pointLabels') {
 
   return {
     id,
+    // Last solved placements ({ left, y, w, h, idx } in canvas CSS pixels) —
+    // lets the chart hit-test hovers against label boxes, not just dots.
+    getLabels() { return cached; },
     afterDatasetsDraw(chart) {
       const { ctx, chartArea } = chart;
       const meta = chart.getDatasetMeta(0);
