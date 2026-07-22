@@ -99,6 +99,8 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // qwen3.7-max: Alibaba bills cache writes at 1.25× input (like Anthropic).
   qwen37max:    { input: 1.25e-6,   cachedInput: 0.25e-6,  cacheWrite: 1.5625e-6, output: 3.75e-6 },
   deepseek:     { input: 0.435e-6,  cachedInput: 0.003625e-6, cacheWrite: 0.435e-6, output: 0.87e-6 }, // deepseek-v4-pro
+  // deepseek-v4-flash, OpenRouter 2026-07-21. No cache-write premium → cacheWrite = input (inert).
+  deepseekflash: { input: 0.0938e-6, cachedInput: 0.01876e-6, cacheWrite: 0.0938e-6, output: 0.1876e-6 },
   kimi26:       { input: 0.68e-6,   cachedInput: 0.34e-6,  cacheWrite: 0.68e-6,   output: 3.41e-6 },
   kimi27:       { input: 0.75e-6,   cachedInput: 0.16e-6,  cacheWrite: 0.75e-6,   output: 3.5e-6 }, // kimi-k2.7-code, OpenRouter 2026-06-14
   kimi3:        { input: 3e-6,      cachedInput: 0.3e-6,   cacheWrite: 3e-6,      output: 15e-6 }, // kimi-k3, OpenRouter 2026-07-16 (no cache-write premium listed)
@@ -166,6 +168,7 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'openrouter/qwen/qwen3-max':         'qwen3max',
   'openrouter/qwen/qwen3.7-max':       'qwen37max',
   'openrouter/deepseek/deepseek-v4-pro': 'deepseek',
+  'openrouter/deepseek/deepseek-v4-flash': 'deepseekflash',
   'openrouter/moonshotai/kimi-k2.6':   'kimi26',
   'openrouter/moonshotai/kimi-k2.7-code': 'kimi27',
   'openrouter/moonshotai/kimi-k3':     'kimi3',

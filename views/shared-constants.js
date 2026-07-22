@@ -55,6 +55,7 @@ const MODEL_CONFIG = {
   'kimi27':   { displayName: 'Kimi K2.7 Code',    shortName: 'Kimi K2.7',   color: '#023e8a', order: 12.6, icon: VIEWS_BASE + 'model-icons/kimi.png', releaseDate: '2026-06-12' },
   'kimi3':    { displayName: 'Kimi K3',           shortName: 'Kimi K3',     color: '#03045e', order: 12.7, icon: VIEWS_BASE + 'model-icons/kimi.png', releaseDate: '2026-07-16' },
   'deepseek': { displayName: 'DeepSeek V4 Pro',   shortName: 'DeepSeek V4', color: '#4d6bfe', order: 12.8, icon: VIEWS_BASE + 'model-icons/deepseek.png', releaseDate: '2026-04-24' },
+  'deepseekflash': { displayName: 'DeepSeek V4 Flash', shortName: 'DS V4 Flash', color: '#8fa3ff', order: 12.85, icon: VIEWS_BASE + 'model-icons/deepseek.png', releaseDate: '2026-04-24' },
   'qwen35':   { displayName: 'Qwen3.5 35B',     shortName: 'Qwen3.5 35B', color: '#818cf8', order: 14, icon: VIEWS_BASE + 'model-icons/qwen.webp', releaseDate: '2026-02-16' },
   'qwen3max': { displayName: 'Qwen3 Max',       shortName: 'Qwen3 Max',   color: '#a5b4fc', order: 15, icon: VIEWS_BASE + 'model-icons/qwen.webp', releaseDate: '2025-09-23' },
   'qwen37max': { displayName: 'Qwen3.7 Max',    shortName: 'Qwen3.7 Max', color: '#4f46e5', order: 15.5, icon: VIEWS_BASE + 'model-icons/qwen.webp', releaseDate: '2026-05-21' },

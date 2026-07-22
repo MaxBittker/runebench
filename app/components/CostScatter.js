@@ -221,13 +221,15 @@ export function CostScatter({ data }) {
       if (idx === hoverIdx) return;
       const chart = chartInstance.current;
       if (!chart) return;
-      const styles = chart.data.datasets[0].pointStyle;
+      const ds = chart.data.datasets[0];
       const set = (i, on) => {
         const p = points[i];
         if (!p || !p.ghost) return false;
         p.color = on ? p.fullColor : '#b6b6b6';
         p.alpha = on ? 1 : 0.3;
-        styles[i] = on ? p.fullImg : p.dimImg;
+        ds.pointStyle[i] = on ? p.fullImg : p.dimImg;
+        ds.backgroundColor[i] = p.color;
+        ds.borderColor[i] = p.color;
         return true;
       };
       const changed = set(hoverIdx, false) | set(idx, true);

@@ -40,12 +40,12 @@ export function App() {
       <${PromoPlayer} data=${data} />
       <${Overview} />
       <${AgentInterface} />
-      <${Heatmap} data=${data} activeModel=${route.model} activeSkill=${route.skill} />
       <section className="section">
         <div className="container is-max-widescreen">
           <${CostScatter} data=${data} />
         </div>
       </section>
+      <${Heatmap} data=${data} activeModel=${route.model} activeSkill=${route.skill} />
       <!-- <${GoldMatrix} data=${goldData} /> -->
       <!-- <${GoldCostTable} data=${goldData} /> -->
         <${TrajectoryModal} model=${route.model || 'opus'} skill=${route.skill || 'woodcutting'} data=${data} seekTs=${route.seekTs} />

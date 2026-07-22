@@ -53,6 +53,7 @@ qwen35-opencode|openrouter/qwen/qwen3.5-35b-a3b|qwen35
 qwen3max-opencode|openrouter/qwen/qwen3-max|qwen3max
 qwen37max-opencode|openrouter/qwen/qwen3.7-max|qwen37max
 deepseek-opencode|openrouter/deepseek/deepseek-v4-pro|deepseek
+deepseekflash-opencode|openrouter/deepseek/deepseek-v4-flash|deepseekflash
 kimi26-opencode|openrouter/moonshotai/kimi-k2.6|kimi26
 kimi27-opencode|openrouter/moonshotai/kimi-k2.7-code|kimi27
 kimi3-opencode|openrouter/moonshotai/kimi-k3|kimi3
@@ -145,7 +146,7 @@ for model_name in $SELECTED_MODELS; do
     gpt56-xhigh|gpt56luna-xhigh|gpt56terra-xhigh)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900 --ak reasoning_effort=xhigh"
       ;;
-    glm|glm52|glm52-wandb|gemma4|gptoss120b|kimi|kimi26|kimi27|kimi3|kimi3-low|qwen35|qwen3max|qwen37max|deepseek|inkling|gemini36flash|gemini35flashlite)
+    glm|glm52|glm52-wandb|gemma4|gptoss120b|kimi|kimi26|kimi27|kimi3|kimi3-low|qwen35|qwen3max|qwen37max|deepseek|deepseekflash|inkling|gemini36flash|gemini35flashlite)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1800"
       ;;
     grok45|grok45-xhigh|grok43|muse)
