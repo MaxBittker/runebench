@@ -1,4 +1,5 @@
 import { html, useState, useEffect, useRef, useMemo } from '../html.js';
+import { useModelDetail } from '../model-data.js';
 
 const SHOWCASES = [
   { model: 'geminiflash', skill: 'fishing' },
@@ -22,7 +23,9 @@ function PromoCell({ trajData, model, skill }) {
   const videoSrc = trajData.videoUrl || (trajData.trialDir + '/verifier/recording.mp4');
   const config = MODEL_CONFIG[model] || { displayName: model };
   const skillName = SKILL_DISPLAY[skill] || skill;
-  const steps = useMemo(() => getAgentSteps(trajData?.trajectory), [trajData]);
+  const detail = useModelDetail(trajData?.trajectory ? null : model);
+  const trajectory = trajData?.trajectory || detail?.[skill]?.trajectory;
+  const steps = useMemo(() => getAgentSteps(trajectory), [trajectory]);
   const stepsRef = useRef(steps);
   stepsRef.current = steps;
 

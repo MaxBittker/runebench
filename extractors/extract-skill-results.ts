@@ -22,7 +22,7 @@ import {
   detectModel, detectModelFromConfig, getTrialDirs,
   findTrackingInTrial, findRewardInTrial, findTokenUsageInTrial,
   trimSamplesToHorizon,
-  parseCLIArgs, resolveJobDirs, writeResults,
+  parseCLIArgs, resolveJobDirs,
   XP_NORMALIZATION_DIVISOR,
 } from '../shared/extract-utils';
 
@@ -694,12 +694,33 @@ if (extracted === 0) {
   process.exit(1);
 }
 
-writeResults(RESULTS_DIR, combined, 'COMBINED_DATA');
+// _combined.json keeps the full payload (local viewers / drag-drop into graph-skills.html).
+const combinedPath = join(RESULTS_DIR, '_combined.json');
+writeFileSync(combinedPath, JSON.stringify(combined, null, 2));
+console.log(`\nWrote ${combinedPath}`);
 
-// Write per-model JSON files
+// _data.js is loaded up-front by the website, so it carries summary fields only.
+// trajectory + samples live in the per-model JSONs, fetched on demand by app/model-data.js.
+const slim: Record<string, Record<string, any>> = {};
+for (const [model, skills] of Object.entries(combined)) {
+  slim[model] = {};
+  for (const [skill, entry] of Object.entries(skills as Record<string, any>)) {
+    const { trajectory, samples, ...rest } = entry;
+    if (rest.toolCalls == null && Array.isArray(trajectory)) {
+      rest.toolCalls = trajectory.filter((s: any) => s.source === 'tool').length;
+    }
+    rest.hasTrajectory = Array.isArray(trajectory) && trajectory.length > 0;
+    slim[model][skill] = rest;
+  }
+}
+const dataJsPath = join(RESULTS_DIR, '_data.js');
+writeFileSync(dataJsPath, `window.COMBINED_DATA = ${JSON.stringify(slim)};`);
+console.log(`Wrote ${dataJsPath} (slim: no trajectory/samples)`);
+
+// Per-model JSON files: committed + served, so compact.
 for (const [model, skills] of Object.entries(combined)) {
   const modelPath = join(RESULTS_DIR, `${model}.json`);
-  writeFileSync(modelPath, JSON.stringify({ model, skills }, null, 2));
+  writeFileSync(modelPath, JSON.stringify({ model, skills }));
 }
 
 // ── Diagnostics ──────────────────────────────────────────────────

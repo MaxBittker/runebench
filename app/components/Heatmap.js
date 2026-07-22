@@ -101,7 +101,7 @@ export function Heatmap({ data, activeModel, activeSkill }) {
 
   function handleCellClick(modelKey, skill) {
     const sd = data[modelKey]?.[skill];
-    if (sd?.trajectory?.length > 0) {
+    if (sd?.hasTrajectory || sd?.trajectory?.length > 0) {
       navigate('trajectory/' + modelKey + '/' + skill);
     }
   }

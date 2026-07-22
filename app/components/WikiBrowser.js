@@ -1,5 +1,11 @@
-import { html, useState } from '../html.js';
-import { WIKI_TREE } from '../wiki-data.js';
+import { html, useState, useEffect } from '../html.js';
+
+// wiki-data.js is ~1.1MB — load it async so it stays off the initial module graph.
+let wikiTreePromise = null;
+function loadWikiTree() {
+  if (!wikiTreePromise) wikiTreePromise = import('../wiki-data.js').then(m => m.WIKI_TREE);
+  return wikiTreePromise;
+}
 
 function slugToTitle(slug) {
   return slug.replace(/\.md$/, '').replace(/-/g, ' ');
@@ -80,7 +86,13 @@ function FolderItem({ folder }) {
 }
 
 export function WikiBrowser() {
+  const [tree, setTree] = useState(null);
+  useEffect(() => {
+    let live = true;
+    loadWikiTree().then(t => { if (live) setTree(t); });
+    return () => { live = false; };
+  }, []);
   return html`<div className="wiki-browser">
-    ${WIKI_TREE.map(folder => html`<${FolderItem} key=${folder.name} folder=${folder} />`)}
+    ${(tree || []).map(folder => html`<${FolderItem} key=${folder.name} folder=${folder} />`)}
   </div>`;
 }

@@ -1,5 +1,6 @@
 import { html, useState, useEffect, useRef, useCallback, useMemo } from '../html.js';
 import { navigate } from '../router.js';
+import { useModelDetail } from '../model-data.js';
 
 const TIERS = {
   zero: { bg: 'rgba(200,200,200,0.2)' },
@@ -224,7 +225,15 @@ function getNavLists(data, model, skill) {
 }
 
 export function TrajectoryModal({ model, skill, data, seekTs }) {
-  const trajData = data?.[model]?.[skill];
+  const baseData = data?.[model]?.[skill];
+  // Gold entries arrive with trajectory/samples embedded; skill entries need the lazy fetch.
+  const needsDetail = !!baseData && (!baseData.trajectory || !baseData.samples);
+  const detail = useModelDetail(needsDetail ? model : null);
+  const trajData = useMemo(() => {
+    if (!baseData || !needsDetail) return baseData;
+    const d = detail?.[skill];
+    return d ? { ...baseData, trajectory: d.trajectory, samples: d.samples } : baseData;
+  }, [baseData, needsDetail, detail, skill]);
   const config = MODEL_CONFIG[model] || { displayName: model, color: '#999' };
   const skillName = SKILL_DISPLAY[skill] || skill;
   const videoSrc = trajData?.videoUrl || (trajData?.trialDir ? trajData.trialDir + '/verifier/recording.mp4' : null);

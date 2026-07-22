@@ -953,6 +953,16 @@ function loadResults() {
   if (window.COMBINED_DATA) {
     combinedData = window.COMBINED_DATA;
     onDataLoaded();
+    // _data.js is slim (no samples) — upgrade to the full local _combined.json
+    // when served over http. Under file:// the drag-drop fallback still works.
+    const firstModel = Object.values(combinedData)[0] || {};
+    const firstEntry = Object.values(firstModel)[0];
+    if (firstEntry && !firstEntry.samples) {
+      fetch('../results/skills-' + HORIZON + '/_combined.json')
+        .then(r => (r.ok ? r.json() : null))
+        .then(full => { if (full) { combinedData = full; onDataLoaded(); } })
+        .catch(() => {});
+    }
   }
 }
 
