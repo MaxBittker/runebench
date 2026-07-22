@@ -43,9 +43,6 @@ export function App() {
       <${Heatmap} data=${data} activeModel=${route.model} activeSkill=${route.skill} />
       <section className="section">
         <div className="container is-max-widescreen">
-          <div className="has-text-centered" style=${{ marginBottom: '2rem' }}>
-            <h2 className="title is-3">Cost vs. Performance</h2>
-          </div>
           <${CostScatter} data=${data} />
         </div>
       </section>

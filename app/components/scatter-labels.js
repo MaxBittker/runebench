@@ -10,9 +10,17 @@
 // their dot get a subtle gray leader line back to it.
 //
 // `points` is the array of plotted points in dataset order, each with
-// { label, color }. Returns a Chart.js plugin.
+// { label, color } plus optional { big } (larger emphasized text), { alpha }
+// (fade the label + leader line), and { ghost } (de-emphasized: its label and
+// icon don't constrain non-ghost labels, though ghost labels still avoid
+// everything). Returns a Chart.js plugin.
 
 const LABEL_H = 12; // collision height of one label row
+const BIG_LABEL_H = 18;
+
+const BASE_FONT = '500 10.5px "Google Sans", sans-serif';
+const BIG_FONT = '600 15.5px "Google Sans", sans-serif';
+const fontFor = (p) => (p.big ? BIG_FONT : BASE_FONT);
 const PAD = 2;      // breathing room between label boxes
 const ICON_R = 13;  // keep-out radius around each point icon
 const GAP = 4;      // gap between icon edge and flank labels
@@ -34,10 +42,13 @@ function mute(color) {
   return m;
 }
 
-const boxOf = (L) => ({
-  left: L.left - PAD, right: L.left + L.w + PAD,
-  top: L.y - LABEL_H / 2 - PAD, bottom: L.y + LABEL_H / 2 + PAD,
-});
+const boxOf = (L) => {
+  const h = L.h || LABEL_H;
+  return {
+    left: L.left - PAD, right: L.left + L.w + PAD,
+    top: L.y - h / 2 - PAD, bottom: L.y + h / 2 + PAD,
+  };
+};
 
 const overlapArea = (a, b) => {
   const ox = Math.min(a.right, b.right) - Math.max(a.left, b.left);
@@ -74,11 +85,14 @@ const segHitsRect = (s, r) => {
 // Leader segment for a label placement: dot center → nearest point on the
 // label box. This mirrors exactly how the leader is drawn, so the crossing
 // penalty judges the same lines the viewer sees.
-const segOf = (L, c) => ({
-  x1: L.dotX, y1: L.dotY,
-  x2: Math.max(c.left, Math.min(L.dotX, c.left + L.w)),
-  y2: Math.max(c.y - LABEL_H / 2, Math.min(L.dotY, c.y + LABEL_H / 2)),
-});
+const segOf = (L, c) => {
+  const h = L.h || LABEL_H;
+  return {
+    x1: L.dotX, y1: L.dotY,
+    x2: Math.max(c.left, Math.min(L.dotX, c.left + L.w)),
+    y2: Math.max(c.y - h / 2, Math.min(L.dotY, c.y + h / 2)),
+  };
+};
 
 function solve(ctx, chartArea, meta, points) {
   // Foreign-icon keep-out boxes are inflated a touch beyond the icon itself:
@@ -98,7 +112,9 @@ function solve(ctx, chartArea, meta, points) {
   meta.data.forEach((el, i) => {
     const p = points[i];
     if (!p) return;
+    ctx.font = fontFor(p);
     const w = ctx.measureText(p.label).width;
+    const h = p.big ? BIG_LABEL_H : LABEL_H;
     // `side` is a mild preference penalty: right flank reads best, left is
     // nearly as good, above/below and outward escapes cost a bit more so the
     // layout stays consistent when there's room.
@@ -133,9 +149,9 @@ function solve(ctx, chartArea, meta, points) {
       candidates.push(mk(FLANK + 48, dy, 'left', 16));
       candidates.push(mk(-FLANK - 48, dy, 'right', 18));
     }
-    const usable = candidates.filter((c) => inBounds(boxOf({ ...c, w })));
+    const usable = candidates.filter((c) => inBounds(boxOf({ ...c, w, h })));
     if (usable.length === 0) usable.push(mk(FLANK, 0, 'left', 0));
-    labels.push({ p, w, idx: i, dotX: el.x, dotY: el.y, candidates: usable, ...usable[0] });
+    labels.push({ p, w, h, idx: i, dotX: el.x, dotY: el.y, candidates: usable, ...usable[0] });
   });
 
   // Cost of placing label k at candidate c. Overlap penalties are steep
@@ -144,11 +160,16 @@ function solve(ctx, chartArea, meta, points) {
   // dot as the crowd allows, and the side term breaks remaining ties toward a
   // consistent right-of-dot look.
   const costAt = (k, c) => {
-    const box = boxOf({ ...c, w: labels[k].w });
+    const box = boxOf({ ...c, w: labels[k].w, h: labels[k].h });
     const seg = segOf(labels[k], c);
+    // Ghost points don't constrain non-ghost labels: the emphasized layout is
+    // solved as if the de-emphasized crowd weren't there. Ghost labels still
+    // pay full cost against everyone, so they flow around the priority layout.
+    const kGhost = !!labels[k].p.ghost;
     let cost = c.d * 2.2 + c.side;
     for (let m = 0; m < labels.length; m++) {
       if (m === k) continue;
+      if (!kGhost && labels[m].p.ghost) continue;
       const mBox = boxOf(labels[m]);
       cost += overlapArea(box, mBox) * 4;
       const mSeg = segOf(labels[m], labels[m]);
@@ -159,7 +180,9 @@ function solve(ctx, chartArea, meta, points) {
       if (segHitsRect(mSeg, box)) cost += 60;
     }
     for (let j = 0; j < iconBoxes.length; j++) {
-      if (j !== labels[k].idx) cost += overlapArea(box, iconBoxes[j]) * 6;
+      if (j === labels[k].idx) continue;
+      if (!kGhost && points[j] && points[j].ghost) continue;
+      cost += overlapArea(box, iconBoxes[j]) * 6;
     }
     return cost;
   };
@@ -227,13 +250,13 @@ export function makeLabelPlugin(points, id = 'pointLabels') {
       const { ctx, chartArea } = chart;
       const meta = chart.getDatasetMeta(0);
       ctx.save();
-      ctx.font = '500 10.5px "Google Sans", sans-serif';
+      ctx.font = BASE_FONT;
       ctx.textBaseline = 'middle';
 
       const key =
         `${chartArea.left},${chartArea.top},${chartArea.right},${chartArea.bottom}|` +
         meta.data.map((el) => `${el.x},${el.y}`).join(';') + '|' +
-        points.map((p) => p && p.label).join(';');
+        points.map((p) => p && `${p.label}${p.big ? '!' : ''}${p.ghost ? '~' : ''}`).join(';');
       if (key !== cacheKey) {
         cached = solve(ctx, chartArea, meta, points);
         cacheKey = key;
@@ -247,9 +270,10 @@ export function makeLabelPlugin(points, id = 'pointLabels') {
       ctx.lineWidth = 1;
       ctx.strokeStyle = 'rgba(107, 107, 107, 0.45)';
       for (const L of labels) {
+        ctx.globalAlpha = L.p.alpha != null ? L.p.alpha : 1;
         const box = {
           left: L.left, right: L.left + L.w,
-          top: L.y - LABEL_H / 2, bottom: L.y + LABEL_H / 2,
+          top: L.y - L.h / 2, bottom: L.y + L.h / 2,
         };
         // Nearest point on the (unpadded) label box to the dot center.
         const nx = Math.max(box.left, Math.min(L.dotX, box.right));
@@ -274,6 +298,8 @@ export function makeLabelPlugin(points, id = 'pointLabels') {
       ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
       ctx.lineJoin = 'round';
       for (const L of labels) {
+        ctx.globalAlpha = L.p.alpha != null ? L.p.alpha : 1;
+        ctx.font = fontFor(L.p);
         ctx.textAlign = L.align;
         ctx.strokeText(L.p.label, L.anchorX, L.y);
         ctx.fillStyle = mute(L.p.color);

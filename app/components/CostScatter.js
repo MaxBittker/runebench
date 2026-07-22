@@ -1,4 +1,4 @@
-import { html, useEffect, useRef, useMemo } from '../html.js';
+import { html, useEffect, useRef, useMemo, useState } from '../html.js';
 import { navigate } from '../router.js';
 import { makeLabelPlugin } from './scatter-labels.js';
 
@@ -73,28 +73,77 @@ function buildRows(data) {
   return [...byKey.values()];
 }
 
+// Keys of models on the Pareto frontier: no other model is both cheaper (or
+// equal) and higher-scoring (or equal), with at least one strict improvement.
+function paretoKeys(rows) {
+  const keys = new Set();
+  for (const r of rows) {
+    const dominated = rows.some(
+      (o) =>
+        o !== r &&
+        o.avgCost <= r.avgCost &&
+        o.logMean >= r.logMean &&
+        (o.avgCost < r.avgCost || o.logMean > r.logMean)
+    );
+    if (!dominated) keys.add(r.key);
+  }
+  return keys;
+}
+
+// Greyed-out copy of a model icon for off-frontier points. Icons are usually
+// cached by this point, but redraw on load (and repaint the chart) if not.
+function makeFadedIcon(img, repaint) {
+  const c = document.createElement('canvas');
+  c.width = 20;
+  c.height = 20;
+  const draw = () => {
+    const ctx = c.getContext('2d');
+    ctx.clearRect(0, 0, 20, 20);
+    ctx.filter = 'grayscale(1) opacity(0.15)';
+    ctx.drawImage(img, 0, 0, 20, 20);
+  };
+  if (img.complete && img.naturalWidth) {
+    draw();
+  } else {
+    img.addEventListener('load', () => {
+      draw();
+      repaint();
+    });
+  }
+  return c;
+}
+
 export function CostScatter({ data }) {
   const canvasRef = useRef(null);
   const chartInstance = useRef(null);
+  const [frontierOnly, setFrontierOnly] = useState(false);
 
   const rows = useMemo(() => buildRows(data), [data]);
+  const frontier = useMemo(() => paretoKeys(rows), [rows]);
 
   useEffect(() => {
     if (!canvasRef.current || rows.length === 0) return;
     if (!window.Chart) return;
 
-    // Preload model icons so points can be drawn as logos.
+    const repaint = () => chartInstance.current && chartInstance.current.update();
+
+    // Preload model icons so points can be drawn as logos. When the frontier
+    // toggle is on, off-frontier points get a greyed icon + grey label.
     const points = rows.map((r) => {
       const cfg = MODEL_CONFIG[r.key];
       const img = new Image(20, 20);
       img.src = cfg.icon;
+      const dimmed = frontierOnly && !frontier.has(r.key);
       return {
         x: r.avgCost,
         y: r.logMean,
         key: r.key,
         label: cfg.shortName,
-        color: cfg.color,
-        img,
+        color: dimmed ? '#b6b6b6' : cfg.color,
+        img: dimmed ? makeFadedIcon(img, repaint) : img,
+        big: frontierOnly && frontier.has(r.key),
+        alpha: dimmed ? 0.3 : 1,
+        ghost: dimmed,
       };
     });
 
@@ -164,13 +213,39 @@ export function CostScatter({ data }) {
         chartInstance.current = null;
       }
     };
-  }, [rows]);
+  }, [rows, frontier, frontierOnly]);
 
   if (!data || rows.length === 0) return null;
 
   return html`
-    <div style=${{ position: 'relative', height: '480px' }}>
-      <canvas ref=${canvasRef}></canvas>
+    <div>
+      <div style=${{ position: 'relative', marginBottom: '0.5rem' }}>
+        <h2 className="title is-3 has-text-centered" style=${{ marginBottom: 0 }}>
+          Cost vs. Performance
+        </h2>
+        <label
+          className="checkbox"
+          style=${{
+            position: 'absolute',
+            right: 0,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            fontSize: '0.8rem',
+            color: '#666',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked=${frontierOnly}
+            onChange=${(e) => setFrontierOnly(e.target.checked)}
+            style=${{ marginRight: '0.35em' }}
+          />
+          Pareto frontier
+        </label>
+      </div>
+      <div style=${{ position: 'relative', height: '480px' }}>
+        <canvas ref=${canvasRef}></canvas>
+      </div>
     </div>
   `;
 }

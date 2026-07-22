@@ -413,6 +413,16 @@ body {
   position: relative;
   cursor: help;
 }
+.heatmap-th-sortable {
+  cursor: pointer;
+  user-select: none;
+}
+.heatmap-th-sortable:hover {
+  background: #f0f0f0;
+}
+.heatmap-th-sortable.is-sorted {
+  box-shadow: inset 0 -2px 0 #5b8def;
+}
 .heatmap-th-tip .tip-text {
   display: none;
   position: absolute;
