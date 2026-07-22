@@ -64,6 +64,7 @@ const MODEL_CONFIG = {
   'grok43':   { displayName: 'Grok 4.3',        shortName: 'Grok 4.3',    color: '#8a8a8a', order: 16.2, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-04-17' },
   'muse':     { displayName: 'Muse Spark 1.1',  shortName: 'Muse Spark',  color: '#0064e0', order: 18, icon: VIEWS_BASE + 'model-icons/meta.svg', releaseDate: '2026-07-09' },
   'inkling':  { displayName: 'Inkling',         shortName: 'Inkling',     color: '#343a40', order: 17, icon: VIEWS_BASE + 'model-icons/thinkingmachines.png', releaseDate: '2026-07-15' },
+  'laguna':   { displayName: 'Laguna S 2.1',    shortName: 'Laguna S',    color: '#0891b2', order: 19, icon: VIEWS_BASE + 'model-icons/poolside.png', releaseDate: '2026-07-20' },
 };
 
 const SKILL_ORDER = [

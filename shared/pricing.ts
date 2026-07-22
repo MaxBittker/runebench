@@ -121,6 +121,12 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // postprocess-costs needs --force to override it. (Earlier Tinker-direct runs
   // at $3.74/$9.36 were deleted and re-benchmarked on OpenRouter.)
   inkling:      { input: 1.0e-6,    cachedInput: 0.17e-6,  cacheWrite: 1.0e-6,    output: 4.05e-6 },
+  // poolside/laguna-s-2.1, OpenRouter (Poolside bf16, the model's only provider)
+  // 2026-07-22. $0.10/$0.20 per 1M; cache read $0.01/1M. No cache-write premium
+  // → cacheWrite = input (inert). Keep in sync with the per-1M `cost` block in
+  // agents/laguna_adapter.py (cost declared in opencode.json → OpenCode reports
+  // real cost_usd; postprocess-costs needs --force to override it).
+  laguna:       { input: 0.1e-6,    cachedInput: 0.01e-6,  cacheWrite: 0.1e-6,    output: 0.2e-6 },
 };
 
 /** By Harbor model ID (provider/name). Aliased to MODEL_PRICING entries. */
@@ -176,6 +182,7 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'openrouter/x-ai/grok-4.3':          'grok43',
   'openrouter/meta/muse-spark-1.1':    'muse',
   'openrouter/thinkingmachines/inkling': 'inkling',
+  'openrouter/poolside/laguna-s-2.1':  'laguna',
 };
 
 /** Look up pricing by either internal label or Harbor model ID. */

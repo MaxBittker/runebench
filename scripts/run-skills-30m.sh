@@ -62,6 +62,7 @@ grok45-xhigh-opencode|openrouter/x-ai/grok-4.5|grok45-xhigh
 grok43-opencode|openrouter/x-ai/grok-4.3|grok43
 muse-opencode|openrouter/meta/muse-spark-1.1|muse
 inkling-opencode|openrouter/thinkingmachines/inkling|inkling
+laguna-opencode|openrouter/poolside/laguna-s-2.1|laguna
 
 "
 
@@ -146,7 +147,7 @@ for model_name in $SELECTED_MODELS; do
     gpt56-xhigh|gpt56luna-xhigh|gpt56terra-xhigh)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900 --ak reasoning_effort=xhigh"
       ;;
-    glm|glm52|glm52-wandb|gemma4|gptoss120b|kimi|kimi26|kimi27|kimi3|kimi3-low|qwen35|qwen3max|qwen37max|deepseek|deepseekflash|inkling|gemini36flash|gemini35flashlite)
+    glm|glm52|glm52-wandb|gemma4|gptoss120b|kimi|kimi26|kimi27|kimi3|kimi3-low|qwen35|qwen3max|qwen37max|deepseek|deepseekflash|inkling|laguna|gemini36flash|gemini35flashlite)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1800"
       ;;
     grok45|grok45-xhigh|grok43|muse)
