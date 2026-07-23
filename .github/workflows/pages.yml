@@ -8,6 +8,7 @@ on:
       - 'app/**'
       - 'views/**'
       - 'results/**/_data.js'
+      - 'results/skills-30m/*.json'
   workflow_dispatch:
 
 permissions:
@@ -35,6 +36,7 @@ jobs:
           cp -r app/* _site/app/
           cp -r views/* _site/views/
           cp results/skills-30m/_data.js _site/results/skills-30m/_data.js || true
+          cp results/skills-30m/*.json _site/results/skills-30m/ 2>/dev/null || true
           cp results/gold/_data.js _site/results/gold/_data.js || true
 
       - uses: actions/configure-pages@v5
