@@ -43,3 +43,5 @@ docker/skill_tracker.ts
 docker/check_xp_rate.ts
 docker/agents.md
 analysis/
+
+export/

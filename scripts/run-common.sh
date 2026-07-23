@@ -190,13 +190,13 @@ configure_model_env() {
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'grok43_adapter:Grok43OpenCode'"
       ;;
-    grok45-xhigh-opencode)
+    grok45-medium-opencode)
       if [ -z "${OPENROUTER_API_KEY:-}" ]; then
         echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
         return 1
       fi
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
-      AGENT_FLAG="--agent-import-path 'grok45_adapter:Grok45XhighOpenCode'"
+      AGENT_FLAG="--agent-import-path 'grok45_adapter:Grok45MediumOpenCode'"
       ;;
     gemini36flash-opencode)
       # Google API direct (not OpenRouter) — needs GEMINI_API_KEY.

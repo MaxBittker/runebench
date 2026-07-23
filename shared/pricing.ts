@@ -107,8 +107,8 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // x-ai/grok-4.5, OpenRouter 2026-07-09. ≤200k-context rates; xAI doubles
   // rates past 200k input but our runs stay well under that.
   grok45:       { input: 2e-6,      cachedInput: 0.5e-6,   cacheWrite: 2e-6,      output: 6e-6 },
-  // Same rate card — xhigh effort just emits more reasoning tokens (billed as output).
-  'grok45-xhigh': { input: 2e-6,    cachedInput: 0.5e-6,   cacheWrite: 2e-6,      output: 6e-6 },
+  // Same rate card — medium effort just emits fewer reasoning tokens (billed as output).
+  'grok45-medium': { input: 2e-6,   cachedInput: 0.5e-6,   cacheWrite: 2e-6,      output: 6e-6 },
   // x-ai/grok-4.3, OpenRouter/models.dev 2026-07-09. ≤200k-context rates (2× past 200k).
   grok43:       { input: 1.25e-6,   cachedInput: 0.2e-6,   cacheWrite: 1.25e-6,   output: 2.5e-6 },
   // meta/muse-spark-1.1, OpenRouter 2026-07-16. $1.25/$4.25 per 1M; cache read

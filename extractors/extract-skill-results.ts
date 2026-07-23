@@ -30,7 +30,7 @@ const JOBS_DIR = join(import.meta.dir, '..', 'jobs');
 const RESULTS_ROOT = join(import.meta.dir, '..', 'results');
 
 // Longer keys MUST precede the keys they contain — detectModel is first-match-wins.
-const KNOWN_MODELS = ['fable-5-xhigh', 'fable-5', 'opus48-max', 'opus48', 'opus47-xhigh', 'opus47', 'opus', 'opus45', 'sonnet5-xhigh', 'sonnet5', 'sonnet46', 'sonnet45', 'haiku', 'codex53', 'gpt56terra-xhigh', 'gpt56terra', 'gpt56luna-xhigh', 'gpt56luna', 'gpt56-xhigh', 'gpt56', 'gpt55-apikey', 'gpt55', 'gpt54mini', 'gpt54nano', 'gpt54', 'gemini31', 'gemini36flash', 'gemini35flashlite', 'gemini35flash-high', 'gemini35flash', 'geminiflash', 'gemini', 'glm52-wandb', 'glm52', 'glm', 'gemma4', 'gptoss120b', 'kimi3-low', 'kimi3', 'kimi27', 'kimi26', 'kimi', 'deepseekflash', 'deepseek', 'qwen37max', 'qwen3max', 'qwen35', 'grok45-xhigh', 'grok45', 'grok43', 'inkling', 'laguna', 'muse'];
+const KNOWN_MODELS = ['fable-5-xhigh', 'fable-5', 'opus48-max', 'opus48', 'opus47-xhigh', 'opus47', 'opus', 'opus45', 'sonnet5-xhigh', 'sonnet5', 'sonnet46', 'sonnet45', 'haiku', 'codex53', 'gpt56terra-xhigh', 'gpt56terra', 'gpt56luna-xhigh', 'gpt56luna', 'gpt56-xhigh', 'gpt56', 'gpt55-apikey', 'gpt55', 'gpt54mini', 'gpt54nano', 'gpt54', 'gemini31', 'gemini36flash', 'gemini35flashlite', 'gemini35flash-high', 'gemini35flash', 'geminiflash', 'gemini', 'glm52-wandb', 'glm52', 'glm', 'gemma4', 'gptoss120b', 'kimi3-low', 'kimi3', 'kimi27', 'kimi26', 'kimi', 'deepseekflash', 'deepseek', 'qwen37max', 'qwen3max', 'qwen35', 'grok45-medium', 'grok45', 'grok43', 'inkling', 'laguna', 'muse'];
 
 const KNOWN_SKILLS = [
   'attack', 'defence', 'strength', 'hitpoints', 'ranged', 'prayer', 'magic',
