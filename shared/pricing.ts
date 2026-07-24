@@ -38,6 +38,15 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // Fable 5: published rate card $10/M input, $50/M output (above Opus). Anthropic
   // cache: read 0.1× input, 5-min cache write 1.25× input.
   'fable-5':    { input: 10e-6,   cachedInput: 1e-6,     cacheWrite: 12.5e-6,  output: 50e-6 },
+  // Opus 5, launched 2026-07-24: standard $5/$25 (same rate card as 4.8).
+  // Fast mode (2.5x speed) is 2x base: $10/$50; cache multipliers apply on the
+  // fast rates (read 0.1x, 5-min write 1.25x). Fast runs share the harbor model
+  // id 'anthropic/claude-opus-5' with standard runs — postprocess-costs keys
+  // the fast row off the '-opus5-fast-' job-dir token instead.
+  // cost_usd is baked into jobs/: -low/-xhigh at the correct 2×
+  // rate; base/-medium at 1.25× (~12% cache-write undercount).
+  opus5:        { input: 5e-6,    cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,  output: 25e-6 },
+  'opus5-fast': { input: 10e-6,   cachedInput: 1e-6,     cacheWrite: 12.5e-6,  output: 50e-6 },
   opus48:       { input: 5e-6,    cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,  output: 25e-6 }, // same rate card as 4.7
   'opus48-max': { input: 5e-6,    cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,  output: 25e-6 },
   opus47:       { input: 5e-6,    cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,  output: 25e-6 },
@@ -133,6 +142,9 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
 export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'anthropic/claude-fable-5[1m]':      'fable-5',
   'anthropic/claude-fable-5':          'fable-5',
+  // NOTE: opus5-fast shares this model id — postprocess-costs overrides the
+  // pricing key from the job-dir name for '-opus5-fast-' runs.
+  'anthropic/claude-opus-5':           'opus5',
   'anthropic/claude-opus-4-8':         'opus48',
   'anthropic/claude-opus-4-7':         'opus47',
   'anthropic/claude-opus-4-6':         'opus',

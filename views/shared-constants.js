@@ -14,6 +14,11 @@ const MODEL_CONFIG = {
   // pre-÷200 task prompt) are archived under jobs/_archive-v40-fable.
   'fable-5':   { displayName: 'Claude Fable 5',   shortName: 'Fable 5',    color: '#c2703e', order: 0.1, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-06-09' },
   'fable-5-xhigh': { displayName: 'Claude Fable 5 xhigh', shortName: 'Fable 5 xh', color: '#9c5226', order: 0.12, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-06-09' },
+  'opus5-fast': { displayName: 'Claude Opus 5 fast', shortName: 'Opus 5 fast', color: '#5c4020', order: 0.24, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-07-24' },
+  'opus5':    { displayName: 'Claude Opus 5',     shortName: 'Opus 5',      color: '#8a6a3f', order: 0.26, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-07-24' },
+  'opus5-xhigh': { displayName: 'Claude Opus 5 xhigh', shortName: 'Opus 5 xh', color: '#7a4a2b', order: 0.27, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-07-24' },
+  'opus5-medium': { displayName: 'Claude Opus 5 medium', shortName: 'Opus 5 med', color: '#c9714b', order: 0.28, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-07-24' },
+  'opus5-low': { displayName: 'Claude Opus 5 low', shortName: 'Opus 5 lo', color: '#c78d5e', order: 0.29, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-07-24' },
   'opus48':   { displayName: 'Claude Opus 4.8',   shortName: 'Opus 4.8',    color: '#7a6045', order: 0.3, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-05-28' },
   'opus48-max': { displayName: 'Claude Opus 4.8 max', shortName: 'Opus 4.8 max', color: '#2e1f10', order: 0.35, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-05-28' },
   'opus47':   { displayName: 'Claude Opus 4.7',   shortName: 'Opus 4.7',    color: '#6d5843', order: 0.5, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-04-16' },

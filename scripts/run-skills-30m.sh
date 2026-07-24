@@ -17,6 +17,8 @@ source "$SCRIPT_DIR/run-common.sh"
 
 # ── Model definitions (agent|model-id|label) ────────────────────
 ALL_MODELS="
+claude-code|anthropic/claude-opus-5|opus5-fast
+claude-code|anthropic/claude-opus-5|opus5
 claude-code|anthropic/claude-opus-4-7|opus47
 claude-code|anthropic/claude-opus-4-6|opus
 claude-code|anthropic/claude-opus-4-5|opus45
@@ -141,6 +143,12 @@ for model_name in $SELECTED_MODELS; do
   #   - For opencode agents: sets the bash loop timeout (game time)
   #   - For codex: sets the Modal exec timeout (must be < harbor's 1920s agent timeout)
   case "$model_name" in
+    opus5-fast)
+      # Fast mode (2.5x speed, $10/$50 per MTok) via patched harbor claude_code.py:
+      # injects --settings '{"fastMode": true}' + CLAUDE_CODE_SKIP_FAST_MODE_ORG_CHECK=1.
+      # Requires fast mode enabled for the org in Console (Claude Code preferences).
+      MODEL_EXTRA_ARGS="--ak fast_mode=true"
+      ;;
     codex|codex53|gpt55|gpt56|gpt56luna|gpt56terra|gpt54|gpt54mini|gpt54nano)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900"
       ;;
