@@ -167,7 +167,7 @@ export function Heatmap({ data, activeModel, activeSkill }) {
                         </td>
                       `;
                     })}
-                    <td className="heatmap-total">${m.logMean.toFixed(1)}</td>
+                    <td className="heatmap-total">${m.logMean.toFixed(2)}</td>
                   </tr>
                 `;
               })}
