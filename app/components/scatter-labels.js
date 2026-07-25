@@ -61,6 +61,12 @@ const overlapArea = (a, b) => {
 const orient = (ax, ay, bx, by, cx, cy) =>
   Math.sign((bx - ax) * (cy - ay) - (by - ay) * (cx - ax));
 const segsCross = (s, t) => {
+  // Bounding-box reject first: in a scatter most segment pairs are nowhere
+  // near each other, and this is the innermost loop of the whole solve.
+  if (Math.max(s.x1, s.x2) < Math.min(t.x1, t.x2) ||
+      Math.max(t.x1, t.x2) < Math.min(s.x1, s.x2) ||
+      Math.max(s.y1, s.y2) < Math.min(t.y1, t.y2) ||
+      Math.max(t.y1, t.y2) < Math.min(s.y1, s.y2)) return false;
   const o1 = orient(s.x1, s.y1, s.x2, s.y2, t.x1, t.y1);
   const o2 = orient(s.x1, s.y1, s.x2, s.y2, t.x2, t.y2);
   const o3 = orient(t.x1, t.y1, t.x2, t.y2, s.x1, s.y1);
@@ -70,16 +76,26 @@ const segsCross = (s, t) => {
 
 // Does a segment pass through a rectangle? (Endpoint inside, or a proper
 // crossing with any edge.)
+// Hot path: called twice per (label, other-label) pair for every candidate of
+// every label, so it does a bounding-box reject before any real work and
+// builds its edge segments in place rather than allocating four objects per
+// call. A segment whose box merely touches the rect can't be strictly inside
+// it, and `segsCross` only reports proper crossings, so the reject is exact.
+const edgeSeg = { x1: 0, y1: 0, x2: 0, y2: 0 };
 const segHitsRect = (s, r) => {
+  if (Math.max(s.x1, s.x2) <= r.left || Math.min(s.x1, s.x2) >= r.right ||
+      Math.max(s.y1, s.y2) <= r.top || Math.min(s.y1, s.y2) >= r.bottom) return false;
   const inside = (x, y) => x > r.left && x < r.right && y > r.top && y < r.bottom;
   if (inside(s.x1, s.y1) || inside(s.x2, s.y2)) return true;
-  const edges = [
-    { x1: r.left, y1: r.top, x2: r.right, y2: r.top },
-    { x1: r.right, y1: r.top, x2: r.right, y2: r.bottom },
-    { x1: r.right, y1: r.bottom, x2: r.left, y2: r.bottom },
-    { x1: r.left, y1: r.bottom, x2: r.left, y2: r.top },
-  ];
-  return edges.some((e) => segsCross(s, e));
+  const e = edgeSeg;
+  e.x1 = r.left; e.y1 = r.top; e.x2 = r.right; e.y2 = r.top;
+  if (segsCross(s, e)) return true;
+  e.x1 = r.right; e.y1 = r.top; e.x2 = r.right; e.y2 = r.bottom;
+  if (segsCross(s, e)) return true;
+  e.x1 = r.right; e.y1 = r.bottom; e.x2 = r.left; e.y2 = r.bottom;
+  if (segsCross(s, e)) return true;
+  e.x1 = r.left; e.y1 = r.bottom; e.x2 = r.left; e.y2 = r.top;
+  return segsCross(s, e);
 };
 
 // Leader segment for a label placement: dot center → nearest point on the
@@ -159,6 +175,17 @@ function solve(ctx, chartArea, meta, points) {
   // spots, the uncapped distance term keeps every label as close to its own
   // dot as the crowd allows, and the side term breaks remaining ties toward a
   // consistent right-of-dot look.
+  // Every other label's box and leader depend only on its own current
+  // placement, which is fixed while we scan one label's candidates — so they
+  // are computed once and refreshed only when a placement actually moves.
+  const boxes = new Array(labels.length);
+  const segs = new Array(labels.length);
+  const refresh = (m) => {
+    boxes[m] = boxOf(labels[m]);
+    segs[m] = segOf(labels[m], labels[m]);
+  };
+  for (let m = 0; m < labels.length; m++) refresh(m);
+
   const costAt = (k, c) => {
     const box = boxOf({ ...c, w: labels[k].w, h: labels[k].h });
     const seg = segOf(labels[k], c);
@@ -170,9 +197,9 @@ function solve(ctx, chartArea, meta, points) {
     for (let m = 0; m < labels.length; m++) {
       if (m === k) continue;
       if (!kGhost && labels[m].p.ghost) continue;
-      const mBox = boxOf(labels[m]);
+      const mBox = boxes[m];
       cost += overlapArea(box, mBox) * 4;
-      const mSeg = segOf(labels[m], labels[m]);
+      const mSeg = segs[m];
       if (segsCross(seg, mSeg)) cost += 150;
       // Leaders tunneling under someone else's label (or vice versa) read as
       // a false attachment — almost as bad as a crossing.
@@ -199,6 +226,7 @@ function solve(ctx, chartArea, meta, points) {
       }
       if (best && (best.left !== L.left || best.y !== L.y)) {
         Object.assign(L, best);
+        refresh(k);
         improved = true;
       }
     }
@@ -215,20 +243,24 @@ function solve(ctx, chartArea, meta, points) {
     let untangled = false;
     for (let k = 0; k < labels.length; k++) {
       for (let m = k + 1; m < labels.length; m++) {
-        if (!segsCross(segOf(labels[k], labels[k]), segOf(labels[m], labels[m]))) continue;
+        if (!segsCross(segs[k], segs[m])) continue;
         const cur = { ck: placementOf(labels[k]), cm: placementOf(labels[m]) };
         let best = cur;
         let bestCost = costAt(k, cur.ck) + costAt(m, cur.cm);
         for (const ck of labels[k].candidates) {
           Object.assign(labels[k], ck);
+          refresh(k);
           for (const cm of labels[m].candidates) {
             Object.assign(labels[m], cm);
+            refresh(m);
             const cost = costAt(k, ck) + costAt(m, cm);
             if (cost < bestCost - 1e-6) { bestCost = cost; best = { ck, cm }; }
           }
         }
         Object.assign(labels[k], best.ck);
         Object.assign(labels[m], best.cm);
+        refresh(k);
+        refresh(m);
         if (best !== cur) untangled = true;
       }
     }
@@ -237,6 +269,14 @@ function solve(ctx, chartArea, meta, points) {
 
   return labels;
 }
+
+// Solving is expensive (coordinate descent over ~75 candidates per label, plus
+// a pairwise uncrossing pass), and toggles that rebuild the chart — e.g. the
+// Pareto checkbox — alternate between a handful of layouts. Keep solved
+// placements in a module-level cache so a plugin built for a fresh chart can
+// reuse a layout an earlier instance already paid for.
+const layoutCache = new Map();
+const LAYOUT_CACHE_MAX = 16;
 
 export function makeLabelPlugin(points, id = 'pointLabels') {
   // The layout only depends on chart geometry, so cache the solved placements
@@ -261,7 +301,19 @@ export function makeLabelPlugin(points, id = 'pointLabels') {
         meta.data.map((el) => `${el.x},${el.y}`).join(';') + '|' +
         points.map((p) => p && `${p.label}${p.big ? '!' : ''}${p.ghost ? '~' : ''}`).join(';');
       if (key !== cacheKey) {
-        cached = solve(ctx, chartArea, meta, points);
+        const hit = layoutCache.get(key);
+        if (hit) {
+          // The key pins geometry, dataset order and label/big/ghost state,
+          // but colors and hover alpha live on *this* chart's point objects —
+          // rebind by index rather than carrying the old ones over.
+          cached = hit.map((L) => ({ ...L, p: points[L.idx] }));
+        } else {
+          cached = solve(ctx, chartArea, meta, points);
+          layoutCache.set(key, cached);
+          if (layoutCache.size > LAYOUT_CACHE_MAX) {
+            layoutCache.delete(layoutCache.keys().next().value);
+          }
+        }
         cacheKey = key;
       }
       const labels = cached;

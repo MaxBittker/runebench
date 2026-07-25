@@ -117,6 +117,9 @@ export function ReleaseScatter({ data }) {
         responsive: true,
         maintainAspectRatio: false,
         devicePixelRatio: Math.max(2, window.devicePixelRatio || 1),
+        // See CostScatter: animating point positions re-solves the label
+        // layout on every frame.
+        animation: false,
         onClick: (evt, els) => {
           if (!els.length) return;
           const p = points[els[0].index];

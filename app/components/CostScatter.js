@@ -91,10 +91,30 @@ function paretoKeys(rows) {
   return keys;
 }
 
+// Icons are shared across chart rebuilds: the frontier toggle tears the chart
+// down and back up, and a fresh Image per toggle starts !complete even when
+// the file is in the HTTP cache — so the faded copies would flash blank every
+// time. One Image (and one greyed canvas) per src, kept for the page's life.
+const iconCache = new Map();
+const fadedCache = new Map();
+
+function iconFor(src) {
+  let img = iconCache.get(src);
+  if (!img) {
+    img = new Image(20, 20);
+    img.src = src;
+    iconCache.set(src, img);
+  }
+  return img;
+}
+
 // Greyed-out copy of a model icon for off-frontier points. Icons are usually
 // cached by this point, but redraw on load (and repaint the chart) if not.
-function makeFadedIcon(img, repaint) {
-  const c = document.createElement('canvas');
+function makeFadedIcon(src, repaint) {
+  let c = fadedCache.get(src);
+  if (c) return c;
+  const img = iconFor(src);
+  c = document.createElement('canvas');
   c.width = 20;
   c.height = 20;
   const draw = () => {
@@ -105,11 +125,14 @@ function makeFadedIcon(img, repaint) {
   };
   if (img.complete && img.naturalWidth) {
     draw();
+    fadedCache.set(src, c);
   } else {
+    // Don't cache until it has real pixels, or a blank canvas sticks around.
     img.addEventListener('load', () => {
       draw();
+      fadedCache.set(src, c);
       repaint();
-    });
+    }, { once: true });
   }
   return c;
 }
@@ -132,10 +155,9 @@ export function CostScatter({ data }) {
     // toggle is on, off-frontier points get a greyed icon + grey label.
     const points = rows.map((r) => {
       const cfg = MODEL_CONFIG[r.key];
-      const img = new Image(20, 20);
-      img.src = cfg.icon;
+      const img = iconFor(cfg.icon);
       const dimmed = frontierOnly && !frontier.has(r.key);
-      const dimImg = dimmed ? makeFadedIcon(img, repaint) : null;
+      const dimImg = dimmed ? makeFadedIcon(cfg.icon, repaint) : null;
       return {
         x: r.avgCost,
         y: r.logMean,
@@ -177,6 +199,10 @@ export function CostScatter({ data }) {
         responsive: true,
         maintainAspectRatio: false,
         devicePixelRatio: Math.max(2, window.devicePixelRatio || 1),
+        // Point positions move on every animation frame, which invalidates the
+        // label plugin's layout cache and re-solves placements ~60 times for
+        // one toggle. The entry animation isn't worth that.
+        animation: false,
         onClick: (evt, els) => {
           if (!els.length) return;
           const p = points[els[0].index];
