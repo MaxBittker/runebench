@@ -19,10 +19,17 @@ hunks stop applying.
   filesystem call raises instead of hanging the trial indefinitely, and the
   surrounding `@retry` bumped from 2 to 3 attempts. Fixes indefinite
   post-agent stalls during artifact download.
+- Memory as `(request, limit)` — `memory=(4096, task.memory_mb)` instead of a
+  flat reservation, so Modal bills actual usage above a 4 GB resident floor
+  rather than the full `memory_mb`. `generate-tasks.ts` emits `memory_mb`
+  as a *cap* on that basis; without this patch every task reserves its cap.
 
 `harbor/agents/installed/claude_code.py`:
 - `reasoning_effort` enum extended with `xhigh` and `max` (needed for the
   `-xhigh` claude-code variants).
+- `fast_mode` agent kwarg — `--ak fast_mode=true` injects
+  `--settings '{"fastMode": true}'` plus `CLAUDE_CODE_SKIP_FAST_MODE_ORG_CHECK=1`.
+  Required by the `opus5-fast` row in `scripts/run-skills-30m.sh`.
 
 ## Apply
 
@@ -36,5 +43,7 @@ patch -p1 -d "$SITE" < patches/harbor-local.patch
 
 ```bash
 grep -q sandbox_region "$SITE/harbor/environments/modal.py" && \
-grep -q xhigh "$SITE/harbor/agents/installed/claude_code.py" && echo OK
+grep -q 'memory=(4096' "$SITE/harbor/environments/modal.py" && \
+grep -q xhigh "$SITE/harbor/agents/installed/claude_code.py" && \
+grep -q fastMode "$SITE/harbor/agents/installed/claude_code.py" && echo OK
 ```

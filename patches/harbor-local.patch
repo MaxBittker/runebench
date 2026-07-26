@@ -16,7 +16,19 @@
  
          # Select strategy based on compose mode
          self._strategy: _ModalStrategy = (
-@@ -908,6 +910,7 @@
+@@ -903,11 +905,18 @@
+             idle_timeout=self._sandbox_idle_timeout,
+             name=self.session_id,
+             cpu=self.task_env_config.cpus,
+-            memory=self.task_env_config.memory_mb,
++            # Local patch: (request, limit) instead of a flat reservation.
++            # Modal bills max(request, actual usage); a plain int reserves —
++            # and bills — the full amount even when idle. 4096 MiB floor
++            # (memory above the request is best-effort — keep the always-
++            # resident baseline reserved), task's memory_mb as the hard cap.
++            # Re-apply after harbor upgrades.
++            memory=(4096, self.task_env_config.memory_mb),
+             gpu=self._gpu_config(),
              block_network=block_network,
              secrets=self._secrets_config(),
              volumes=self._volumes_config(),  # type: ignore[arg-type]
@@ -24,7 +36,7 @@
              **kwargs,
          )
  
-@@ -968,7 +971,7 @@
+@@ -968,7 +977,7 @@
          )
  
      @retry(
@@ -33,7 +45,7 @@
          wait=wait_exponential(multiplier=1, min=1, max=10),
          reraise=True,
      )
-@@ -984,7 +987,13 @@
+@@ -984,7 +993,13 @@
              raise RuntimeError("Sandbox not found. Please start the environment first.")
  
          # Creates parent directories on the remote side if needed.
@@ -48,7 +60,7 @@
  
      async def _sdk_upload_dir(self, source_dir: Path | str, target_dir: str) -> None:
          """
-@@ -1017,7 +1026,7 @@
+@@ -1017,7 +1032,7 @@
                  await self._sdk_upload_file(file_path, target_file_path)
  
      @retry(
@@ -57,7 +69,7 @@
          wait=wait_exponential(multiplier=1, min=1, max=10),
          reraise=True,
      )
-@@ -1035,7 +1044,14 @@
+@@ -1035,7 +1050,14 @@
              raise RuntimeError("Sandbox not found. Please start the environment first.")
  
          # Creates parent directories locally if needed.
@@ -84,3 +96,35 @@
              env_fallback="CLAUDE_CODE_EFFORT_LEVEL",
          ),
          CliFlag(
+@@ -87,10 +87,13 @@
+         self,
+         logs_dir: Path,
+         memory_dir: str | None = None,
++        fast_mode: str | bool = False,
+         *args,
+         **kwargs,
+     ):
+         self.memory_dir = memory_dir
++        # rs-bench2 local patch: opt into fast mode (--ak fast_mode=true).
++        self.fast_mode = str(fast_mode).strip().lower() in ("1", "true", "yes")
+         super().__init__(logs_dir, *args, **kwargs)
+ 
+     def get_version_command(self) -> str | None:
+@@ -1086,6 +1089,17 @@
+ 
+         cli_flags = self.build_cli_flags()
+         extra_flags = (cli_flags + " ") if cli_flags else ""
++
++        # rs-bench2 local patch: fast mode. The --settings blob is the only
++        # documented headless opt-in. CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
++        # (set above) suppresses the client-side org availability check, which
++        # would silently disable fast mode — skip the check entirely; the API
++        # still rejects fast requests if the org has fast mode disabled.
++        if self.fast_mode:
++            env["CLAUDE_CODE_SKIP_FAST_MODE_ORG_CHECK"] = "1"
++            extra_flags += (
++                f"--settings {shlex.quote(json.dumps({'fastMode': True}))} "
++            )
+ 
+         await self.exec_as_agent(
+             environment,
