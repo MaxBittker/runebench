@@ -110,9 +110,12 @@ function processTrialDir(trialDir: string) {
   }
 
   // Rows whose rate card differs from the base model's but share its harbor
-  // model id — the job-dir name token is the only signal. First entry so far:
-  // opus5-fast (fast mode is 2x the standard claude-opus-5 rates).
+  // model id — the job-dir name token is the only signal.
+  //   opus5-fast      — fast mode is 2x the standard claude-opus-5 rates.
+  //   gpt56*-fast     — codex service_tier="fast" (premium-speed serving).
   if (/[/-]opus5-fast-/.test(trialDir)) modelName = 'opus5-fast';
+  const gpt56Fast = /[/-](gpt56(?:terra|luna)?)-fast-/.exec(trialDir);
+  if (gpt56Fast) modelName = `${gpt56Fast[1]}-fast`;
 
   const ar = result.agent_result || {};
   const inputTokens = ar.n_input_tokens || 0;
