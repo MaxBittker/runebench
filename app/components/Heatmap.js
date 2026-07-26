@@ -1,4 +1,4 @@
-import { html, useMemo } from '../html.js';
+import { html, useMemo, useState } from '../html.js';
 import { navigate } from '../router.js';
 
 
@@ -27,6 +27,8 @@ function peakRateAtHorizon(skillData, skill) {
 }
 
 export function Heatmap({ data, activeModel, activeSkill }) {
+  const [sortCol, setSortCol] = useState('logMean');
+
   const { models, skillOrder, skillMax, skillPad } = useMemo(() => {
     if (!data) return { models: [], skillOrder: [], skillMax: {} };
 
@@ -47,16 +49,23 @@ export function Heatmap({ data, activeModel, activeSkill }) {
 
     models.sort((a, b) => b.logMean - a.logMean);
 
-    const skillOrder = SKILL_ORDER.slice().sort((a, b) => {
-      // Order skills by how many models scored zero (fewest zeros first).
-      const zeroA = models.filter(m => !(m.skills[a] > 0)).length;
-      const zeroB = models.filter(m => !(m.skills[b] > 0)).length;
-      if (zeroA !== zeroB) return zeroA - zeroB;
-      // tie-break by average rate
-      const avgA = models.reduce((s, m) => s + m.skills[a], 0) / models.length;
-      const avgB = models.reduce((s, m) => s + m.skills[b], 0) / models.length;
-      return avgB - avgA;
-    });
+    // Skills stay grouped with their category; categories and skills within
+    // each category are both ordered by difficulty (fewest model zeros first).
+    const SKILL_GROUPS = [
+      ['attack', 'strength', 'hitpoints', 'defence'],
+      ['magic', 'ranged'],
+      ['woodcutting', 'thieving', 'mining', 'fishing', 'prayer', 'fletching'],
+      ['firemaking', 'cooking', 'smithing', 'crafting'],
+    ];
+    const zeros = skill => models.filter(m => !(m.skills[skill] > 0)).length;
+    const avgRate = skill => models.reduce((s, m) => s + m.skills[skill], 0) / models.length;
+    const bySkillDifficulty = (a, b) =>
+      (zeros(a) - zeros(b)) || (avgRate(b) - avgRate(a));
+    const zeroAvg = g => g.reduce((s, sk) => s + zeros(sk), 0) / g.length;
+    const skillOrder = SKILL_GROUPS
+      .map(group => group.slice().sort(bySkillDifficulty))
+      .sort((ga, gb) => zeroAvg(ga) - zeroAvg(gb))
+      .flat();
 
     const skillMax = {};
     const skillPad = {};
@@ -69,11 +78,30 @@ export function Heatmap({ data, activeModel, activeSkill }) {
     return { models, skillOrder, skillMax, skillPad };
   }, [data]);
 
+  const sortedModels = useMemo(() => {
+    const sorted = models.slice();
+    if (sortCol === 'model') {
+      sorted.sort((a, b) => {
+        const an = MODEL_CONFIG[a.key]?.shortName || a.key;
+        const bn = MODEL_CONFIG[b.key]?.shortName || b.key;
+        return an.localeCompare(bn);
+      });
+    } else if (sortCol !== 'logMean') {
+      sorted.sort((a, b) => (b.skills[sortCol] || 0) - (a.skills[sortCol] || 0) || b.logMean - a.logMean);
+    }
+    return sorted;
+  }, [models, sortCol]);
+
   if (!data || models.length === 0) return null;
+
+  // Default sort (logMean) shows no indicator.
+  function sortedClass(col) {
+    return sortCol === col && col !== 'logMean' ? ' is-sorted' : '';
+  }
 
   function handleCellClick(modelKey, skill) {
     const sd = data[modelKey]?.[skill];
-    if (sd?.trajectory?.length > 0) {
+    if (sd?.hasTrajectory || sd?.trajectory?.length > 0) {
       navigate('trajectory/' + modelKey + '/' + skill);
     }
   }
@@ -96,21 +124,29 @@ export function Heatmap({ data, activeModel, activeSkill }) {
           <table className="heatmap-table">
             <thead>
               <tr>
-                <th style=${{ textAlign: 'left' }}>Model</th>
+                <th style=${{ textAlign: 'left' }}
+                    className=${'heatmap-th-sortable' + sortedClass('model')}
+                    onClick=${() => setSortCol('model')}>
+                  Model
+                </th>
                 ${skillOrder.map(skill => html`
-                  <th key=${skill} title=${SKILL_DISPLAY[skill]}>
+                  <th key=${skill} title=${SKILL_DISPLAY[skill]}
+                      className=${'heatmap-th-sortable' + sortedClass(skill)}
+                      onClick=${() => setSortCol(skill)}>
                     <img src=${VIEWS_BASE + 'skill-icons/' + skill + '.png'}
                          alt=${SKILL_DISPLAY[skill]} width="16" height="16" />
                   </th>
                 `)}
-                <th style=${{ fontWeight: 700 }} className="heatmap-th-tip">
+                <th style=${{ fontWeight: 700 }}
+                    className=${'heatmap-th-tip heatmap-th-sortable'}
+                    onClick=${() => setSortCol('logMean')}>
                   \u27e8ln\u27e9
                   <span className="tip-text">avg of ln(1 + XP/min) across skills</span>
                 </th>
               </tr>
             </thead>
             <tbody>
-              ${models.map(m => {
+              ${sortedModels.map(m => {
                 const cfg = MODEL_CONFIG[m.key];
                 if (!cfg) return null;
                 return html`
@@ -131,7 +167,7 @@ export function Heatmap({ data, activeModel, activeSkill }) {
                         </td>
                       `;
                     })}
-                    <td className="heatmap-total">${m.logMean.toFixed(1)}</td>
+                    <td className="heatmap-total">${m.logMean.toFixed(2)}</td>
                   </tr>
                 `;
               })}

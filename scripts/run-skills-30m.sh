@@ -17,6 +17,8 @@ source "$SCRIPT_DIR/run-common.sh"
 
 # ── Model definitions (agent|model-id|label) ────────────────────
 ALL_MODELS="
+claude-code|anthropic/claude-opus-5|opus5-fast
+claude-code|anthropic/claude-opus-5|opus5
 claude-code|anthropic/claude-opus-4-7|opus47
 claude-code|anthropic/claude-opus-4-6|opus
 claude-code|anthropic/claude-opus-4-5|opus45
@@ -34,26 +36,35 @@ codex|openai/gpt-5.6-sol|gpt56
 codex|openai/gpt-5.6-sol|gpt56-xhigh
 codex|openai/gpt-5.6-luna|gpt56luna
 codex|openai/gpt-5.6-luna|gpt56luna-xhigh
+codex|openai/gpt-5.6-terra|gpt56terra
+codex|openai/gpt-5.6-terra|gpt56terra-xhigh
 gemini-cli|google/gemini-3-pro-preview|gemini
 gemini-cli|google/gemini-3.1-pro-preview|gemini31
 gemini-cli|google/gemini-3-flash-preview|geminiflash
 gemini-cli|google/gemini-3.5-flash|gemini35flash
 gemini-cli-high|google/gemini-3.5-flash|gemini35flash-high
+gemini36flash-opencode|google/gemini-3.6-flash|gemini36flash
+gemini35flashlite-opencode|google/gemini-3.5-flash-lite|gemini35flashlite
 glm-opencode|openrouter/z-ai/glm-5|glm
 glm52-opencode|openrouter/z-ai/glm-5.2|glm52
+glm52-wandb-opencode|openrouter/z-ai/glm-5.2|glm52-wandb
+gemma4-opencode|openrouter/google/gemma-4-31b-it|gemma4
+gptoss120b-opencode|openrouter/openai/gpt-oss-120b|gptoss120b
 kimi-opencode|openrouter/moonshotai/kimi-k2.5|kimi
 qwen35-opencode|openrouter/qwen/qwen3.5-35b-a3b|qwen35
 qwen3max-opencode|openrouter/qwen/qwen3-max|qwen3max
 qwen37max-opencode|openrouter/qwen/qwen3.7-max|qwen37max
 deepseek-opencode|openrouter/deepseek/deepseek-v4-pro|deepseek
+deepseekflash-opencode|openrouter/deepseek/deepseek-v4-flash|deepseekflash
 kimi26-opencode|openrouter/moonshotai/kimi-k2.6|kimi26
 kimi27-opencode|openrouter/moonshotai/kimi-k2.7-code|kimi27
 kimi3-opencode|openrouter/moonshotai/kimi-k3|kimi3
 grok45-opencode|openrouter/x-ai/grok-4.5|grok45
-grok45-xhigh-opencode|openrouter/x-ai/grok-4.5|grok45-xhigh
+grok45-medium-opencode|openrouter/x-ai/grok-4.5|grok45-medium
 grok43-opencode|openrouter/x-ai/grok-4.3|grok43
 muse-opencode|openrouter/meta/muse-spark-1.1|muse
-inkling-opencode|tinker/thinkingmachines/Inkling:peft:262144|inkling
+inkling-opencode|openrouter/thinkingmachines/inkling|inkling
+laguna-opencode|openrouter/poolside/laguna-s-2.1|laguna
 
 "
 
@@ -132,16 +143,22 @@ for model_name in $SELECTED_MODELS; do
   #   - For opencode agents: sets the bash loop timeout (game time)
   #   - For codex: sets the Modal exec timeout (must be < harbor's 1920s agent timeout)
   case "$model_name" in
-    codex|codex53|gpt55|gpt56|gpt56luna|gpt54|gpt54mini|gpt54nano)
+    opus5-fast)
+      # Fast mode (2.5x speed, $10/$50 per MTok) via patched harbor claude_code.py:
+      # injects --settings '{"fastMode": true}' + CLAUDE_CODE_SKIP_FAST_MODE_ORG_CHECK=1.
+      # Requires fast mode enabled for the org in Console (Claude Code preferences).
+      MODEL_EXTRA_ARGS="--ak fast_mode=true"
+      ;;
+    codex|codex53|gpt55|gpt56|gpt56luna|gpt56terra|gpt54|gpt54mini|gpt54nano)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900"
       ;;
-    gpt56-xhigh|gpt56luna-xhigh)
+    gpt56-xhigh|gpt56luna-xhigh|gpt56terra-xhigh)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900 --ak reasoning_effort=xhigh"
       ;;
-    glm|glm52|kimi|kimi26|kimi27|kimi3|kimi3-low|qwen35|qwen3max|qwen37max|deepseek|inkling)
+    glm|glm52|glm52-wandb|gemma4|gptoss120b|kimi|kimi26|kimi27|kimi3|kimi3-low|qwen35|qwen3max|qwen37max|deepseek|deepseekflash|inkling|laguna|gemini36flash|gemini35flashlite)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1800"
       ;;
-    grok45|grok45-xhigh|grok43|muse)
+    grok45|grok45-medium|grok43|muse)
       # xAI blocks grok models for EU-origin requests (403 "not available in
       # your region") — pin the Modal sandbox to a US region so OpenRouter sees
       # a US client. Requires the sandbox_region patch in harbor's modal.py.

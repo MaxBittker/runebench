@@ -134,6 +134,11 @@ bun extractors/extract-gold-results.ts               # gold: keyed by condition-
 bun extractors/extract-arrav-results.ts              # arrav duo: completion times
 ```
 
+The skill extractor writes three artifacts per horizon dir: `_data.js` (slim summary, no
+trajectory/samples — loaded up-front by the website), per-model `<model>.json` (full payloads,
+lazy-fetched by `app/model-data.js` when a trajectory is viewed — commit these alongside
+`_data.js` for skills-30m), and `_combined.json` (full, gitignored, for local viewers).
+
 ## Adding a new task
 
 1. Add a new entry to the `SKILLS` array or modify `generateSkillXpVariants()` in `generate-tasks.ts`

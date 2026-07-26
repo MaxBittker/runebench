@@ -7,6 +7,7 @@ import { makeLabelPlugin } from './scatter-labels.js';
 // run, the base model adopts the xh point (score) but keeps the base label, so
 // no "xh" text appears. (Release date is shared between base and xh.)
 const XH_TO_BASE = {
+  'opus5-xhigh': 'opus5',
   'fable-5-xhigh': 'fable-5',
   'opus48-max': 'opus48',
   'opus47-xhigh': 'opus47',
@@ -116,6 +117,9 @@ export function ReleaseScatter({ data }) {
         responsive: true,
         maintainAspectRatio: false,
         devicePixelRatio: Math.max(2, window.devicePixelRatio || 1),
+        // See CostScatter: animating point positions re-solves the label
+        // layout on every frame.
+        animation: false,
         onClick: (evt, els) => {
           if (!els.length) return;
           const p = points[els[0].index];

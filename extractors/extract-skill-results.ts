@@ -22,14 +22,17 @@ import {
   detectModel, detectModelFromConfig, getTrialDirs,
   findTrackingInTrial, findRewardInTrial, findTokenUsageInTrial,
   trimSamplesToHorizon,
-  parseCLIArgs, resolveJobDirs, writeResults,
+  parseCLIArgs, resolveJobDirs,
   XP_NORMALIZATION_DIVISOR,
 } from '../shared/extract-utils';
 
 const JOBS_DIR = join(import.meta.dir, '..', 'jobs');
 const RESULTS_ROOT = join(import.meta.dir, '..', 'results');
 
-const KNOWN_MODELS = ['fable-5-xhigh', 'fable-5', 'opus48-max', 'opus48', 'opus47-xhigh', 'opus47', 'opus', 'opus45', 'sonnet5-xhigh', 'sonnet5', 'sonnet46', 'sonnet45', 'haiku', 'codex53', 'gpt56luna-xhigh', 'gpt56luna', 'gpt56-xhigh', 'gpt56', 'gpt55-apikey', 'gpt55', 'gpt54mini', 'gpt54nano', 'gpt54', 'gemini31', 'gemini35flash-high', 'gemini35flash', 'geminiflash', 'gemini', 'glm52', 'glm', 'kimi3-low', 'kimi3', 'kimi27', 'kimi26', 'kimi', 'deepseek', 'qwen37max', 'qwen3max', 'qwen35', 'grok45-xhigh', 'grok45', 'grok43', 'inkling', 'muse'];
+// Longer keys MUST precede the keys they contain — detectModel is first-match-wins.
+// Opus 5 effort variants must precede the bare 'opus5' (high = default, no suffix).
+const KNOWN_MODELS = ['opus5-xhigh', 'opus5-low', 'opus5-medium',
+  'fable-5-xhigh', 'fable-5', 'opus5-fast', 'opus5', 'opus48-max', 'opus48', 'opus47-xhigh', 'opus47', 'opus', 'opus45', 'sonnet5-xhigh', 'sonnet5', 'sonnet46', 'sonnet45', 'haiku', 'codex53', 'gpt56terra-xhigh', 'gpt56terra', 'gpt56luna-xhigh', 'gpt56luna', 'gpt56-xhigh', 'gpt56', 'gpt55-apikey', 'gpt55', 'gpt54mini', 'gpt54nano', 'gpt54', 'gemini31', 'gemini36flash', 'gemini35flashlite', 'gemini35flash-high', 'gemini35flash', 'geminiflash', 'gemini', 'glm52-wandb', 'glm52', 'glm', 'gemma4', 'gptoss120b', 'kimi3-low', 'kimi3', 'kimi27', 'kimi26', 'kimi', 'deepseekflash', 'deepseek', 'qwen37max', 'qwen3max', 'qwen35', 'grok45-medium', 'grok45', 'grok43', 'inkling', 'laguna', 'muse'];
 
 const KNOWN_SKILLS = [
   'attack', 'defence', 'strength', 'hitpoints', 'ranged', 'prayer', 'magic',
@@ -473,6 +476,8 @@ for (const dir of jobDirs) {
   let model = detectModel(jobName, KNOWN_MODELS);
   if (model === 'unknown') model = detectModelFromConfig(dir, KNOWN_MODELS, {
     preMatch: (lower) => {
+      if (lower.includes('gemini-3.6-flash') || lower.includes('gemini-3_6_flash')) return 'gemini36flash';
+      if (lower.includes('gemini-3.5-flash-lite') || lower.includes('gemini-3_5_flash_lite')) return 'gemini35flashlite';
       if (lower.includes('gemini-3.5-flash') || lower.includes('gemini-3_5_flash')) return 'gemini35flash';
       if (lower.includes('gemini-3.1') || lower.includes('gemini-3_1')) return 'gemini31';
       if (lower.includes('gemini-3-flash') || lower.includes('gemini-3_flash')) return 'geminiflash';
@@ -691,12 +696,33 @@ if (extracted === 0) {
   process.exit(1);
 }
 
-writeResults(RESULTS_DIR, combined, 'COMBINED_DATA');
+// _combined.json keeps the full payload (local viewers / drag-drop into graph-skills.html).
+const combinedPath = join(RESULTS_DIR, '_combined.json');
+writeFileSync(combinedPath, JSON.stringify(combined, null, 2));
+console.log(`\nWrote ${combinedPath}`);
 
-// Write per-model JSON files
+// _data.js is loaded up-front by the website, so it carries summary fields only.
+// trajectory + samples live in the per-model JSONs, fetched on demand by app/model-data.js.
+const slim: Record<string, Record<string, any>> = {};
+for (const [model, skills] of Object.entries(combined)) {
+  slim[model] = {};
+  for (const [skill, entry] of Object.entries(skills as Record<string, any>)) {
+    const { trajectory, samples, ...rest } = entry;
+    if (rest.toolCalls == null && Array.isArray(trajectory)) {
+      rest.toolCalls = trajectory.filter((s: any) => s.source === 'tool').length;
+    }
+    rest.hasTrajectory = Array.isArray(trajectory) && trajectory.length > 0;
+    slim[model][skill] = rest;
+  }
+}
+const dataJsPath = join(RESULTS_DIR, '_data.js');
+writeFileSync(dataJsPath, `window.COMBINED_DATA = ${JSON.stringify(slim)};`);
+console.log(`Wrote ${dataJsPath} (slim: no trajectory/samples)`);
+
+// Per-model JSON files: committed + served, so compact.
 for (const [model, skills] of Object.entries(combined)) {
   const modelPath = join(RESULTS_DIR, `${model}.json`);
-  writeFileSync(modelPath, JSON.stringify({ model, skills }, null, 2));
+  writeFileSync(modelPath, JSON.stringify({ model, skills }));
 }
 
 // ── Diagnostics ──────────────────────────────────────────────────

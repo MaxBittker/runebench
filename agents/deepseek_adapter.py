@@ -19,3 +19,13 @@ class DeepSeekOpenCode(OpenCodeAdapter):
     @staticmethod
     def name() -> str:
         return "deepseek-opencode"
+
+
+class DeepSeekFlashOpenCode(OpenCodeAdapter):
+    _default_model = "openrouter/deepseek/deepseek-v4-flash"
+    _log_prefix = "deepseekflash"
+    _log_file = "opencode-deepseekflash.txt"
+
+    @staticmethod
+    def name() -> str:
+        return "deepseekflash-opencode"

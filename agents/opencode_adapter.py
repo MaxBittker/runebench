@@ -221,7 +221,6 @@ class OpenCodeAdapter(BaseInstalledAgent):
             "ANTHROPIC_API_KEY",
             "OPENAI_API_KEY",
             "GEMINI_API_KEY",
-            "TINKER_API_KEY",
         ]
     }
 
@@ -306,7 +305,7 @@ class OpenCodeAdapter(BaseInstalledAgent):
         escaped_model = shlex.quote(model_name)
 
         # Variable prefix for the restart loop (bash-identifier-safe).
-        # Sanitize ALL non-alphanumerics: a hyphen or dot (e.g. "grok45-xhigh")
+        # Sanitize ALL non-alphanumerics: a hyphen or dot (e.g. "grok45-medium")
         # would make invalid shell variable names and silently break the loop.
         vp = re.sub(r"[^A-Za-z0-9_]", "_", prefix.upper())
 

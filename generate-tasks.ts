@@ -69,7 +69,7 @@ interface VariantTask {
   testsFiles?: Array<{ src: string; dst: string }>;
   /** Save files generated from declarative configs into environment/ */
   saveConfigs?: Array<{ config: SaveConfig; dst: string }>;
-  /** Sandbox sizing overrides (defaults: 2 cpus / 4096 MB) */
+  /** Sandbox sizing overrides (defaults: 2 cpus / 8192 MB) */
   cpus?: number;
   memoryMb?: number;
 }
@@ -952,7 +952,20 @@ timeout_sec = ${v.agentTimeout}.0
 
 [environment]
 cpus = ${v.cpus ?? 2}
-memory_mb = ${v.memoryMb ?? 4096}
+# Hard memory LIMIT, not a flat reservation — the local harbor modal.py
+# patch passes memory=(4096, memory_mb): 4GB reserved floor (the always-
+# resident baseline), dynamic growth up to this cap, billed at actual usage
+# instead of a flat request. The single-bot cap stays at 8192 — no run has
+# legitimately hit it, so OOM risk is unchanged; the savings come from the
+# lower request. Multi-bot tasks override it (arrav duo / teamResources).
+# History: at a plain 4096 request the baseline stack (game server + gateway +
+# MCP + tracker + agent CLI) sat at the ceiling and Modal SIGTERMed the agent
+# exec mid-run once agents backgrounded a few bun scripts (exit 143, log cut
+# mid-step; 9/16 gemini35flashlite trials on 2026-07-21). Sandbox survived, so
+# trials scored as unfair floor estimates rather than failing loudly — hence
+# the floor must cover the ~4GB baseline (memory above the request is
+# best-effort on Modal).
+memory_mb = ${v.memoryMb ?? 8192}
 storage_mb = 10240
 allow_internet = true
 build_timeout_sec = 1200.0

@@ -3,7 +3,6 @@ import { useRoute } from '../router.js';
 import { Hero } from './Hero.js';
 import { PromoPlayer } from './PromoPlayer.js';
 import { Overview } from './Overview.js';
-import { CumulativeChart } from './CumulativeChart.js';
 import { Heatmap } from './Heatmap.js';
 import { GoldMatrix } from './GoldMatrix.js';
 import { GoldCostTable } from './GoldCostTable.js';
@@ -41,16 +40,12 @@ export function App() {
       <${PromoPlayer} data=${data} />
       <${Overview} />
       <${AgentInterface} />
-      <${CumulativeChart} data=${data} />
-      <${Heatmap} data=${data} activeModel=${route.model} activeSkill=${route.skill} />
       <section className="section">
         <div className="container is-max-widescreen">
-          <div className="has-text-centered" style=${{ marginBottom: '2rem' }}>
-            <h2 className="title is-3">Cost vs. Performance</h2>
-          </div>
           <${CostScatter} data=${data} />
         </div>
       </section>
+      <${Heatmap} data=${data} activeModel=${route.model} activeSkill=${route.skill} />
       <!-- <${GoldMatrix} data=${goldData} /> -->
       <!-- <${GoldCostTable} data=${goldData} /> -->
         <${TrajectoryModal} model=${route.model || 'opus'} skill=${route.skill || 'woodcutting'} data=${data} seekTs=${route.seekTs} />

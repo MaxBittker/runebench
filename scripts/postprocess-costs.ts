@@ -109,6 +109,11 @@ function processTrialDir(trialDir: string) {
     modelName = `${modelInfo.provider}/${modelInfo.name}`;
   }
 
+  // Rows whose rate card differs from the base model's but share its harbor
+  // model id — the job-dir name token is the only signal. First entry so far:
+  // opus5-fast (fast mode is 2x the standard claude-opus-5 rates).
+  if (/[/-]opus5-fast-/.test(trialDir)) modelName = 'opus5-fast';
+
   const ar = result.agent_result || {};
   const inputTokens = ar.n_input_tokens || 0;
   const cacheTokens = ar.n_cache_tokens || 0;

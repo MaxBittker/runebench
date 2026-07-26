@@ -132,6 +132,30 @@ configure_model_env() {
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'glm52_adapter:Glm52OpenCode'"
       ;;
+    glm52-wandb-opencode)
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'glm52wandb_adapter:Glm52WandbOpenCode'"
+      ;;
+    gemma4-opencode)
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'gemma4_adapter:Gemma4OpenCode'"
+      ;;
+    gptoss120b-opencode)
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'gptoss_adapter:GptOss120bOpenCode'"
+      ;;
     kimi-opencode)
       if [ -z "${OPENROUTER_API_KEY:-}" ]; then
         echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
@@ -171,6 +195,14 @@ configure_model_env() {
       fi
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'deepseek_adapter:DeepSeekOpenCode'"
+      ;;
+    deepseekflash-opencode)
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'deepseek_adapter:DeepSeekFlashOpenCode'"
       ;;
     kimi26-opencode)
       if [ -z "${OPENROUTER_API_KEY:-}" ]; then
@@ -228,20 +260,42 @@ configure_model_env() {
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'grok43_adapter:Grok43OpenCode'"
       ;;
-    grok45-xhigh-opencode)
+    grok45-medium-opencode)
       if [ -z "${OPENROUTER_API_KEY:-}" ]; then
         echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
         return 1
       fi
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
-      AGENT_FLAG="--agent-import-path 'grok45_adapter:Grok45XhighOpenCode'"
+      AGENT_FLAG="--agent-import-path 'grok45_adapter:Grok45MediumOpenCode'"
+      ;;
+    gemini36flash-opencode)
+      # Google API direct (not OpenRouter) — needs GEMINI_API_KEY.
+      if [ -z "${GEMINI_API_KEY:-}" ]; then
+        echo "  WARNING: GEMINI_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'gemini_oc_adapter:Gemini36FlashOpenCode'"
+      ;;
+    gemini35flashlite-opencode)
+      if [ -z "${GEMINI_API_KEY:-}" ]; then
+        echo "  WARNING: GEMINI_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'gemini_oc_adapter:Gemini35FlashLiteOpenCode'"
+      ;;
+    laguna-opencode)
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'laguna_adapter:LagunaOpenCode'"
       ;;
     inkling-opencode)
-      # Tinker (Thinking Machines) — not an OpenRouter model; needs TINKER_API_KEY.
-      # OpenCode substitutes an unset {env:TINKER_API_KEY} to an empty string
-      # silently, so guard here rather than burning a run on a 401.
-      if [ -z "${TINKER_API_KEY:-}" ]; then
-        echo "  WARNING: TINKER_API_KEY not found in .env, skipping $model_name"
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
         return 1
       fi
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
