@@ -27,6 +27,15 @@ import { parseSave, INV_TYPE, WORN_TYPE, BANK_TYPE } from './save-parser';
 const BOT_NAMES = (process.env.BOT_NAMES || 'agenta agentb agentc').split(/\s+/).filter(Boolean);
 const SMITHING_SKILL_INDEX = 13;
 
+// Items every bot starts with (TEAM_START_INVENTORY in generate-tasks.ts;
+// exported by the task's test.sh). The starting bronze axe (1351) is itself a
+// level-1 smithable worth 16gp — without this filter it puts a 16gp floor
+// under every run. A run that genuinely smiths a bronze axe forfeits those
+// 16gp; anything beyond the very first bar/dagger out-scores it anyway.
+const STARTING_ITEM_IDS = new Set(
+    (process.env.STARTING_ITEM_IDS || '1265 1351').split(/\s+/).filter(Boolean).map(Number),
+);
+
 const TRACKING_PATHS = [
     '/logs/tracking/smith_team_tracking.json',
     '/logs/verifier/smith_team_tracking.json',
@@ -90,6 +99,7 @@ function main() {
 
     for (const ev of tracking?.events ?? []) {
         if (ev.event !== 'gained') continue;
+        if (STARTING_ITEM_IDS.has(ev.itemId)) continue;
         candidates.push({
             bot: ev.bot,
             itemId: ev.itemId,
@@ -120,9 +130,10 @@ function main() {
 
         const smithingLevel = save.skills[SMITHING_SKILL_INDEX]?.level ?? 1;
         const miningLevel = save.skills[14]?.level ?? 1;
+        // Save files store XP ×10 (engine-internal); normalize to real XP.
         perBot[bot] = {
-            finalSmithing: { level: smithingLevel, xp: save.skills[SMITHING_SKILL_INDEX]?.xp ?? 0 },
-            finalMining: { level: miningLevel, xp: save.skills[14]?.xp ?? 0 },
+            finalSmithing: { level: smithingLevel, xp: Math.floor((save.skills[SMITHING_SKILL_INDEX]?.xp ?? 0) / 10) },
+            finalMining: { level: miningLevel, xp: Math.floor((save.skills[14]?.xp ?? 0) / 10) },
         };
         console.log(`${bot}: final Smithing ${smithingLevel}, Mining ${miningLevel}`);
 
@@ -130,6 +141,7 @@ function main() {
             for (const item of save.inventories.get(invType) ?? []) {
                 const r = recipeById.get(item.id);
                 if (!r) continue;
+                if (STARTING_ITEM_IDS.has(item.id)) continue;
                 candidates.push({
                     bot,
                     itemId: item.id,

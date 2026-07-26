@@ -61,6 +61,20 @@ bun sdk/cli.ts {username}
 
 A failed 5-minute run wastes more time than five 30 second diagnostic runs. **Fail fast and start simple.**
 
+**HARD CAP: shell commands are killed at ~120 seconds**, and when that happens
+you may see no output at all — a working script that hits the cap looks exactly
+like a broken one. If a long command "vanished" with no output, assume it hit
+the cap; do NOT rewrite the script. Run anything longer than ~90s in the
+background and poll its log instead:
+
+```bash
+nohup bun run /tmp/grind.ts >> /tmp/grind.log 2>&1 &
+sleep 30 && tail -20 /tmp/grind.log     # poll progress each turn
+```
+
+Have the script print progress (XP, inventory counts) every few iterations so
+`tail` shows it's alive.
+
 Look out for "I can't reach" messages - the solution is often to open closed gates or that the item isn't accessible. 
 
 Read and grep in the learnings/ and wiki/ folder for tips, skill guides, item and npc locations, and shop information.

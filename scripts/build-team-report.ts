@@ -10,15 +10,26 @@ const LOCAL = process.env.LOCAL || '/tmp/team-results';
 const OUT = process.env.OUT || 'team-events-report.html';
 
 const DISPLAY: Record<string, string> = {
-  glm52: 'GLM-5.2', gemini35flash: 'Gemini-3.5-Flash', opus48: 'Claude Opus 4.8',
-  gpt55: 'GPT-5.5', gpt54mini: 'GPT-5.4-mini', sonnet5: 'Claude Sonnet 5',
+  opus48: 'Claude Opus 4.8', opus47: 'Claude Opus 4.7', opus: 'Claude Opus 4.6', opus45: 'Claude Opus 4.5',
+  sonnet5: 'Claude Sonnet 5', sonnet46: 'Claude Sonnet 4.6', sonnet45: 'Claude Sonnet 4.5', haiku: 'Claude Haiku 4.5',
+  fable5: 'Claude Fable 5', codex53: 'GPT-5.3-Codex', gpt55: 'GPT-5.5', gpt54: 'GPT-5.4',
+  gpt54mini: 'GPT-5.4-mini', gpt54nano: 'GPT-5.4-nano', gemini: 'Gemini 3 Pro', gemini31: 'Gemini 3.1 Pro',
+  geminiflash: 'Gemini 3 Flash', gemini35flash: 'Gemini 3.5 Flash', glm: 'GLM-5', glm52: 'GLM-5.2',
+  kimi: 'Kimi K2.5', qwen3: 'Qwen3-Coder-Next', qwen35: 'Qwen3.5-35B', qwen3max: 'Qwen3-Max',
 };
+// Provider brand color per model (drives the leaderboard dot + outcome bars).
+const C = { anthropic: '#d97757', openai: '#10a37f', gemini: '#4285f4', glm: '#22c55e', kimi: '#a855f7', qwen: '#f59e0b' };
 const PROVIDER: Record<string, string> = {
-  glm52: '#22c55e', gemini35flash: '#4285f4', opus48: '#d97757',
-  gpt55: '#10a37f', gpt54mini: '#10a37f', sonnet5: '#d97757',
+  opus48: C.anthropic, opus47: C.anthropic, opus: C.anthropic, opus45: C.anthropic,
+  sonnet5: C.anthropic, sonnet46: C.anthropic, sonnet45: C.anthropic, haiku: C.anthropic, fable5: C.anthropic,
+  codex53: C.openai, gpt55: C.openai, gpt54: C.openai, gpt54mini: C.openai, gpt54nano: C.openai,
+  gemini: C.gemini, gemini31: C.gemini, geminiflash: C.gemini, gemini35flash: C.gemini,
+  glm: C.glm, glm52: C.glm, kimi: C.kimi, qwen3: C.qwen, qwen35: C.qwen, qwen3max: C.qwen,
 };
-// Every model we launched, so the report shows pending ones too.
-const ROSTER = ['opus48', 'sonnet5', 'gpt55', 'gpt54mini', 'gemini35flash', 'glm52'];
+// Every model we launched, so the report shows pending/failed ones too.
+const ROSTER = ['opus48', 'opus47', 'opus', 'opus45', 'sonnet5', 'sonnet46', 'sonnet45', 'haiku', 'fable5',
+  'codex53', 'gpt55', 'gpt54', 'gpt54mini', 'gpt54nano', 'gemini', 'gemini31', 'geminiflash', 'gemini35flash',
+  'glm', 'glm52', 'kimi', 'qwen3', 'qwen35', 'qwen3max'];
 
 // Skills to chart per event: [primary (solid), secondary (dashed)]
 const SKILL_CFG: Record<string, { k: string; label: string; dash: boolean }[]> = {
@@ -32,6 +43,7 @@ interface Row {
   reward: number; costUsd: number | null; inTok: number | null; outTok: number | null;
   reward_detail: any; perBot: any; chatCount: number; chat: string;
   bots: string[]; samples: any[];
+  firstMs: number | null; // smith-team: when the score-setting item was first smithed
 }
 
 function parseJob(job: string): Row | null {
@@ -65,6 +77,16 @@ function parseJob(job: string): Row | null {
     samples.push(pt);
   }
 
+  // Smith-team tiebreak input: earliest valid "gained" event at the winning cost
+  // (bestItem.elapsedMs isn't guaranteed to be the first occurrence of the item).
+  let firstMs: number | null = null;
+  if (task === 'smith-team' && (reward.reward ?? 0) > 0) {
+    const times = (reward.events ?? [])
+      .filter((e: any) => e.event === 'gained' && e.valid && e.cost === reward.reward && e.elapsedMs != null)
+      .map((e: any) => e.elapsedMs);
+    firstMs = times.length ? Math.min(...times) : (reward.bestItem?.elapsedMs ?? null);
+  }
+
   return {
     label, task, ts,
     reward: reward.reward ?? 0,
@@ -76,7 +98,7 @@ function parseJob(job: string): Row | null {
       : reward.best,
     perBot: reward.perBot ?? {},
     chatCount: reward.chatCount ?? 0,
-    chat, bots, samples,
+    chat, bots, samples, firstMs,
   };
 }
 
@@ -97,11 +119,46 @@ const dn = (l: string) => DISPLAY[l] ?? l;
 const fmt = (n: number | null, d = 2) => n == null ? '—' : n.toLocaleString('en-US', { maximumFractionDigits: d });
 const usd = (n: number | null) => n == null ? '—' : '$' + n.toFixed(2);
 const medal = (i: number) => ['🥇', '🥈', '🥉'][i] ?? `${i + 1}`;
+const mmss = (ms: number) => `${Math.floor(ms / 60000)}:${String(Math.floor(ms / 1000) % 60).padStart(2, '0')}`;
+
+// Reward ties: magic saturates at level 99, so break by best-account XP;
+// smith ties (same item value) break by who first smithed the item — earlier wins.
+const xpOf = (r: Row) => r.reward_detail?.xp ?? 0;
+const rankCmp = (task: string) => (a: Row, b: Row) =>
+  b.reward - a.reward ||
+  (task === 'smith-team' ? (a.firstMs ?? Infinity) - (b.firstMs ?? Infinity) : xpOf(b) - xpOf(a));
+
+// Grid timelapse video for a run, if it was generated (videos/<task>-<label>.mp4).
+const VIDEO_DIR = process.env.VIDEO_DIR || 'videos';
+function videoTag(r: Row): string {
+  const rel = `${VIDEO_DIR}/${r.task}-${r.label}.mp4`;
+  if (!existsSync(rel)) return '';
+  return `<video class="grid-vid" controls preload="none" playsinline src="${rel}"></video>
+    <div class="vidcap muted">3-bot grid timelapse (agenta · agentb · agentc) — 45min run compressed to ~8min. <a href="${rel}">open ↗</a></div>`;
+}
+
+// Per-task outcome bar chart: reward by model, tallest first, colored by provider.
+function outcomeBars(task: 'smith-team' | 'magic-team' | 'crafting-team'): string {
+  const done = byTask(task).filter(r => r.reward > 0).sort(rankCmp(task));
+  if (!done.length) return '';
+  const max = Math.max(...done.map(r => r.reward));
+  const rowH = 22, gap = 6, PL = 132, PR = 60, W = 720;
+  const H = done.length * (rowH + gap) + 10;
+  const bars = done.map((r, i) => {
+    const yy = 6 + i * (rowH + gap);
+    const w = Math.max(2, (r.reward / max) * (W - PL - PR));
+    const col = PROVIDER[r.label] ?? '#888';
+    return `<text x="${PL - 8}" y="${yy + rowH / 2 + 4}" text-anchor="end" class="bl">${esc(dn(r.label))}</text>
+      <rect x="${PL}" y="${yy}" width="${w.toFixed(1)}" height="${rowH}" rx="3" fill="${col}"/>
+      <text x="${PL + w + 6}" y="${yy + rowH / 2 + 4}" class="bv">${fmt(r.reward, 0)}</text>`;
+  }).join('');
+  const unit = task === 'smith-team' ? 'best item value (gp)' : task === 'magic-team' ? 'best Magic level' : 'best Crafting XP';
+  return `<svg viewBox="0 0 ${W} ${H}" class="bars" role="img" aria-label="${unit} by model">${bars}</svg>
+    <div class="barcap muted">${unit} · ${done.length} models scored</div>`;
+}
 
 function leaderboard(task: 'smith-team' | 'magic-team' | 'crafting-team') {
-  // Magic level saturates at 99, so tiebreak the magic board by best-account XP.
-  const xpOf = (r: Row) => r.reward_detail?.xp ?? 0;
-  const done = byTask(task).sort((a, b) => b.reward - a.reward || xpOf(b) - xpOf(a));
+  const done = byTask(task).sort(rankCmp(task));
   const doneLabels = new Set(done.map(d => d.label));
   const pending = ROSTER.filter(l => !doneLabels.has(l));
   const scoreHead = task === 'magic-team' ? 'Best Magic level'
@@ -115,7 +172,7 @@ function leaderboard(task: 'smith-team' | 'magic-team' | 'crafting-team') {
       ? `Magic <b>${d.level ?? r.reward}</b> · ${fmt(d.xp, 0)} xp <span class="muted">(${d.bot ?? '?'})</span>`
       : task === 'crafting-team'
       ? `Crafting <b>${d.topBot?.level ?? '?'}</b> · ${fmt(d.topBot?.xp ?? r.reward, 0)} xp <span class="muted">(${d.topBot?.bot ?? '?'}; split ${split})</span>`
-      : `<b>${esc(d.name ?? '—')}</b> · ${fmt(d.cost ?? r.reward, 0)}gp <span class="muted">(${d.bot ?? '?'}, smith ${d.smithingLevel ?? '?'})</span>`;
+      : `<b>${esc(d.name ?? '—')}</b> · ${fmt(d.cost ?? r.reward, 0)}gp <span class="muted">(${d.bot ?? '?'}, smith ${d.smithingLevel ?? '?'}${r.firstMs != null ? `, first at ${mmss(r.firstMs)}` : ''})</span>`;
     return `<tr>
       <td class="rank">${medal(i)}</td>
       <td><span class="dot" style="background:${PROVIDER[r.label] ?? '#888'}"></span>${esc(dn(r.label))}</td>
@@ -205,12 +262,17 @@ function perBotCard(r: Row) {
     <div class="card-h"><span class="dot" style="background:${PROVIDER[r.label] ?? '#888'}"></span><b>${esc(dn(r.label))}</b>
       <span class="muted">— ${r.task} · score ${fmt(r.reward, 0)} · ${usd(r.costUsd)} · ${r.chatCount} msgs</span></div>
     <div class="bots">${cells}</div>
+    ${videoTag(r)}
     ${levelChart(r)}
     ${chatLines.length ? `<details><summary>chat (${chatLines.length})</summary><pre>${chatSample}${esc(more)}</pre></details>` : ''}
   </div>`;
 }
 
 const nDone = rows.length, nTotal = ROSTER.length * 3;
+const nVideos = rows.filter(r => existsSync(`${VIDEO_DIR}/${r.task}-${r.label}.mp4`)).length;
+const magicRows = byTask('magic-team');
+const magicTop = magicRows.length ? Math.max(...magicRows.map(r => r.reward)) : 0;
+const magicMin = magicRows.length ? Math.min(...magicRows.map(r => r.reward)) : 0;
 const smithMagicDone = byTask('smith-team').length + byTask('magic-team').length;
 const now = new Date().toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
 
@@ -250,12 +312,18 @@ const html = `<!doctype html><html lang="en"><head><meta charset="utf-8">
   .chart { width:100%; max-width:560px; height:auto; margin:10px 0 2px; display:block; }
   .chart .ax { fill:#6e7681; font-size:9px; }
   .chart .lg { fill:#adbac7; font-size:10px; }
+  .grid-vid { width:100%; max-width:720px; border:1px solid #21262d; border-radius:8px; margin:10px 0 2px; display:block; background:#000; }
+  .vidcap, .barcap { font-size:12px; margin:2px 0 6px; }
+  .vidcap a, .barcap a { color:#58a6ff; }
+  .bars { width:100%; max-width:720px; height:auto; margin:8px 0 2px; display:block; }
+  .bars .bl { fill:#adbac7; font-size:11px; }
+  .bars .bv { fill:#e6edf3; font-size:11px; font-weight:600; }
   .foot { color:#6e7681; font-size:12px; margin-top:40px; border-top:1px solid #21262d; padding-top:14px; }
   code { background:#21262d; padding:1px 5px; border-radius:4px; font-size:13px; }
 </style></head><body><div class="wrap">
   <h1>RuneBench — Team Events</h1>
   <p class="sub">One model drives three cooperating bots. Generated ${now}</p>
-  <span class="prog">${nDone} / ${nTotal} runs complete</span>
+  <span class="prog">${nDone} / ${nTotal} runs complete · ${nVideos} grid videos</span>
   &nbsp;<a href="collaboration-analysis.html" style="color:#58a6ff">→ Team collaboration analysis</a>
 
   <div class="findings">
@@ -263,17 +331,20 @@ const html = `<!doctype html><html lang="en"><head><meta charset="utf-8">
     <p>Every bot starts <b>identical</b>: a bronze pickaxe, a bronze axe, and level-30 Attack/Strength/Defence/Hitpoints — <b>no coins, runes, ore, materials, or processing tools</b>, and no pre-assigned leader. Each event is a bootstrap-an-economy-from-nothing challenge (mine/fight/earn → buy/craft the resource → funnel it to one specialist), so scores are low and hard-won and cooperation is load-bearing. See the <a href="collaboration-analysis.html">collaboration analysis</a> for how each team communicated and whether a real gather→supply→specialist chain actually emerged.</p>
   </div>
 
-  <h2>⚒️ Smith-Team <span class="muted" style="font-size:14px">— highest-value item forged in 60 min</span></h2>
-  <p class="lead">Score = store value (gp) of the single most valuable item the team legitimately smiths. Rewards role specialization: two miners feeding one dedicated smith who climbs the metal tiers.</p>
+  <h2>⚒️ Smith-Team <span class="muted" style="font-size:14px">— highest-value item forged in 45 min</span></h2>
+  <p class="lead">Score = store value (gp) of the single most valuable item the team legitimately smiths; ties break by who smithed that item <b>first</b>. Rewards role specialization: two miners feeding one dedicated smith who climbs the metal tiers.</p>
   ${leaderboard('smith-team')}
+  ${outcomeBars('smith-team')}
 
-  <h2>✨ Magic-Team <span class="muted" style="font-size:14px">— highest Magic level on any account in 60 min</span></h2>
-  <p class="lead">Score = the best single account's final Magic level. Casting needs runes and the team starts with <b>none</b> — they must earn coins (combat/thieving) and buy runes, or mine essence and runecraft, then funnel them to one caster. It's a brutal bootstrap: the top account this round reached only <b>Magic 22</b>, and one team never got casting working (Magic 1).</p>
+  <h2>✨ Magic-Team <span class="muted" style="font-size:14px">— highest Magic level on any account in 45 min</span></h2>
+  <p class="lead">Score = the best single account's final Magic level. Casting needs runes and the team starts with <b>none</b> — they must earn coins (combat/thieving) and buy runes, or mine essence and runecraft, then funnel them to one caster. It's a brutal bootstrap: the top account this round reached only <b>Magic ${magicTop}</b>, and the weakest team ended at <b>Magic ${magicMin}</b>.</p>
   ${leaderboard('magic-team')}
+  ${outcomeBars('magic-team')}
 
-  <h2>🧵 Crafting-Team <span class="muted" style="font-size:14px">— highest Crafting XP on any account in 60 min</span></h2>
+  <h2>🧵 Crafting-Team <span class="muted" style="font-size:14px">— highest Crafting XP on any account in 45 min</span></h2>
   <p class="lead">Score = the best single account's Crafting XP (the <b>max</b>, like magic-team). The team starts with <b>no materials or tools</b> — they bootstrap from shearing sheep + spinning wool (free), then earn coins to buy a needle/chisel and gather cowhides/gems. The per-bot split shows how lopsided each team went.</p>
   ${leaderboard('crafting-team')}
+  ${outcomeBars('crafting-team')}
 
   <h2>Per-model detail</h2>
   ${rows.length ? rows.sort((a,b)=> a.task.localeCompare(b.task) || b.reward-a.reward).map(perBotCard).join('\n') : '<p class="muted">No completed runs yet.</p>'}

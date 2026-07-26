@@ -36,6 +36,32 @@ start_displays() {
     sleep 1
 }
 
+# ── Helper: pre-provision SDK workspaces for every team bot ──────
+# The image only ships /app/bots/agent (single-bot tasks). Without a per-bot
+# dir, agents self-provision from _template/bot.env, whose SERVER default
+# points at the remote demo server — a password-walled dead end inside the
+# sandbox that costs minutes per bot.
+provision_workspaces() {
+    for name in $BOT_NAMES; do
+        mkdir -p "/app/bots/$name"
+        if [ ! -f "/app/bots/$name/bot.env" ]; then
+            printf 'BOT_USERNAME=%s\nPASSWORD=test\nSERVER=localhost\nSHOW_CHAT=true\n' \
+                "$name" > "/app/bots/$name/bot.env"
+        fi
+    done
+    # Defuse the template's demo-server default for any bot dir an agent
+    # still creates by hand, and keep teammate chat visible (create-bot.ts
+    # flips the template to SHOW_CHAT=false, which silently breaks in-game
+    # coordination on team tasks).
+    if [ -f /app/bots/_template/bot.env ]; then
+        sed -i 's/^SERVER=.*/SERVER=localhost/' /app/bots/_template/bot.env 2>/dev/null || true
+        grep -q '^SERVER=' /app/bots/_template/bot.env || echo 'SERVER=localhost' >> /app/bots/_template/bot.env
+        sed -i 's/^SHOW_CHAT=.*/SHOW_CHAT=true/' /app/bots/_template/bot.env 2>/dev/null || true
+        grep -q '^SHOW_CHAT=' /app/bots/_template/bot.env || echo 'SHOW_CHAT=true' >> /app/bots/_template/bot.env
+    fi
+    echo "[entrypoint-team] Provisioned /app/bots/{$(echo $BOT_NAMES | tr ' ' ',')}"
+}
+
 # ── Helper: start engine and wait for readiness ──────────────────
 start_engine() {
     cd /app/server/engine && bun run src/app.ts &
@@ -123,6 +149,9 @@ start_watcher() {
 }
 
 # ── Initial startup ──────────────────────────────────────────────
+
+echo "[entrypoint-team] Provisioning bot workspaces..."
+provision_workspaces
 
 echo "[entrypoint-team] Starting virtual displays..."
 start_displays

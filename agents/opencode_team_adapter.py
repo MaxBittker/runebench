@@ -1,23 +1,24 @@
 """
-Team adapter for three-bot cooperative tasks (smith-team).
+Team adapter for multi-bot cooperative tasks (smith/magic/crafting-team).
 
-Runs THREE concurrent OpenCode sessions of the SAME model in one sandbox:
-  - session A drives bot "agenta"
-  - session B drives bot "agentb"
-  - session C drives bot "agentc"
+Runs N concurrent OpenCode sessions of the SAME model in one sandbox, one per
+bot (agenta, agentb, ...). N defaults to 3; pass `--ak team_size=N` to match
+the -n<N> task variants (the task's BOT_NAMES env and save files are generated
+per size by generate-tasks.ts).
 
 Each session receives the shared task instruction plus a role addendum naming
 its bot. Roles are symmetric — the task instruction asks the team to divide
 labor themselves (via in-game chat).
 
-Logs:    /logs/agent/opencode-agenta.txt / -agentb.txt / -agentc.txt
-Output:  trajectory.json          (merged, A then B then C steps)
-         trajectory-agent{a,b,c}.json (per-session)
+Logs:    /logs/agent/opencode-<bot>.txt (one per bot)
+Output:  trajectory.json          (merged, session steps in bot order)
+         trajectory-<bot>.json    (per-session)
 Context: token counts and cost summed across all sessions.
 """
 
 import json
 import logging
+import shlex
 
 from harbor.environments.base import BaseEnvironment
 from harbor.models.agent.context import AgentContext
@@ -26,22 +27,55 @@ from opencode_adapter import OpenCodeAdapter, _parse_opencode_log
 
 logger = logging.getLogger(__name__)
 
-_BOTS = ["agenta", "agentb", "agentc"]
+_DEFAULT_TEAM_SIZE = 3
+
+_NUM_WORDS = {2: "two", 3: "three", 4: "four", 5: "five", 6: "six"}
 
 _ROLE_ADDENDUM = (
     "=== YOUR ROLE ===\n"
     "You are PLAYER {letter}. You control bot \"{bot}\" ONLY — every "
-    "execute_code call must use bot_name: \"{bot}\". Your two teammates are "
-    "separate agent sessions controlling the other bots. Coordinate with them "
-    "through in-game chat."
+    "execute_code call must use bot_name: \"{bot}\". Your {n_word} "
+    "teammate{plural} {verb} separate agent session{plural} controlling the "
+    "other bot{plural}. Coordinate with them through in-game chat."
+)
+
+_SOLO_ADDENDUM = (
+    "=== YOUR ROLE ===\n"
+    "You are the only player. You control bot \"{bot}\" — every "
+    "execute_code call must use bot_name: \"{bot}\"."
 )
 
 
+def _team_bots(n: int) -> list[str]:
+    return [f"agent{chr(ord('a') + i)}" for i in range(n)]
+
+
+def _role_addendum(bot: str, index: int, team_size: int) -> str:
+    if team_size == 1:
+        return _SOLO_ADDENDUM.format(bot=bot)
+    n_teammates = team_size - 1
+    return _ROLE_ADDENDUM.format(
+        letter=chr(ord("A") + index),
+        bot=bot,
+        n_word=_NUM_WORDS.get(n_teammates, str(n_teammates)),
+        plural="" if n_teammates == 1 else "s",
+        verb="is a" if n_teammates == 1 else "are",
+    )
+
+
 class OpenCodeTeamAdapter(OpenCodeAdapter):
-    """Three concurrent OpenCode sessions of one model, one per bot."""
+    """N concurrent OpenCode sessions of one model, one per bot."""
 
     _log_prefix = "opencode-team"
     _log_file = "opencode-team.txt"  # unused; per-session files below
+
+    # Seconds between session launches (avoids the shared-SQLite boot race)
+    _LAUNCH_STAGGER_SEC = 1
+
+    def __init__(self, team_size: int | str | None = None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        n = int(team_size) if team_size is not None else _DEFAULT_TEAM_SIZE
+        self._bots = _team_bots(n)
 
     @staticmethod
     def name() -> str:
@@ -65,26 +99,43 @@ class OpenCodeTeamAdapter(OpenCodeAdapter):
         bash_timeout = self._run_timeout_sec or 1620
         model_name = self._resolved_model_name()
 
+        # Write each session's instruction into the sandbox and reference it
+        # via $(cat ...) — inlining N full instructions into the single exec
+        # command breaks Modal's 64 KB ARG_MAX at larger team sizes.
         session_cmds = []
-        for i, bot in enumerate(_BOTS):
-            addendum = _ROLE_ADDENDUM.format(letter=chr(ord("A") + i), bot=bot)
+        for i, bot in enumerate(self._bots):
+            addendum = _role_addendum(bot, i, len(self._bots))
             role_instruction = f"{instruction}\n\n{addendum}"
+            instr_file = f"/tmp/opencode-instruction-{bot}.txt"
+            await self.exec_as_agent(
+                environment,
+                command=f"printf %s {shlex.quote(role_instruction)} > {instr_file}",
+                env=env,
+            )
             session_cmds.append(
                 self._compose_run_command(
                     model_name=model_name,
                     instruction=role_instruction,
                     prefix=f"opencode-{bot}",
                     log_file=self._session_log_file(bot),
-                    bash_timeout=bash_timeout,
+                    # Shrink each staggered session's budget by its launch
+                    # delay so all sessions end at the same wall-clock time.
+                    bash_timeout=max(bash_timeout - i * self._LAUNCH_STAGGER_SEC, 60),
+                    instruction_file=instr_file,
                 )
             )
 
         # Launch all sessions concurrently; the command returns when every
         # restart loop has exhausted its (shared-length) time budget.
+        # Launches are staggered a few seconds apart: simultaneous first boots
+        # race on OpenCode's shared SQLite storage (schema creation under
+        # ~/.local/share/opencode) and die with "database is locked".
         parts = []
         waits = []
         for i, cmd in enumerate(session_cmds):
-            parts.append(f"( {cmd} ) & TEAM_PID_{i}=$!")
+            delay = i * self._LAUNCH_STAGGER_SEC
+            prefix = f"sleep {delay}; " if delay else ""
+            parts.append(f"( {prefix}{cmd} ) & TEAM_PID_{i}=$!")
             waits.append(f"wait $TEAM_PID_{i}")
         run_command = (
             "; ".join(parts) + "; " + "; ".join(waits) + "; "
@@ -102,7 +153,7 @@ class OpenCodeTeamAdapter(OpenCodeAdapter):
     def populate_context_post_run(self, context: AgentContext) -> None:
         """Parse all session logs → per-bot + merged trajectories, summed tokens."""
         trajectories = {}
-        for bot in _BOTS:
+        for bot in self._bots:
             log_path = self.logs_dir / self._session_log_file(bot)
             if not log_path.exists():
                 logger.warning("OpenCode log not found: %s", log_path)

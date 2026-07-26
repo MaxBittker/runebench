@@ -1,7 +1,7 @@
 #!/bin/bash
 # Run the crafting-team benchmark: each run is ONE model controlling THREE bots
 # via three concurrent OpenCode sessions (opencode_team_adapter).
-# Score = total Crafting XP across the team the team reaches in 30m.
+# Score = highest single account's Crafting XP the team reaches in 30m.
 #
 # Usage:
 #   run-crafting-team.sh                 # all models
@@ -19,6 +19,7 @@ HORIZON="30m"
 # ── Defaults ──────────────────────────────────────────────────────
 SELECTED_MODELS=""
 K_TRIALS=1
+TEAM_SIZE=3
 DRY_RUN=0
 EXTRA_ARGS=""
 
@@ -28,15 +29,16 @@ while [[ $# -gt 0 ]]; do
     -m|--model)    SELECTED_MODELS="$SELECTED_MODELS $2"; shift 2 ;;
     -k|--k-trials) K_TRIALS="$2"; shift 2 ;;
     -H|--horizon)  HORIZON="$2"; shift 2 ;;
+    -n|--team-size) TEAM_SIZE="$2"; shift 2 ;;
     --dry-run)     DRY_RUN=1; shift ;;
     -h|--help)
-      echo "Usage: run-crafting-team.sh [-m model] [-k trials] [-H horizon] [--dry-run]"
+      echo "Usage: run-crafting-team.sh [-m model] [-k trials] [-H horizon] [-n team-size] [--dry-run]"
       echo ""
       echo "Models: $ALL_MODEL_LABELS (default: all)"
       echo ""
       echo "Each trial runs one model as ALL THREE players of the cooperative"
-      echo "crafting challenge. Reward = total Crafting XP across the team"
-      echo "the team reaches within ${HORIZON} (0 = nobody crafted)."
+      echo "crafting challenge. Reward = the highest single account's Crafting XP"
+      echo "reached within ${HORIZON} (0 = nobody crafted)."
       exit 0
       ;;
     *)
@@ -48,13 +50,18 @@ if [ -z "$SELECTED_MODELS" ]; then
   SELECTED_MODELS="$ALL_MODEL_LABELS"
 fi
 
-TASK="crafting-team-${HORIZON}"
+# n=3 is the canonical task; other sizes use the -n<N> variant dirs.
+SIZE_SUFFIX=""
+if [ "$TEAM_SIZE" != "3" ]; then SIZE_SUFFIX="-n${TEAM_SIZE}"; fi
+TASK="crafting-team-${HORIZON}${SIZE_SUFFIX}"
 SANDBOX_TIMEOUT=$(sandbox_timeout_for_horizon "$HORIZON")
 RUN_TIMEOUT=$(run_timeout_for_horizon "$HORIZON")
 
 load_env "$REPO_ROOT/.env"
 
-if [ "$DRY_RUN" != "1" ]; then
+# SKIP_REGEN=1 lets a caller that launches several invocations in parallel
+# regenerate tasks/ once up front (the regen wipes tasks/ and would race).
+if [ "$DRY_RUN" != "1" ] && [ "${SKIP_REGEN:-0}" != "1" ]; then
   regenerate_tasks "$REPO_ROOT/generate-tasks.ts"
 fi
 
@@ -76,10 +83,14 @@ for model_name in $SELECTED_MODELS; do
     continue
   fi
 
-  # Every model runs through the team adapter for this task.
-  AGENT_FLAG="--agent-import-path 'opencode_team_adapter:OpenCodeTeamAdapter'"
+  # Every model runs through a team adapter for this task. OpenCode models
+  # share the unified opencode team adapter; claude-code-only models (e.g.
+  # hotteok EAP) keep the claude team adapter set by configure_model_env.
+  case "$agent" in
+    *opencode*) AGENT_FLAG="--agent-import-path 'opencode_team_adapter:OpenCodeTeamAdapter'" ;;
+  esac
 
-  JOB_NAME="crafting-team-${label}-${TIMESTAMP}"
+  JOB_NAME="crafting-team${SIZE_SUFFIX}-${label}-${TIMESTAMP}"
   LOG_FILE="/tmp/harbor-${JOB_NAME}.log"
 
   CMD="$ENV_PREFIX harbor run \
@@ -90,6 +101,7 @@ for model_name in $SELECTED_MODELS; do
     --env modal \
     --ek sandbox_timeout_secs=$SANDBOX_TIMEOUT \
     --ak run_timeout_sec=$RUN_TIMEOUT \
+    --ak team_size=$TEAM_SIZE \
     $AGENT_ENV_FLAGS \
     -n 4 \
     -k $K_TRIALS \

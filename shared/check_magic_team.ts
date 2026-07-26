@@ -74,7 +74,9 @@ function main() {
         let magicLevel = 1, magicXp = 0, hpLevel = 10;
         if (save) {
             magicLevel = save.skills[MAGIC_SKILL_INDEX]?.level ?? 1;
-            magicXp = save.skills[MAGIC_SKILL_INDEX]?.xp ?? 0;
+            // Save files store XP ×10 (engine-internal); normalize to real XP
+            // so it's comparable with the watcher samples and skill tasks.
+            magicXp = Math.floor((save.skills[MAGIC_SKILL_INDEX]?.xp ?? 0) / 10);
             hpLevel = save.skills[HITPOINTS_SKILL_INDEX]?.level ?? 10;
         } else {
             console.log(`${bot}: no save file found — using watcher peak`);

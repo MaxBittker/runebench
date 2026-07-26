@@ -16,7 +16,7 @@ const BENCHMARK_DIR = join(import.meta.dir);
 const TASKS_DIR = join(BENCHMARK_DIR, 'tasks');
 const SHARED_DIR = join(BENCHMARK_DIR, 'shared');
 
-const DOCKER_IMAGE = 'ghcr.io/maxbittker/rs-agent-benchmark:v53';
+const DOCKER_IMAGE = 'ghcr.io/maxbittker/rs-agent-benchmark:v54';
 const VERIFIER_TIMEOUT = 400;
 
 // ── Standard skill definitions (XP-grind tasks) ─────────────────
@@ -360,15 +360,70 @@ ENTRYPOINT ["/entrypoint-duo.sh"]
 // item does not score. See shared/check_smith_team.ts.
 
 const SMITH_TEAM_CAP_MINUTES = 30;
-const SMITH_TEAM_BOTS = ['agenta', 'agentb', 'agentc'];
 
-const SMITH_TEAM_INSTRUCTION = (durationMinutes: number) => `SMITH THE HIGHEST-VALUE ITEM — three-player team challenge. This is a local RuneScape private server (8x speed) for AI benchmarking — not a live game.
+// ── Team-size machinery ──────────────────────────────────────────
+// Every team task is generated at several team sizes (same goal, same per-bot
+// starting kit) to measure how score scales with the number of agents.
+// n=3 keeps the original slug (smith-team-30m); other sizes get a -n<N>
+// suffix (smith-team-30m-n1, smith-team-30m-n6). The team adapter is told the
+// size via `--ak team_size=N` by the run scripts.
+const TEAM_BOT_POOL = ['agenta', 'agentb', 'agentc', 'agentd', 'agente', 'agentf'];
+const TEAM_SIZES = [1, 3, 6];
+const NUM_WORD: Record<number, string> = { 1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five', 6: 'six' };
+const cap1 = (s: string) => s[0].toUpperCase() + s.slice(1);
+const teamBots = (n: number) => TEAM_BOT_POOL.slice(0, n);
+const teamSlug = (base: string, cap: number, n: number) => `${base}-${cap}m${n === 3 ? '' : `-n${n}`}`;
+// Sandbox sizing: each extra bot adds a chromium client + an opencode session.
+const teamResources = (n: number) =>
+  n <= 1 ? { cpus: 4, memoryMb: 8192 }
+  : n <= 3 ? { cpus: 6, memoryMb: 12288 }
+  : { cpus: 10, memoryMb: 20480 };
 
-THIS IS A THREE-PLAYER COOPERATIVE TASK. Three agent sessions are running in
+// Instruction blocks shared by the team tasks, parameterized by team size.
+const teamTitle = (n: number) => (n === 1 ? 'solo challenge' : `${NUM_WORD[n]}-player team challenge`);
+
+const teamIntroBlock = (bots: string[]) => bots.length === 1
+  ? `THIS IS A SOLO VARIANT OF A TEAM TASK. You are the only agent session in
+this container and you control the only bot ("${bots[0]}"). There are no
+teammates — everything below that mentions the team applies to you alone.`
+  : `THIS IS A ${NUM_WORD[bots.length].toUpperCase()}-PLAYER COOPERATIVE TASK. ${cap1(NUM_WORD[bots.length])} agent sessions are running in
 this container at the same time — you are one of them. Each session controls
-its own bot ("agenta", "agentb", or "agentc"); your role addendum at the end
-of this message tells you which bot is yours. NEVER send commands to a
-teammate's bot.
+its own bot (${bots.map((b) => `"${b}"`).join(', ')}); your role
+addendum at the end of this message tells you which bot is yours. NEVER send
+commands to a teammate's bot.`;
+
+// `goods` = what gets handed between teammates in this task, e.g. "items (ores, bars)".
+const teamGameFactsBlock = (n: number, goods: string) => n === 1
+  ? `GAME FACTS: There is no player-to-player trade interface on this server. You
+have your own bank account.`
+  : `GAME FACTS: There is no player-to-player trade interface on this server; the
+only way to transfer ${goods} between teammates is to drop them on
+the ground for the other player. A dropped item becomes visible to other
+players after a short delay and despawns a short while later — drop at an
+agreed spot with your teammate standing nearby, and confirm pickup before
+dropping more. Each player has their OWN bank account; banks are not shared.`;
+
+// Includes its own trailing blank line so it can vanish cleanly for n=1.
+const teamCoordBlock = (n: number) => n === 1 ? '' : `COORDINATION — IN-GAME CHAT ONLY: Communicate with your teammates exclusively
+through the in-game public chat. Send messages with \`sdk.sendSay("...")\` and
+read teammates' messages from \`sdk.getState().gameMessages\` (each entry has
+a sender and text; poll it regularly — it is a rolling window of recent
+messages). Public chat reaches your teammates anywhere on the map (this
+server broadcasts it world-wide). Do NOT coordinate through files, the
+filesystem, or any channel other than in-game chat — this benchmark measures
+in-game collaboration, and runs are audited.
+
+`;
+
+const teamRulesLine = (n: number) => `RULES: progress through legitimate in-game actions only. Do NOT modify server
+files, save files, or use cheat commands.${n === 1 ? '' : ' Do NOT control a teammate\'s bot.'}`;
+
+// "the other two gather and haul" at n=3; generalized for other sizes.
+const theOthers = (n: number) => (n === 3 ? 'the other two' : 'the others');
+
+const SMITH_TEAM_INSTRUCTION = (durationMinutes: number, bots: string[]) => `SMITH THE HIGHEST-VALUE ITEM — ${teamTitle(bots.length)}. This is a local RuneScape private server (8x speed) for AI benchmarking — not a live game.
+
+${teamIntroBlock(bots)}
 
 GOAL: within ${durationMinutes} minutes, your team must SMITH the single most
 valuable item it can. The team's score is the store value of the BEST single
@@ -385,10 +440,10 @@ SCORING:
   adamant platebody 12,800gp (88) · rune platebody 65,000gp (99). Higher
   metal tiers are worth far more — push as high up the ladder as time allows.
 - Smithing XP is per-player and whoever smiths your best item must personally
-  have the Smithing LEVEL for it, so it usually pays to funnel ALL bars onto
-  ONE designated smith while the other two gather and haul.
+  have the Smithing LEVEL for it${bots.length === 1 ? '.' : `, so it usually pays to funnel ALL bars onto
+  ONE designated smith while ${theOthers(bots.length)} gather and haul.`}
 
-STARTING STATE: all three bots are identical — you each start in Falador with a
+STARTING STATE: ${bots.length === 1 ? 'you start' : `all ${NUM_WORD[bots.length]} bots are identical — you each start`} in Falador with a
 bronze pickaxe, a bronze axe, and level-30 Attack/Strength/Defence/Hitpoints.
 Nothing else: no coins, no ore, no bars, and NO HAMMER. You must gather and earn
 everything.
@@ -402,23 +457,9 @@ everything.
   iron, coal, mithril and adamantite; your 30 melee helps you survive its
   scorpions and fight weak monsters for starter coins.
 
-GAME FACTS: There is no player-to-player trade interface on this server; the
-only way to transfer items (ores, bars) between teammates is to drop them on
-the ground for the other player. A dropped item becomes visible to other
-players after a short delay and despawns a short while later — drop at an
-agreed spot with your teammate standing nearby, and confirm pickup before
-dropping more. Each player has their OWN bank account; banks are not shared.
+${teamGameFactsBlock(bots.length, 'items (ores, bars)')}
 
-COORDINATION — IN-GAME CHAT ONLY: Communicate with your teammates exclusively
-through the in-game public chat. Send messages with \`sdk.sendSay("...")\` and
-read teammates' messages from \`sdk.getState().gameMessages\` (each entry has
-a sender and text; poll it regularly — it is a rolling window of recent
-messages). Public chat reaches your teammates anywhere on the map (this
-server broadcasts it world-wide). Do NOT coordinate through files, the
-filesystem, or any channel other than in-game chat — this benchmark measures
-in-game collaboration, and runs are audited.
-
-You control your bot via the \`rs-agent\` MCP server: use the \`execute_code\`
+${teamCoordBlock(bots.length)}You control your bot via the \`rs-agent\` MCP server: use the \`execute_code\`
 tool with YOUR bot_name. Two globals are available in the code context:
 - \`bot\` (BotActions) — high-level actions: \`await bot.interactLoc("rock", "Mine")\`, \`await bot.useItemOnLoc(item, loc)\`, \`await bot.walkTo(x, z)\`, etc.
 - \`sdk\` (BotSDK) — low-level state & actions: \`sdk.getState()\`, \`sdk.getInventory()\`, \`sdk.findNearbyLoc(/anvil/i)\`, etc.
@@ -440,22 +481,25 @@ scores nothing, so always bank a completed item at your current best tier
 before attempting the next. Keep execute_code calls SMALL and iterative;
 verify each step worked before scaling it up.
 
-RULES: progress through legitimate in-game actions only. Do NOT modify server
-files, save files, or use cheat commands. Do NOT control a teammate's bot.`;
+${teamRulesLine(bots.length)}`;
 
 // (defined as a function — VERIFIER_CLEANUP is declared further down)
 const SMITH_TEAM_CAP_MINUTES_LIST = [30, 45, 60];
 
-const smithTeamVariants = (): VariantTask[] => SMITH_TEAM_CAP_MINUTES_LIST.map((cap) => ({
-    slug: `smith-team-${cap}m`,
-    taskDescription: SMITH_TEAM_INSTRUCTION(cap),
+const smithTeamVariants = (): VariantTask[] => SMITH_TEAM_CAP_MINUTES_LIST.flatMap((cap) =>
+  TEAM_SIZES.map((n) => {
+    const bots = teamBots(n);
+    return {
+    slug: teamSlug('smith-team', cap, n),
+    taskDescription: SMITH_TEAM_INSTRUCTION(cap, bots),
     agentTimeout: cap * 60 + 120,
     verifier: 'check_smith_team.ts',
     testSh: `#!/bin/bash
 set -e
 mkdir -p /logs/verifier
 ${VERIFIER_CLEANUP}
-export BOT_NAMES="${SMITH_TEAM_BOTS.join(' ')}"
+export BOT_NAMES="${bots.join(' ')}"
+export STARTING_ITEM_IDS="${TEAM_START_INVENTORY.map((i) => i.id).join(' ')}"
 cd /app && bun run /tests/check_smith_team.ts
 `,
     tags: ['game', 'runescape', 'automation', 'mcp', 'benchmark', 'team', 'smith-team'],
@@ -466,8 +510,8 @@ ENV NODE_TICKRATE=100
 ENV SAMPLE_INTERVAL_MS=5000
 ENV GATEWAY_URL=ws://localhost:7780
 ENV BENCHMARK_DURATION_SECS=${cap * 60}
-ENV BOT_NAMES="${SMITH_TEAM_BOTS.join(' ')}"
-${SMITH_TEAM_BOTS.map(b => `COPY ${b}.sav /app/server/engine/data/players/main/${b}.sav`).join('\n')}
+ENV BOT_NAMES="${bots.join(' ')}"
+${bots.map(b => `COPY ${b}.sav /app/server/engine/data/players/main/${b}.sav`).join('\n')}
 COPY smith_team_watcher.ts /app/benchmark/shared/smith_team_watcher.ts
 COPY smithing-table.json /app/benchmark/shared/smithing-table.json
 COPY entrypoint-team.sh /entrypoint-team.sh
@@ -483,7 +527,7 @@ ENTRYPOINT ["/entrypoint-team.sh"]
       { src: 'smithing-table.json', dst: 'smithing-table.json' },
     ],
     // Spawn the bots a few tiles apart so they don't stack on one tile
-    saveConfigs: SMITH_TEAM_BOTS.map((bot, i) => ({
+    saveConfigs: bots.map((bot, i) => ({
       config: {
         position: { x: Locations.FALADOR_CENTER.x + i * 2, z: Locations.FALADOR_CENTER.z },
         skills: TEAM_START_SKILLS,
@@ -492,9 +536,9 @@ ENTRYPOINT ["/entrypoint-team.sh"]
       },
       dst: `${bot}.sav`,
     })),
-    // Three chromium clients + three opencode sessions need more headroom
-    cpus: 6,
-    memoryMb: 12288,
+    // Each chromium client + opencode session needs headroom
+    ...teamResources(n),
+    };
   }),
 );
 
@@ -528,15 +572,10 @@ sleep 2`;
 // only for the chat transcript + level-over-time timeline.
 
 const MAGIC_TEAM_CAP_MINUTES_LIST = [30, 45, 60];
-const MAGIC_TEAM_BOTS = ['agenta', 'agentb', 'agentc'];
 
-const MAGIC_TEAM_INSTRUCTION = (durationMinutes: number) => `TRAIN THE HIGHEST MAGIC LEVEL — three-player team challenge. This is a local RuneScape private server (8x speed) for AI benchmarking — not a live game.
+const MAGIC_TEAM_INSTRUCTION = (durationMinutes: number, bots: string[]) => `TRAIN THE HIGHEST MAGIC LEVEL — ${teamTitle(bots.length)}. This is a local RuneScape private server (8x speed) for AI benchmarking — not a live game.
 
-THIS IS A THREE-PLAYER COOPERATIVE TASK. Three agent sessions are running in
-this container at the same time — you are one of them. Each session controls
-its own bot ("agenta", "agentb", or "agentc"); your role addendum at the end
-of this message tells you which bot is yours. NEVER send commands to a
-teammate's bot.
+${teamIntroBlock(bots)}
 
 GOAL: within ${durationMinutes} minutes, get the Magic level of ONE account as
 high as you can. The team's score is the HIGHEST Magic level reached by any
@@ -546,13 +585,13 @@ at Magic 40.
 SCORING:
 - Score = the best single account's final Magic level. Only Magic levels gained
   by legitimately casting spells count — runs are audited.
-- Magic XP comes from casting spells, and every cast consumes runes. Because
+- Magic XP comes from casting spells, and every cast consumes runes.${bots.length === 1 ? '' : ` Because
   only ONE account's level counts, it usually pays to funnel ALL of the team's
-  runes onto ONE designated caster so that account can cast ~3x as long and
-  climb far higher than any of you could training alone. The other two supply
-  runes and keep the caster casting.
+  runes onto ONE designated caster so that account can cast ~${bots.length}x as long and
+  climb far higher than any of you could training alone. ${cap1(theOthers(bots.length))} supply
+  runes and keep the caster casting.`}
 
-STARTING STATE: all three bots are identical — you each start next to Lumbridge
+STARTING STATE: ${bots.length === 1 ? 'you start' : `all ${NUM_WORD[bots.length]} bots are identical — you each start`} next to Lumbridge
 Castle with a bronze pickaxe, a bronze axe, and level-30 Attack/Strength/Defence/
 Hitpoints. Nothing else: NO runes and NO coins. Weak monsters (cows, chickens,
 goblins) roam right around the spawn.
@@ -567,23 +606,9 @@ HOW TO TRAIN MAGIC (from scratch — you have NO runes, and casting needs runes)
   From Magic 25+, repeatable Teleport spells (Law runes) also give XP.
 - Runes are the bottleneck — build a rune supply line so your caster never idles.
 
-GAME FACTS: There is no player-to-player trade interface on this server; the
-only way to transfer runes (or coins) between teammates is to drop them on the
-ground for the other player. A dropped item becomes visible to other players
-after a short delay and despawns a short while later — drop at an agreed spot
-with your teammate standing nearby, and confirm pickup before dropping more.
-Each player has their OWN bank account; banks are not shared.
+${teamGameFactsBlock(bots.length, 'runes (or coins)')}
 
-COORDINATION — IN-GAME CHAT ONLY: Communicate with your teammates exclusively
-through the in-game public chat. Send messages with \`sdk.sendSay("...")\` and
-read teammates' messages from \`sdk.getState().gameMessages\` (each entry has
-a sender and text; poll it regularly — it is a rolling window of recent
-messages). Public chat reaches your teammates anywhere on the map (this
-server broadcasts it world-wide). Do NOT coordinate through files, the
-filesystem, or any channel other than in-game chat — this benchmark measures
-in-game collaboration, and runs are audited.
-
-You control your bot via the \`rs-agent\` MCP server: use the \`execute_code\`
+${teamCoordBlock(bots.length)}You control your bot via the \`rs-agent\` MCP server: use the \`execute_code\`
 tool with YOUR bot_name. Two globals are available in the code context:
 - \`bot\` (BotActions) — high-level actions: \`await bot.attackNpc("chicken")\`, \`await bot.walkTo(x, z)\`, \`await bot.pickupItem(...)\`, etc.
 - \`sdk\` (BotSDK) — low-level state & actions: \`sdk.getState()\`, \`sdk.getInventory()\`, \`sdk.getSkills()\`, \`sdk.findNearbyNpc(/chicken/i)\`, etc.
@@ -601,19 +626,21 @@ early, get runes flowing to them, and keep them casting non-stop — idle time i
 lost levels. Keep execute_code calls SMALL and iterative; verify each step
 worked before scaling it up.
 
-RULES: progress through legitimate in-game actions only. Do NOT modify server
-files, save files, or use cheat commands. Do NOT control a teammate's bot.`;
+${teamRulesLine(bots.length)}`;
 
-const magicTeamVariants = (): VariantTask[] => MAGIC_TEAM_CAP_MINUTES_LIST.map((cap) => ({
-    slug: `magic-team-${cap}m`,
-    taskDescription: MAGIC_TEAM_INSTRUCTION(cap),
+const magicTeamVariants = (): VariantTask[] => MAGIC_TEAM_CAP_MINUTES_LIST.flatMap((cap) =>
+  TEAM_SIZES.map((n) => {
+    const bots = teamBots(n);
+    return {
+    slug: teamSlug('magic-team', cap, n),
+    taskDescription: MAGIC_TEAM_INSTRUCTION(cap, bots),
     agentTimeout: cap * 60 + 120,
     verifier: 'check_magic_team.ts',
     testSh: `#!/bin/bash
 set -e
 mkdir -p /logs/verifier
 ${VERIFIER_CLEANUP}
-export BOT_NAMES="${MAGIC_TEAM_BOTS.join(' ')}"
+export BOT_NAMES="${bots.join(' ')}"
 cd /app && bun run /tests/check_magic_team.ts
 `,
     tags: ['game', 'runescape', 'automation', 'mcp', 'benchmark', 'team', 'magic-team'],
@@ -629,11 +656,11 @@ ENV NODE_XPRATE=1
 ENV SAMPLE_INTERVAL_MS=5000
 ENV GATEWAY_URL=ws://localhost:7780
 ENV BENCHMARK_DURATION_SECS=${cap * 60}
-ENV BOT_NAMES="${MAGIC_TEAM_BOTS.join(' ')}"
+ENV BOT_NAMES="${bots.join(' ')}"
 ENV WATCHER_SCRIPT=benchmark/shared/magic_team_watcher.ts
 ENV WATCHER_LOCK=/tmp/magic_team_watcher.lock
 ENV TRACKING_FILE=/logs/tracking/magic_team_tracking.json
-${MAGIC_TEAM_BOTS.map(b => `COPY ${b}.sav /app/server/engine/data/players/main/${b}.sav`).join('\n')}
+${bots.map(b => `COPY ${b}.sav /app/server/engine/data/players/main/${b}.sav`).join('\n')}
 COPY magic_team_watcher.ts /app/benchmark/shared/magic_team_watcher.ts
 COPY entrypoint-team.sh /entrypoint-team.sh
 RUN chmod +x /entrypoint-team.sh
@@ -645,7 +672,7 @@ ENTRYPOINT ["/entrypoint-team.sh"]
     ],
     // Spawn the bots a few tiles apart so they don't stack on one tile, each
     // with an identical rune stash + coins to pool onto one caster.
-    saveConfigs: MAGIC_TEAM_BOTS.map((bot, i) => ({
+    saveConfigs: bots.map((bot, i) => ({
       config: {
         position: { x: Locations.LUMBRIDGE_CASTLE.x + i * 2, z: Locations.LUMBRIDGE_CASTLE.z },
         skills: TEAM_START_SKILLS,
@@ -653,9 +680,9 @@ ENTRYPOINT ["/entrypoint-team.sh"]
       },
       dst: `${bot}.sav`,
     })),
-    // Three chromium clients + three opencode sessions need more headroom
-    cpus: 6,
-    memoryMb: 12288,
+    // Each chromium client + opencode session needs headroom
+    ...teamResources(n),
+    };
   }),
 );
 
@@ -667,15 +694,10 @@ ENTRYPOINT ["/entrypoint-team.sh"]
 // files (skill index 12 = Crafting) via check_crafting_team.ts.
 
 const CRAFTING_TEAM_CAP_MINUTES_LIST = [30, 45, 60];
-const CRAFTING_TEAM_BOTS = ['agenta', 'agentb', 'agentc'];
 
-const CRAFTING_TEAM_INSTRUCTION = (durationMinutes: number) => `TRAIN THE HIGHEST CRAFTING XP — three-player team challenge. This is a local RuneScape private server (8x speed) for AI benchmarking — not a live game.
+const CRAFTING_TEAM_INSTRUCTION = (durationMinutes: number, bots: string[]) => `TRAIN THE HIGHEST CRAFTING XP — ${teamTitle(bots.length)}. This is a local RuneScape private server (8x speed) for AI benchmarking — not a live game.
 
-THIS IS A THREE-PLAYER COOPERATIVE TASK. Three agent sessions are running in
-this container at the same time — you are one of them. Each session controls
-its own bot ("agenta", "agentb", or "agentc"); your role addendum at the end
-of this message tells you which bot is yours. NEVER send commands to a
-teammate's bot.
+${teamIntroBlock(bots)}
 
 GOAL: within ${durationMinutes} minutes, get the Crafting XP of ONE account as
 high as you can. The team's score is the HIGHEST single account's Crafting XP —
@@ -683,13 +705,13 @@ not a sum. One account at 500k XP beats three accounts at 200k each.
 
 SCORING:
 - Score = the best single account's Crafting XP. Only XP gained by legitimately
-  crafting during this run counts — runs are audited.
+  crafting during this run counts — runs are audited.${bots.length === 1 ? '' : `
 - Because only ONE account's XP counts, it usually pays to funnel ALL of the
   team's materials onto ONE designated crafter so that account can craft far
-  more than any of you could alone. The other two gather/buy and hand over
-  materials to keep the crafter's inventory full and never idle.
+  more than any of you could alone. ${cap1(theOthers(bots.length))} gather/buy and hand over
+  materials to keep the crafter's inventory full and never idle.`}
 
-STARTING STATE: all three bots are identical — you each start next to Lumbridge
+STARTING STATE: ${bots.length === 1 ? 'you start' : `all ${NUM_WORD[bots.length]} bots are identical — you each start`} next to Lumbridge
 Castle with a bronze pickaxe, a bronze axe, and level-30 Attack/Strength/Defence/
 Hitpoints. Nothing else: NO crafting materials, NO tools (no needle/chisel), and
 NO coins.
@@ -704,21 +726,9 @@ HOW TO TRAIN CRAFTING (from scratch — you have no materials or crafting tools)
 - Gather -> process -> craft, and keep your crafter's inventory full so it never
   idles.
 
-GAME FACTS: There is no player-to-player trade interface on this server; the
-only way to hand materials to a teammate is to drop them on the ground for the
-other player. A dropped item becomes visible to others after a short delay and
-despawns a short while later — drop at an agreed spot with your teammate nearby
-and confirm pickup. Each player has their OWN bank account; banks are not shared.
+${teamGameFactsBlock(bots.length, 'materials')}
 
-COORDINATION — IN-GAME CHAT ONLY: Communicate with your teammates exclusively
-through the in-game public chat. Send messages with \`sdk.sendSay("...")\` and
-read teammates' messages from \`sdk.getState().gameMessages\` (each entry has a
-sender and text; poll it regularly — it is a rolling window of recent messages).
-Public chat reaches your teammates anywhere on the map. Do NOT coordinate through
-files or any channel other than in-game chat — this benchmark measures in-game
-collaboration, and runs are audited.
-
-You control your bot via the \`rs-agent\` MCP server: use the \`execute_code\`
+${teamCoordBlock(bots.length)}You control your bot via the \`rs-agent\` MCP server: use the \`execute_code\`
 tool with YOUR bot_name. Two globals are available in the code context:
 - \`bot\` (BotActions) — high-level actions: \`await bot.useItemOnItem(a, b)\`, \`await bot.walkTo(x, z)\`, etc.
 - \`sdk\` (BotSDK) — low-level state & actions: \`sdk.getState()\`, \`sdk.getInventory()\`, \`sdk.getSkills()\`, etc.
@@ -738,19 +748,21 @@ level climbs), and keep that one account's inventory full so it never idles —
 one account's XP, not the team's combined output, is the score. Keep
 execute_code calls SMALL and iterative; verify each step worked before scaling.
 
-RULES: progress through legitimate in-game actions only. Do NOT modify server
-files, save files, or use cheat commands. Do NOT control a teammate's bot.`;
+${teamRulesLine(bots.length)}`;
 
-const craftingTeamVariants = (): VariantTask[] => CRAFTING_TEAM_CAP_MINUTES_LIST.map((cap) => ({
-    slug: `crafting-team-${cap}m`,
-    taskDescription: CRAFTING_TEAM_INSTRUCTION(cap),
+const craftingTeamVariants = (): VariantTask[] => CRAFTING_TEAM_CAP_MINUTES_LIST.flatMap((cap) =>
+  TEAM_SIZES.map((n) => {
+    const bots = teamBots(n);
+    return {
+    slug: teamSlug('crafting-team', cap, n),
+    taskDescription: CRAFTING_TEAM_INSTRUCTION(cap, bots),
     agentTimeout: cap * 60 + 120,
     verifier: 'check_crafting_team.ts',
     testSh: `#!/bin/bash
 set -e
 mkdir -p /logs/verifier
 ${VERIFIER_CLEANUP}
-export BOT_NAMES="${CRAFTING_TEAM_BOTS.join(' ')}"
+export BOT_NAMES="${bots.join(' ')}"
 cd /app && bun run /tests/check_crafting_team.ts
 `,
     tags: ['game', 'runescape', 'automation', 'mcp', 'benchmark', 'team', 'crafting-team'],
@@ -763,11 +775,11 @@ ENV NODE_XPRATE=1
 ENV SAMPLE_INTERVAL_MS=5000
 ENV GATEWAY_URL=ws://localhost:7780
 ENV BENCHMARK_DURATION_SECS=${cap * 60}
-ENV BOT_NAMES="${CRAFTING_TEAM_BOTS.join(' ')}"
+ENV BOT_NAMES="${bots.join(' ')}"
 ENV WATCHER_SCRIPT=benchmark/shared/crafting_team_watcher.ts
 ENV WATCHER_LOCK=/tmp/crafting_team_watcher.lock
 ENV TRACKING_FILE=/logs/tracking/crafting_team_tracking.json
-${CRAFTING_TEAM_BOTS.map(b => `COPY ${b}.sav /app/server/engine/data/players/main/${b}.sav`).join('\n')}
+${bots.map(b => `COPY ${b}.sav /app/server/engine/data/players/main/${b}.sav`).join('\n')}
 COPY crafting_team_watcher.ts /app/benchmark/shared/crafting_team_watcher.ts
 COPY entrypoint-team.sh /entrypoint-team.sh
 RUN chmod +x /entrypoint-team.sh
@@ -778,7 +790,7 @@ ENTRYPOINT ["/entrypoint-team.sh"]
       { src: 'entrypoint-team.sh', dst: 'entrypoint-team.sh' },
     ],
     // Spawn a few tiles apart, each with an identical crafting kit.
-    saveConfigs: CRAFTING_TEAM_BOTS.map((bot, i) => ({
+    saveConfigs: bots.map((bot, i) => ({
       config: {
         position: { x: Locations.LUMBRIDGE_CASTLE.x + i * 2, z: Locations.LUMBRIDGE_CASTLE.z },
         skills: TEAM_START_SKILLS,
@@ -786,9 +798,9 @@ ENTRYPOINT ["/entrypoint-team.sh"]
       },
       dst: `${bot}.sav`,
     })),
-    // Three chromium clients + three opencode sessions need more headroom
-    cpus: 6,
-    memoryMb: 12288,
+    // Each chromium client + opencode session needs headroom
+    ...teamResources(n),
+    };
   }),
 );
 

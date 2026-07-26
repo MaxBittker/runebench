@@ -75,8 +75,12 @@ for model_name in $SELECTED_MODELS; do
     continue
   fi
 
-  # Every model runs through the duo adapter for this task.
-  AGENT_FLAG="--agent-import-path 'opencode_duo_adapter:OpenCodeDuoAdapter'"
+  # Every model runs through the duo adapter for this task. Claude-code-only
+  # models (e.g. hotteok EAP) have no duo adapter yet — skip them.
+  case "$agent" in
+    *opencode*) AGENT_FLAG="--agent-import-path 'opencode_duo_adapter:OpenCodeDuoAdapter'" ;;
+    *) echo "  Skipping $model_name (no OpenCode access; duo adapter is OpenCode-only)"; continue ;;
+  esac
 
   JOB_NAME="arrav-duo-${label}-${TIMESTAMP}"
   LOG_FILE="/tmp/harbor-${JOB_NAME}.log"

@@ -65,7 +65,10 @@ function main() {
         let level = 1, xp = 0;
         if (save) {
             level = save.skills[CRAFTING_SKILL_INDEX]?.level ?? 1;
-            xp = save.skills[CRAFTING_SKILL_INDEX]?.xp ?? 0;
+            // Save files store XP ×10 (engine-internal); normalize to real XP
+            // so it's comparable with the watcher samples and skill tasks.
+            // (Rewards before 2026-07-07 were in the ×10 save unit.)
+            xp = Math.floor((save.skills[CRAFTING_SKILL_INDEX]?.xp ?? 0) / 10);
         } else {
             console.log(`${bot}: no save file found — using watcher peak`);
         }

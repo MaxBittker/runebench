@@ -10,6 +10,7 @@
 # this — so this list only feeds the multi-bot path.
 ALL_MODELS="
 opencode|anthropic/claude-fable-5|fable5
+hotteok-claude|anthropic/claude-hotteok-eap|hotteok
 opencode|anthropic/claude-opus-4-8|opus48
 opencode|anthropic/claude-opus-4-7|opus47
 opencode|anthropic/claude-opus-4-6|opus
@@ -35,7 +36,7 @@ qwen35-opencode|openrouter/qwen/qwen3.5-35b-a3b|qwen35
 qwen3max-opencode|openrouter/qwen/qwen3-max|qwen3max
 "
 
-ALL_MODEL_LABELS="fable5 opus48 opus47 opus opus45 sonnet5 sonnet46 sonnet45 haiku codex53 gpt55 gpt54 gpt54mini gpt54nano gemini gemini31 geminiflash gemini35flash glm glm52 kimi qwen3 qwen35 qwen3max"
+ALL_MODEL_LABELS="fable5 hotteok opus48 opus47 opus opus45 sonnet5 sonnet46 sonnet45 haiku codex53 gpt55 gpt54 gpt54mini gpt54nano gemini gemini31 geminiflash gemini35flash glm glm52 kimi qwen3 qwen35 qwen3max"
 
 # ── sandbox_timeout_for_horizon: horizon → Modal sandbox backstop ──
 # Generous ceilings: a too-small value kills runs mid-flight (unfair zero
@@ -246,6 +247,27 @@ configure_model_env() {
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'inkling_adapter:InklingOpenCode'"
       ;;
+    hotteok-claude)
+      # EAP Claude model — 404s on every API key; the only credential that
+      # resolves it is the Max-subscription OAuth token from the local Claude
+      # Code keychain entry (bills the subscription; all concurrent sessions
+      # share one five_hour rate-limit window). Driven by the Claude Code CLI
+      # via claude_code_team_adapter — OpenCode cannot reach EAP models.
+      if [ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]; then
+        CLAUDE_CODE_OAUTH_TOKEN="$(security find-generic-password -s 'Claude Code-credentials' -w 2>/dev/null \
+          | python3 -c 'import json,sys;print(json.load(sys.stdin)["claudeAiOauth"]["accessToken"])' 2>/dev/null || true)"
+      fi
+      if [ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]; then
+        echo "  WARNING: no Claude Code OAuth token (keychain 'Claude Code-credentials'), skipping $model_name"
+        return 1
+      fi
+      export CLAUDE_CODE_OAUTH_TOKEN
+      # Blank ANTHROPIC_API_KEY so the CLI can't fall back to a key that
+      # lacks the EAP grant (it would 404 the model id).
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-} ANTHROPIC_API_KEY="
+      AGENT_FLAG="--agent-import-path 'claude_code_team_adapter:ClaudeCodeTeamAdapter'"
+      AGENT_ENV_FLAGS="--ae CLAUDE_CODE_OAUTH_TOKEN=${CLAUDE_CODE_OAUTH_TOKEN}"
+      ;;
     codex)
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'codex_adapter:CodexWithTimeout'"
@@ -262,6 +284,9 @@ configure_model_env() {
   # scripts consume $AGENT_ENV_FLAGS; the skill/gold scripts ignore it
   # (they forward creds through ENV_PREFIX), so a missing key here must
   # NOT skip those models — hence no `return 1`.
+  # (skipped when the agent case above already set its own flags, e.g. the
+  # hotteok OAuth token — the API key must NOT leak in as a fallback there)
+  [ -n "$AGENT_ENV_FLAGS" ] && return 0
   case "$(echo "$3" | cut -d'|' -f2)" in
     anthropic/*)        [ -n "${ANTHROPIC_API_KEY:-}" ]  && AGENT_ENV_FLAGS="--ae ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}" ;;
     openai/*)           [ -n "${OPENAI_API_KEY:-}" ]     && AGENT_ENV_FLAGS="--ae OPENAI_API_KEY=${OPENAI_API_KEY}" ;;

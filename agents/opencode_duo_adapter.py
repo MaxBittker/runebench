@@ -69,8 +69,12 @@ class OpenCodeDuoAdapter(OpenCodeAdapter):
         bash_timeout = self._run_timeout_sec or 1620
         model_name = self._resolved_model_name()
 
+        # Session B launches shortly after A: simultaneous first boots race
+        # on OpenCode's shared SQLite storage and die with "database is
+        # locked". B's budget shrinks by the delay so both end together.
+        stagger = 1
         session_cmds = []
-        for bot, addendum in _ROLE_ADDENDA.items():
+        for i, (bot, addendum) in enumerate(_ROLE_ADDENDA.items()):
             role_instruction = f"{instruction}\n\n{addendum}"
             session_cmds.append(
                 self._compose_run_command(
@@ -78,7 +82,7 @@ class OpenCodeDuoAdapter(OpenCodeAdapter):
                     instruction=role_instruction,
                     prefix=f"opencode-{bot}",
                     log_file=self._session_log_file(bot),
-                    bash_timeout=bash_timeout,
+                    bash_timeout=max(bash_timeout - i * stagger, 60),
                 )
             )
 
@@ -86,7 +90,7 @@ class OpenCodeDuoAdapter(OpenCodeAdapter):
         # restart loops have exhausted their (shared-length) time budget.
         run_command = (
             f"( {session_cmds[0]} ) & DUO_PID_A=$!; "
-            f"( {session_cmds[1]} ) & DUO_PID_B=$!; "
+            f"( sleep {stagger}; {session_cmds[1]} ) & DUO_PID_B=$!; "
             "wait $DUO_PID_A; wait $DUO_PID_B; "
             "echo '[opencode-duo] Both sessions finished'"
         )

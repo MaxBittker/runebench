@@ -252,6 +252,21 @@ class OpenCodeAdapter(BaseInstalledAgent):
                 model_name = f"{remapped}/{model_suffix}"
         return model_name
 
+    _CONTINUE_PREFIX = (
+        "You were previously working on this task but stopped early. "
+        "There is still time remaining. Check the current game state with "
+        "sdk.getState() and CONTINUE training. Do NOT write a summary — "
+        "keep grinding. "
+    )
+
+    # Sent when resuming a previous session (context preserved, so the full
+    # instruction is not re-appended).
+    _RESUME_MESSAGE = (
+        "You stopped early but there is still time remaining. Check the "
+        "current game state with sdk.getState() and CONTINUE working on the "
+        "task. Do NOT write a summary — keep going."
+    )
+
     def _compose_run_command(
         self,
         model_name: str,
@@ -259,21 +274,36 @@ class OpenCodeAdapter(BaseInstalledAgent):
         prefix: str,
         log_file: str,
         bash_timeout: int,
+        instruction_file: str | None = None,
     ) -> str:
         """Build the opencode restart-loop bash command for one session.
+
+        If opencode exits early, the loop restarts it by RESUMING the previous
+        session (`--session <id>`, id grepped from this session's own JSON
+        log) so the model keeps its context instead of starting cold. A resume
+        that fast-fails (<10s) falls back to a fresh session with the full
+        instruction on the next iteration.
 
         `prefix` namespaces the log messages and bash variables, so two
         sessions composed into one command (see opencode_duo_adapter) don't
         clobber each other's loop state.
+
+        `instruction_file` swaps the inlined instruction for a `$(cat ...)`
+        of a file previously written into the sandbox — needed when several
+        sessions are composed into one exec command (opencode_team_adapter),
+        whose total size must stay under Modal's 64 KB ARG_MAX.
         """
-        escaped_instruction = shlex.quote(instruction)
+        if instruction_file:
+            q_file = shlex.quote(instruction_file)
+            escaped_instruction = f'"$(cat {q_file})"'
+            continue_instruction = (
+                f'"$(printf %s {shlex.quote(self._CONTINUE_PREFIX)}; cat {q_file})"'
+            )
+        else:
+            escaped_instruction = shlex.quote(instruction)
+            continue_instruction = shlex.quote(self._CONTINUE_PREFIX + instruction)
+        resume_message = shlex.quote(self._RESUME_MESSAGE)
         escaped_model = shlex.quote(model_name)
-        continue_instruction = shlex.quote(
-            "You were previously working on this task but stopped early. "
-            "There is still time remaining. Check the current game state with "
-            "sdk.getState() and CONTINUE training. Do NOT write a summary — "
-            "keep grinding. " + instruction
-        )
 
         # Variable prefix for the restart loop (bash-identifier-safe).
         # Sanitize ALL non-alphanumerics: a hyphen or dot (e.g. "grok45-xhigh")
@@ -295,6 +325,8 @@ class OpenCodeAdapter(BaseInstalledAgent):
             f"{vp}_MIN_RESTART=180; "
             f"{vp}_FAST_FAILS=0; "
             f"{vp}_MAX_FAST_FAILS=3; "
+            f"{vp}_COOLDOWN_USED=0; "
+            f"{vp}_RESUME=1; "
             f"{vp}_RUN=1; "
             f"echo \"[{prefix}-loop] Run ${vp}_RUN starting (budget=${{{vp}_TIMEOUT}}s)\" | tee -a /logs/agent/{log_file}; "
             f"{vp}_RUN_START=$(date +%s); "
@@ -305,9 +337,18 @@ class OpenCodeAdapter(BaseInstalledAgent):
             # Track fast failures (< 10s) to avoid spinning on broken setups
             f"if [ ${vp}_RUN_DUR -lt 10 ]; then {vp}_FAST_FAILS=$(({vp}_FAST_FAILS + 1)); else {vp}_FAST_FAILS=0; fi; "
             "while true; do "
+            # Consecutive fast failures usually mean a transient broken setup
+            # (locked db, API hiccup). Before giving up for good, cool down
+            # once for 60s and retry with a fresh session; abort only if the
+            # fast-fails come right back.
             f"  if [ ${vp}_FAST_FAILS -ge ${vp}_MAX_FAST_FAILS ]; then "
-            f"    echo \"[{prefix}-loop] ${{{vp}_FAST_FAILS}} consecutive fast failures (<10s), aborting\" | tee -a /logs/agent/{log_file}; "
-            "    break; "
+            f"    if [ ${vp}_COOLDOWN_USED -ge 1 ]; then "
+            f"      echo \"[{prefix}-loop] ${{{vp}_FAST_FAILS}} consecutive fast failures (<10s) after cooldown, aborting\" | tee -a /logs/agent/{log_file}; "
+            "      break; "
+            "    fi; "
+            f"    {vp}_COOLDOWN_USED=1; {vp}_FAST_FAILS=0; {vp}_RESUME=0; "
+            f"    echo \"[{prefix}-loop] ${{{vp}_MAX_FAST_FAILS}} consecutive fast failures (<10s) — cooling down 60s, then retrying with a fresh session\" | tee -a /logs/agent/{log_file}; "
+            "    sleep 60; "
             "  fi; "
             f"  {vp}_ELAPSED=$(( $(date +%s) - {vp}_START )); "
             f"  {vp}_REMAINING=$(( {vp}_TIMEOUT - {vp}_ELAPSED )); "
@@ -317,13 +358,28 @@ class OpenCodeAdapter(BaseInstalledAgent):
             "    break; "
             "  fi; "
             f"  {vp}_RUN=$(({vp}_RUN + 1)); "
+            # Resume the previous session (context preserved) when possible:
+            # pull the newest sessionID out of this session's own JSON log.
+            f"  {vp}_SID=''; "
+            f"  if [ ${vp}_RESUME -eq 1 ]; then {vp}_SID=$(grep -o '\"sessionID\":\"[^\"]*\"' /logs/agent/{log_file} | tail -1 | cut -d'\"' -f4); fi; "
             f"  echo \"[{prefix}-loop] Run ${vp}_RUN starting (${{{vp}_REMAINING}}s remaining)\" | tee -a /logs/agent/{log_file}; "
             f"  {vp}_RUN_START=$(date +%s); "
-            f"  timeout ${{{vp}_REMAINING}}s opencode --model {escaped_model} run --format=json {continue_instruction} "
-            f"  2>&1 </dev/null | tee -a /logs/agent/{log_file}; "
+            f"  if [ -n \"${vp}_SID\" ]; then "
+            f"    echo \"[{prefix}-loop] Resuming session ${vp}_SID\" | tee -a /logs/agent/{log_file}; "
+            f"    timeout ${{{vp}_REMAINING}}s opencode --model {escaped_model} run --format=json --session \"${vp}_SID\" {resume_message} "
+            f"    2>&1 </dev/null | tee -a /logs/agent/{log_file}; "
+            "  else "
+            f"    timeout ${{{vp}_REMAINING}}s opencode --model {escaped_model} run --format=json {continue_instruction} "
+            f"    2>&1 </dev/null | tee -a /logs/agent/{log_file}; "
+            "  fi; "
             f"  {vp}_RUN_DUR=$(( $(date +%s) - {vp}_RUN_START )); "
             f"  echo \"[{prefix}-loop] opencode exited after ${{{vp}_RUN_DUR}}s\" | tee -a /logs/agent/{log_file}; "
-            f"  if [ ${vp}_RUN_DUR -lt 10 ]; then {vp}_FAST_FAILS=$(({vp}_FAST_FAILS + 1)); else {vp}_FAST_FAILS=0; fi; "
+            # A fast-failing resume likely means the stored session is bad
+            # (locked db, corrupt state) — fall back to a fresh session.
+            f"  if [ ${vp}_RUN_DUR -lt 10 ]; then "
+            f"    {vp}_FAST_FAILS=$(({vp}_FAST_FAILS + 1)); "
+            f"    if [ -n \"${vp}_SID\" ]; then {vp}_RESUME=0; echo \"[{prefix}-loop] Resume failed fast — next run starts a fresh session\" | tee -a /logs/agent/{log_file}; fi; "
+            f"  else {vp}_FAST_FAILS=0; {vp}_RESUME=1; fi; "
             "done; "
             f"echo \"[{prefix}-loop] Finished after ${vp}_RUN runs\" | tee -a /logs/agent/{log_file}"
         )
