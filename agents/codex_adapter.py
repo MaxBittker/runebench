@@ -43,14 +43,54 @@ from harbor.models.agent.context import AgentContext
 from harbor.models.trial.paths import EnvironmentPaths
 
 
+def _truthy(value) -> bool:
+    """Harbor passes --ak values through as strings ('true', '1', ...)."""
+    if isinstance(value, bool):
+        return value
+    return str(value).strip().lower() in ("1", "true", "yes", "on")
+
+
 class CodexWithTimeout(Codex):
     """Codex agent with Modal-level exec timeout and OAuth auth support."""
 
-    def __init__(self, run_timeout_sec: int | None = None, *args, **kwargs):
+    def __init__(
+        self,
+        run_timeout_sec: int | None = None,
+        fast_mode=None,
+        service_tier: str | None = None,
+        *args,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         self._run_timeout_sec = (
             int(run_timeout_sec) if run_timeout_sec is not None else None
         )
+        # Fast mode = OpenAI's premium-speed serving tier. Two knobs, both read
+        # from config.toml (and both settable via `-c` / `--enable`):
+        #   service_tier = "fast"
+        #   [features] fast_mode = true
+        #
+        # Verified on codex-cli 0.145.0 by pointing `openai_base_url` at a local
+        # capture proxy and diffing the outgoing /v1/responses body:
+        #
+        #   baseline                              -> no service_tier field
+        #   --enable fast_mode alone              -> no service_tier field
+        #   -c service_tier="fast"                -> "service_tier": "priority"
+        #   service_tier="fast" --disable fast_mode -> field DROPPED
+        #   -c service_tier="bogus_tier"          -> field DROPPED, exit 0, NO error
+        #
+        # So the CLI translates "fast" -> the API's "priority" tier, the feature
+        # flag GATES it (it defaults to true today, but a flip would silently
+        # disable the tier), and an unrecognised value is silently discarded.
+        # We therefore set both, and never treat a clean exit as proof.
+        #
+        # There is NO post-run artifact recording the tier — codex omits
+        # service_tier from session_meta and turn_context — so the only
+        # available evidence that a row ran fast is the `codex exec` command
+        # line echoed in each trial's trial.log:
+        #   grep -l 'service_tier="fast"' jobs/<job>/*/trial.log | wc -l
+        self._fast_mode = _truthy(fast_mode) if fast_mode is not None else False
+        self._service_tier = service_tier or ("fast" if self._fast_mode else None)
         self._auth_tempfile: str | None = None
 
     @staticmethod
@@ -120,6 +160,24 @@ class CodexWithTimeout(Codex):
             and "codex exec" in command
         ):
             timeout_sec = self._run_timeout_sec
+
+        # Same hook for the fast-mode config overrides. Harbor's Codex.run()
+        # hard-codes the `codex exec` invocation and only exposes
+        # reasoning_effort/reasoning_summary through CLI_FLAGS, so splice the
+        # extra `-c` flags in here rather than forking the whole run() method.
+        if "codex exec " in command:
+            extra: list[str] = []
+            if self._service_tier:
+                extra.append(f"-c 'service_tier=\"{self._service_tier}\"'")
+            if self._fast_mode:
+                # `--enable X` is codex shorthand for `-c features.X=true`, and
+                # is repeatable — harbor already passes `--enable unified_exec`.
+                extra.append("--enable fast_mode")
+            if extra:
+                command = command.replace(
+                    "codex exec ", "codex exec " + " ".join(extra) + " ", 1
+                )
+
         return await super().exec_as_agent(
             environment, command, env=env, cwd=cwd, timeout_sec=timeout_sec
         )

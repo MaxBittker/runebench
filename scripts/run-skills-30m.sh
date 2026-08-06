@@ -34,10 +34,13 @@ codex|openai/gpt-5.4-nano|gpt54nano
 codex|openai/gpt-5.5|gpt55
 codex|openai/gpt-5.6-sol|gpt56
 codex|openai/gpt-5.6-sol|gpt56-xhigh
+codex|openai/gpt-5.6-sol|gpt56-fast
 codex|openai/gpt-5.6-luna|gpt56luna
 codex|openai/gpt-5.6-luna|gpt56luna-xhigh
+codex|openai/gpt-5.6-luna|gpt56luna-fast
 codex|openai/gpt-5.6-terra|gpt56terra
 codex|openai/gpt-5.6-terra|gpt56terra-xhigh
+codex|openai/gpt-5.6-terra|gpt56terra-fast
 gemini-cli|google/gemini-3-pro-preview|gemini
 gemini-cli|google/gemini-3.1-pro-preview|gemini31
 gemini-cli|google/gemini-3-flash-preview|geminiflash
@@ -155,6 +158,18 @@ for model_name in $SELECTED_MODELS; do
       ;;
     gpt56-xhigh|gpt56luna-xhigh|gpt56terra-xhigh)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900 --ak reasoning_effort=xhigh"
+      ;;
+    gpt56-fast|gpt56luna-fast|gpt56terra-fast)
+      # OpenAI's premium-speed serving tier: codex_adapter turns fast_mode=true
+      # into `-c service_tier="fast" --enable fast_mode` on the codex exec line.
+      # reasoning_effort is left at harbor's codex default (high) so these rows
+      # differ from the base gpt56* rows in serving speed ONLY.
+      #
+      # On the wire this becomes `"service_tier": "priority"`. An unrecognised
+      # value is dropped SILENTLY (exit 0, no error), and codex records the
+      # tier in no post-run artifact, so verify from the echoed command line:
+      #   grep -l 'service_tier="fast"' jobs/<job>/*/trial.log | wc -l   # want 16
+      MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900 --ak fast_mode=true"
       ;;
     glm|glm52|glm52-wandb|gemma4|gptoss120b|kimi|kimi26|kimi27|kimi3|kimi3-low|qwen35|qwen3max|qwen37max|deepseek|deepseekflash|deepseekflash0731|inkling|laguna|gemini36flash|gemini35flashlite)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1800"

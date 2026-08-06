@@ -46,7 +46,9 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // cost_usd is baked into jobs/: -low/-xhigh at the correct 2×
   // rate; base/-medium at 1.25× (~12% cache-write undercount).
   opus5:        { input: 5e-6,    cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,  output: 25e-6 },
-  'opus5-fast': { input: 10e-6,   cachedInput: 1e-6,     cacheWrite: 12.5e-6,  output: 50e-6 },
+  // opus5-fast ran via subscription OAuth (run-claude-oauth-30m.sh + CLAUDE_FAST=1),
+  // which writes the 1h cache bucket → cacheWrite = 2× fast input, not 5-min 1.25×.
+  'opus5-fast': { input: 10e-6,   cachedInput: 1e-6,     cacheWrite: 20e-6,    output: 50e-6 },
   opus48:       { input: 5e-6,    cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,  output: 25e-6 }, // same rate card as 4.7
   'opus48-max': { input: 5e-6,    cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,  output: 25e-6 },
   opus47:       { input: 5e-6,    cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,  output: 25e-6 },
@@ -81,6 +83,17 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   'gpt56terra-xhigh': { input: 2e-6, cachedInput: 0.2e-6, cacheWrite: 2.5e-6, output: 12e-6 },
   gpt56luna:    { input: 0.2e-6,  cachedInput: 0.02e-6,  cacheWrite: 0.25e-6,  output: 1.2e-6 },
   'gpt56luna-xhigh': { input: 0.2e-6, cachedInput: 0.02e-6, cacheWrite: 0.25e-6, output: 1.2e-6 },
+  // Fast rows: codex `service_tier = "fast"`, which goes out as the API's
+  // "priority" tier. Priority serving bills 2.5x the standard rate card (vs
+  // opus5-fast's 2x). The family's 1.25x cache-write premium and 0.1x cache
+  // read apply on the FAST rates, not the base ones.
+  // These share a harbor model id with their base row, so postprocess-costs
+  // keys them off the '-gpt56*-fast-' job-dir token — same trick as opus5-fast.
+  // cost_usd is cached in jobs/, so changing these needs:
+  //   bun scripts/postprocess-costs.ts --force --models gpt56-fast,gpt56terra-fast,gpt56luna-fast
+  'gpt56-fast':      { input: 12.5e-6, cachedInput: 1.25e-6,  cacheWrite: 15.625e-6, output: 75e-6 },
+  'gpt56terra-fast': { input: 5e-6,    cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,   output: 30e-6 },
+  'gpt56luna-fast':  { input: 0.5e-6,  cachedInput: 0.05e-6,  cacheWrite: 0.625e-6,  output: 3e-6 },
   gemini:       { input: 2e-6,    cachedInput: 0.2e-6,   cacheWrite: 2e-6,     output: 12e-6 },
   gemini31:     { input: 2e-6,    cachedInput: 0.2e-6,   cacheWrite: 2e-6,     output: 12e-6 },
   geminiflash:  { input: 0.5e-6,  cachedInput: 0.05e-6,  cacheWrite: 0.5e-6,   output: 3e-6 },
