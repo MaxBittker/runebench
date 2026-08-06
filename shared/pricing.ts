@@ -67,17 +67,20 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   gpt54mini:    { input: 0.75e-6, cachedInput: 0.075e-6, cacheWrite: 0.75e-6,  output: 4.5e-6 },
   gpt54nano:    { input: 0.2e-6,  cachedInput: 0.02e-6,  cacheWrite: 0.2e-6,   output: 1.25e-6 },
   gpt55:        { input: 5e-6,    cachedInput: 0.5e-6,   cacheWrite: 5e-6,     output: 30e-6 },
-  // gpt-5.6 family, released 2026-07-09. Sol matches gpt-5.5's $5/$30 rate card;
-  // Terra is the $2.50/$15 middle tier; Luna is the new $1/$6 tier. 5.6
+  // gpt-5.6 family, released 2026-07-09. Sol matches gpt-5.5's $5/$30 rate card.
+  // 2026-07-30 price cut (openai.com/index/advancing-the-price-performance-
+  // frontier-with-gpt-5-6): Terra $2.50/$15 → $2/$12, Luna $1/$6 → $0.20/$1.20;
+  // Sol unchanged. Pre-cut runs were --force-backfilled to the NEW rates on
+  // 2026-07-30 (leaderboard shows current replication cost, not historical). 5.6
   // introduces a 1.25× cache-write premium (inert unless usage reports a write
   // bucket). xhigh variants share the base rate card — higher effort just
   // emits more reasoning tokens (billed as output).
   gpt56:        { input: 5e-6,    cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,  output: 30e-6 },
   'gpt56-xhigh': { input: 5e-6,   cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,  output: 30e-6 },
-  gpt56terra:   { input: 2.5e-6,  cachedInput: 0.25e-6,  cacheWrite: 3.125e-6, output: 15e-6 },
-  'gpt56terra-xhigh': { input: 2.5e-6, cachedInput: 0.25e-6, cacheWrite: 3.125e-6, output: 15e-6 },
-  gpt56luna:    { input: 1e-6,    cachedInput: 0.1e-6,   cacheWrite: 1.25e-6,  output: 6e-6 },
-  'gpt56luna-xhigh': { input: 1e-6, cachedInput: 0.1e-6, cacheWrite: 1.25e-6,  output: 6e-6 },
+  gpt56terra:   { input: 2e-6,    cachedInput: 0.2e-6,   cacheWrite: 2.5e-6,   output: 12e-6 },
+  'gpt56terra-xhigh': { input: 2e-6, cachedInput: 0.2e-6, cacheWrite: 2.5e-6, output: 12e-6 },
+  gpt56luna:    { input: 0.2e-6,  cachedInput: 0.02e-6,  cacheWrite: 0.25e-6,  output: 1.2e-6 },
+  'gpt56luna-xhigh': { input: 0.2e-6, cachedInput: 0.02e-6, cacheWrite: 0.25e-6, output: 1.2e-6 },
   gemini:       { input: 2e-6,    cachedInput: 0.2e-6,   cacheWrite: 2e-6,     output: 12e-6 },
   gemini31:     { input: 2e-6,    cachedInput: 0.2e-6,   cacheWrite: 2e-6,     output: 12e-6 },
   geminiflash:  { input: 0.5e-6,  cachedInput: 0.05e-6,  cacheWrite: 0.5e-6,   output: 3e-6 },
@@ -110,6 +113,12 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   deepseek:     { input: 0.435e-6,  cachedInput: 0.003625e-6, cacheWrite: 0.435e-6, output: 0.87e-6 }, // deepseek-v4-pro
   // deepseek-v4-flash, OpenRouter 2026-07-21. No cache-write premium → cacheWrite = input (inert).
   deepseekflash: { input: 0.0938e-6, cachedInput: 0.01876e-6, cacheWrite: 0.0938e-6, output: 0.1876e-6 },
+  // deepseek-v4-flash-0731 pinned to DeepInfra fp4, OpenRouter 2026-08-03 ($0.09/$0.18
+  // per 1M, cache read $0.018). No cache-write premium → cacheWrite = input (inert).
+  // Keep in sync with the per-1M `cost` block in agents/deepseek_adapter.py (cost
+  // declared in opencode.json → OpenCode reports real cost_usd; postprocess-costs
+  // needs --force to override it).
+  deepseekflash0731: { input: 0.09e-6, cachedInput: 0.018e-6, cacheWrite: 0.09e-6, output: 0.18e-6 },
   kimi26:       { input: 0.68e-6,   cachedInput: 0.34e-6,  cacheWrite: 0.68e-6,   output: 3.41e-6 },
   kimi27:       { input: 0.75e-6,   cachedInput: 0.16e-6,  cacheWrite: 0.75e-6,   output: 3.5e-6 }, // kimi-k2.7-code, OpenRouter 2026-06-14
   kimi3:        { input: 3e-6,      cachedInput: 0.3e-6,   cacheWrite: 3e-6,      output: 15e-6 }, // kimi-k3, OpenRouter 2026-07-16 (no cache-write premium listed)
@@ -187,6 +196,7 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'openrouter/qwen/qwen3.7-max':       'qwen37max',
   'openrouter/deepseek/deepseek-v4-pro': 'deepseek',
   'openrouter/deepseek/deepseek-v4-flash': 'deepseekflash',
+  'openrouter/deepseek/deepseek-v4-flash-0731': 'deepseekflash0731',
   'openrouter/moonshotai/kimi-k2.6':   'kimi26',
   'openrouter/moonshotai/kimi-k2.7-code': 'kimi27',
   'openrouter/moonshotai/kimi-k3':     'kimi3',
