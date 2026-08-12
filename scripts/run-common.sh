@@ -110,6 +110,14 @@ configure_model_env() {
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'qwen3max_adapter:Qwen3MaxOpenCode'"
       ;;
+    qwen38max-opencode)
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'qwen38max_adapter:Qwen38MaxOpenCode'"
+      ;;
     qwen37max-opencode)
       if [ -z "${OPENROUTER_API_KEY:-}" ]; then
         echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
@@ -181,6 +189,14 @@ configure_model_env() {
       fi
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'muse_adapter:MuseSparkOpenCode'"
+      ;;
+    grok46-opencode)
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'grok46_adapter:Grok46OpenCode'"
       ;;
     grok45-opencode)
       if [ -z "${OPENROUTER_API_KEY:-}" ]; then

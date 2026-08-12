@@ -123,6 +123,9 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // OpenRouter listed rates as of 2026-06-09.
   // qwen3.7-max: Alibaba bills cache writes at 1.25× input (like Anthropic).
   qwen37max:    { input: 1.25e-6,   cachedInput: 0.25e-6,  cacheWrite: 1.5625e-6, output: 3.75e-6 },
+  // qwen/qwen3.8-max, OpenRouter (Alibaba, sole provider) 2026-08-12.
+  // $2/$6 per 1M; cache read $0.25/1M, cache write $2.50/1M (1.25× input).
+  qwen38max:    { input: 2e-6,       cachedInput: 0.25e-6,  cacheWrite: 2.5e-6,    output: 6e-6 },
   deepseek:     { input: 0.435e-6,  cachedInput: 0.003625e-6, cacheWrite: 0.435e-6, output: 0.87e-6 }, // deepseek-v4-pro
   // deepseek-v4-flash, OpenRouter 2026-07-21. No cache-write premium → cacheWrite = input (inert).
   deepseekflash: { input: 0.0938e-6, cachedInput: 0.01876e-6, cacheWrite: 0.0938e-6, output: 0.1876e-6 },
@@ -135,6 +138,10 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   kimi26:       { input: 0.68e-6,   cachedInput: 0.34e-6,  cacheWrite: 0.68e-6,   output: 3.41e-6 },
   kimi27:       { input: 0.75e-6,   cachedInput: 0.16e-6,  cacheWrite: 0.75e-6,   output: 3.5e-6 }, // kimi-k2.7-code, OpenRouter 2026-06-14
   kimi3:        { input: 3e-6,      cachedInput: 0.3e-6,   cacheWrite: 3e-6,      output: 15e-6 }, // kimi-k3, OpenRouter 2026-07-16 (no cache-write premium listed)
+  // x-ai/grok-4.6, OpenRouter 2026-08-12. ≤200k-context rates ($2/$6 per 1M,
+  // cache read $0.50/1M); xAI doubles rates past 200k input. No cache-write
+  // premium listed → cacheWrite = input (inert).
+  grok46:       { input: 2e-6,      cachedInput: 0.5e-6,   cacheWrite: 2e-6,      output: 6e-6 },
   // x-ai/grok-4.5, OpenRouter 2026-07-09. ≤200k-context rates; xAI doubles
   // rates past 200k input but our runs stay well under that.
   grok45:       { input: 2e-6,      cachedInput: 0.5e-6,   cacheWrite: 2e-6,      output: 6e-6 },
@@ -207,12 +214,14 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'openrouter/qwen/qwen3.5-35b-a3b':   'qwen35',
   'openrouter/qwen/qwen3-max':         'qwen3max',
   'openrouter/qwen/qwen3.7-max':       'qwen37max',
+  'openrouter/qwen/qwen3.8-max':       'qwen38max',
   'openrouter/deepseek/deepseek-v4-pro': 'deepseek',
   'openrouter/deepseek/deepseek-v4-flash': 'deepseekflash',
   'openrouter/deepseek/deepseek-v4-flash-0731': 'deepseekflash0731',
   'openrouter/moonshotai/kimi-k2.6':   'kimi26',
   'openrouter/moonshotai/kimi-k2.7-code': 'kimi27',
   'openrouter/moonshotai/kimi-k3':     'kimi3',
+  'openrouter/x-ai/grok-4.6':          'grok46',
   'openrouter/x-ai/grok-4.5':          'grok45',
   'openrouter/x-ai/grok-4.3':          'grok43',
   'openrouter/meta/muse-spark-1.1':    'muse',

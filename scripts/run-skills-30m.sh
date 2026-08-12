@@ -57,12 +57,14 @@ kimi-opencode|openrouter/moonshotai/kimi-k2.5|kimi
 qwen35-opencode|openrouter/qwen/qwen3.5-35b-a3b|qwen35
 qwen3max-opencode|openrouter/qwen/qwen3-max|qwen3max
 qwen37max-opencode|openrouter/qwen/qwen3.7-max|qwen37max
+qwen38max-opencode|openrouter/qwen/qwen3.8-max|qwen38max
 deepseek-opencode|openrouter/deepseek/deepseek-v4-pro|deepseek
 deepseekflash-opencode|openrouter/deepseek/deepseek-v4-flash|deepseekflash
 deepseekflash0731-opencode|openrouter/deepseek/deepseek-v4-flash-0731|deepseekflash0731
 kimi26-opencode|openrouter/moonshotai/kimi-k2.6|kimi26
 kimi27-opencode|openrouter/moonshotai/kimi-k2.7-code|kimi27
 kimi3-opencode|openrouter/moonshotai/kimi-k3|kimi3
+grok46-opencode|openrouter/x-ai/grok-4.6|grok46
 grok45-opencode|openrouter/x-ai/grok-4.5|grok45
 grok45-medium-opencode|openrouter/x-ai/grok-4.5|grok45-medium
 grok43-opencode|openrouter/x-ai/grok-4.3|grok43
@@ -171,10 +173,10 @@ for model_name in $SELECTED_MODELS; do
       #   grep -l 'service_tier="fast"' jobs/<job>/*/trial.log | wc -l   # want 16
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900 --ak fast_mode=true"
       ;;
-    glm|glm52|glm52-wandb|gemma4|gptoss120b|kimi|kimi26|kimi27|kimi3|kimi3-low|qwen35|qwen3max|qwen37max|deepseek|deepseekflash|deepseekflash0731|inkling|laguna|gemini36flash|gemini35flashlite)
+    glm|glm52|glm52-wandb|gemma4|gptoss120b|kimi|kimi26|kimi27|kimi3|kimi3-low|qwen35|qwen3max|qwen37max|qwen38max|deepseek|deepseekflash|deepseekflash0731|inkling|laguna|gemini36flash|gemini35flashlite)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1800"
       ;;
-    grok45|grok45-medium|grok43|muse)
+    grok46|grok45|grok45-medium|grok43|muse)
       # xAI blocks grok models for EU-origin requests (403 "not available in
       # your region") — pin the Modal sandbox to a US region so OpenRouter sees
       # a US client. Requires the sandbox_region patch in harbor's modal.py.
