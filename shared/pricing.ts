@@ -142,6 +142,9 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // cache read $0.50/1M); xAI doubles rates past 200k input. No cache-write
   // premium listed → cacheWrite = input (inert).
   grok46:       { input: 2e-6,      cachedInput: 0.5e-6,   cacheWrite: 2e-6,      output: 6e-6 },
+  // Same rate card — effort only changes how many reasoning tokens are emitted.
+  'grok46-medium': { input: 2e-6,   cachedInput: 0.5e-6,   cacheWrite: 2e-6,      output: 6e-6 },
+  'grok46-xhigh':  { input: 2e-6,   cachedInput: 0.5e-6,   cacheWrite: 2e-6,      output: 6e-6 },
   // x-ai/grok-4.5, OpenRouter 2026-07-09. ≤200k-context rates; xAI doubles
   // rates past 200k input but our runs stay well under that.
   grok45:       { input: 2e-6,      cachedInput: 0.5e-6,   cacheWrite: 2e-6,      output: 6e-6 },

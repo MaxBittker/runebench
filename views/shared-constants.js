@@ -10,7 +10,8 @@ const XP_NORMALIZATION_DIVISOR = 8 * 25;
 // releaseDate (YYYY-MM-DD) sourced from https://models.dev/. xhigh variants
 // inherit their base model's date.
 const MODEL_CONFIG = {
-  // Both fable rows are the 2026-07-20 runs on image v53. The June runs (image v40,
+  // Both fable rows are the 2026-07-20 runs on image v52 (they started ~3h before
+  // the v53 pin landed in 676038b). The June runs (image v40,
   // pre-÷200 task prompt) are archived under jobs/_archive-v40-fable.
   'fable-5':   { displayName: 'Claude Fable 5',   shortName: 'Fable 5',    color: '#c2703e', order: 0.1, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-06-09' },
   'fable-5-xhigh': { displayName: 'Claude Fable 5 xhigh', shortName: 'Fable 5 xh', color: '#9c5226', order: 0.12, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-06-09' },
@@ -70,6 +71,8 @@ const MODEL_CONFIG = {
   'qwen37max': { displayName: 'Qwen3.7 Max',    shortName: 'Qwen3.7 Max', color: '#4f46e5', order: 15.5, icon: VIEWS_BASE + 'model-icons/qwen.webp', releaseDate: '2026-05-21' },
   'qwen38max': { displayName: 'Qwen3.8 Max',    shortName: 'Qwen3.8 Max', color: '#3730a3', order: 15.6, icon: VIEWS_BASE + 'model-icons/qwen.webp', releaseDate: '2026-08-03' },
   'grok46':   { displayName: 'Grok 4.6',        shortName: 'Grok 4.6',    color: '#000000', order: 15.9, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-08-10' },
+  'grok46-medium': { displayName: 'Grok 4.6 medium', shortName: 'Grok 4.6 med', color: '#4a4a4a', order: 15.91, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-08-10' },
+  'grok46-xhigh': { displayName: 'Grok 4.6 xhigh', shortName: 'Grok 4.6 xhigh', color: '#2b2b2b', order: 15.92, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-08-10' },
   'grok45':   { displayName: 'Grok 4.5',        shortName: 'Grok 4.5',    color: '#1c1c1c', order: 16, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-07-08' },
   'grok45-medium': { displayName: 'Grok 4.5 medium', shortName: 'Grok 4.5 med', color: '#555555', order: 16.1, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-07-08' },
   'grok43':   { displayName: 'Grok 4.3',        shortName: 'Grok 4.3',    color: '#8a8a8a', order: 16.2, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-04-17' },
