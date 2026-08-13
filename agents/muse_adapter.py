@@ -1,9 +1,11 @@
 """
 Custom Harbor adapters for Meta Muse Spark.
 
-MuseSparkOpenCode        — muse-spark-1.1 via OpenCode + OpenRouter (original row).
+MuseSparkOpenCode        — muse-spark-1.1 via the Meta Model API direct.
 Muse12ContributorOpenCode — muse-spark-1.2-contributor via the Meta Model API direct.
-Muse11MetaOpenCode        — muse-spark-1.1 via the Meta Model API direct.
+
+The muse row originally ran via OpenCode + OpenRouter; the 2026-08-12 Meta-API
+run replaced it (old jobs in jobs/_archive-muse-openrouter-20260813).
 
 `meta` is a native models.dev provider (npm @ai-sdk/openai, baseURL
 api.meta.ai/v1, env META_MODEL_API_KEY), so OpenCode resolves it from its
@@ -26,7 +28,7 @@ from opencode_adapter import OpenCodeAdapter
 
 
 class MuseSparkOpenCode(OpenCodeAdapter):
-    _default_model = "openrouter/meta/muse-spark-1.1"
+    _default_model = "meta/muse-spark-1.1"
     _log_prefix = "muse"
     _log_file = "opencode-muse.txt"
 
@@ -60,13 +62,3 @@ class Muse12ContributorOpenCode(OpenCodeAdapter):
             "cost": {"input": 1.25, "output": 4.25, "cache_read": 0.15},
         }
         return config
-
-
-class Muse11MetaOpenCode(OpenCodeAdapter):
-    _default_model = "meta/muse-spark-1.1"
-    _log_prefix = "muse11"
-    _log_file = "opencode-muse11.txt"
-
-    @staticmethod
-    def name() -> str:
-        return "muse11-opencode"
