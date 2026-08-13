@@ -155,6 +155,19 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // meta/muse-spark-1.1, OpenRouter 2026-07-16. $1.25/$4.25 per 1M; cache read
   // $0.15/1M. No cache-write premium listed → cacheWrite = input (inert).
   muse:         { input: 1.25e-6,   cachedInput: 0.15e-6,  cacheWrite: 1.25e-6,   output: 4.25e-6 },
+  // muse-spark-1.2-contributor via the Meta Model API direct (api.meta.ai),
+  // 2026-08-12. Displayed at muse-spark-1.2 STANDARD list price ($1.25/$4.25
+  // per 1M, cache read $0.15 — same card as 1.1) by decision: the contributor
+  // tier's ~95% data-for-training discount ($0.10/$0.20, cache read $0.002)
+  // is what the API actually bills, but it isn't comparable to the other
+  // rows' list prices. No cache-write premium → cacheWrite = input (inert).
+  // Keep in sync with the per-1M `cost` block in agents/muse_adapter.py
+  // (declared in opencode.json → OpenCode reports standard-rate cost_usd
+  // natively for future runs; the 2026-08-12 job was repriced in place).
+  muse12:       { input: 1.25e-6,   cachedInput: 0.15e-6,  cacheWrite: 1.25e-6,   output: 4.25e-6 },
+  // muse-spark-1.1 via the Meta Model API direct — standard tier, same rate
+  // card as the OpenRouter 'muse' row. Also declared in agents/muse_adapter.py.
+  muse11:       { input: 1.25e-6,   cachedInput: 0.15e-6,  cacheWrite: 1.25e-6,   output: 4.25e-6 },
   // thinkingmachines/inkling, OpenRouter (Together endpoint, the model's only
   // provider) 2026-07-21. No cache-write premium → cacheWrite = input (inert).
   // Keep in sync with the per-1M `cost` block in agents/inkling_adapter.py —
@@ -228,6 +241,8 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'openrouter/x-ai/grok-4.5':          'grok45',
   'openrouter/x-ai/grok-4.3':          'grok43',
   'openrouter/meta/muse-spark-1.1':    'muse',
+  'meta/muse-spark-1.2-contributor':   'muse12',
+  'meta/muse-spark-1.1':               'muse11',
   'openrouter/thinkingmachines/inkling': 'inkling',
   'openrouter/poolside/laguna-s-2.1':  'laguna',
 };

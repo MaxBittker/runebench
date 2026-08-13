@@ -84,6 +84,9 @@ _PROVIDER_KEY_MAP = {
     "gemini": "GEMINI_API_KEY",
     "google": "GEMINI_API_KEY",
     "openrouter": "OPENROUTER_API_KEY",
+    # Meta Model API (api.meta.ai) — custom provider declared in
+    # muse_adapter; the key is referenced as {env:META_MODEL_API_KEY} in opencode.json.
+    "meta": "META_MODEL_API_KEY",
 }
 
 
@@ -218,6 +221,7 @@ class OpenCodeAdapter(BaseInstalledAgent):
             "ANTHROPIC_API_KEY",
             "OPENAI_API_KEY",
             "GEMINI_API_KEY",
+            "META_MODEL_API_KEY",
         ]
     }
 

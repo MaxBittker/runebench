@@ -190,6 +190,23 @@ configure_model_env() {
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'muse_adapter:MuseSparkOpenCode'"
       ;;
+    muse12-opencode)
+      # Meta Model API direct (api.meta.ai) — needs META_MODEL_API_KEY.
+      if [ -z "${META_MODEL_API_KEY:-}" ]; then
+        echo "  WARNING: META_MODEL_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'muse_adapter:Muse12ContributorOpenCode'"
+      ;;
+    muse11-opencode)
+      if [ -z "${META_MODEL_API_KEY:-}" ]; then
+        echo "  WARNING: META_MODEL_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'muse_adapter:Muse11MetaOpenCode'"
+      ;;
     grok46-medium-opencode)
       if [ -z "${OPENROUTER_API_KEY:-}" ]; then
         echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"

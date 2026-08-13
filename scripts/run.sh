@@ -30,6 +30,8 @@ glm-opencode|openrouter/z-ai/glm-5|glm
 kimi-opencode|openrouter/moonshotai/kimi-k2.5|kimi
 qwen35-opencode|openrouter/qwen/qwen3.5-35b-a3b|qwen35
 muse-opencode|openrouter/meta/muse-spark-1.1|muse
+muse12-opencode|meta/muse-spark-1.2-contributor|muse12
+muse11-opencode|meta/muse-spark-1.1|muse11
 
 "
 

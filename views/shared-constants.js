@@ -77,6 +77,8 @@ const MODEL_CONFIG = {
   'grok45-medium': { displayName: 'Grok 4.5 medium', shortName: 'Grok 4.5 med', color: '#555555', order: 16.1, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-07-08' },
   'grok43':   { displayName: 'Grok 4.3',        shortName: 'Grok 4.3',    color: '#8a8a8a', order: 16.2, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-04-17' },
   'muse':     { displayName: 'Muse Spark 1.1',  shortName: 'Muse Spark',  color: '#0064e0', order: 18, icon: VIEWS_BASE + 'model-icons/meta.svg', releaseDate: '2026-07-09' },
+  'muse12':   { displayName: 'Muse Spark 1.2', shortName: 'Muse Spark 1.2', color: '#003f8c', order: 17.9, icon: VIEWS_BASE + 'model-icons/meta.svg', releaseDate: '2026-08-05' },
+  'muse11':   { displayName: 'Muse Spark 1.1 (Meta API)', shortName: 'Muse 1.1 Meta', color: '#4d94ec', order: 18.1, icon: VIEWS_BASE + 'model-icons/meta.svg', releaseDate: '2026-07-09' },
   'inkling':  { displayName: 'Inkling',         shortName: 'Inkling',     color: '#343a40', order: 17, icon: VIEWS_BASE + 'model-icons/thinkingmachines.png', releaseDate: '2026-07-15' },
   'laguna':   { displayName: 'Laguna S 2.1',    shortName: 'Laguna S',    color: '#0891b2', order: 19, icon: VIEWS_BASE + 'model-icons/poolside.png', releaseDate: '2026-07-20' },
 };
