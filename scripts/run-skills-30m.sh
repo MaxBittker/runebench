@@ -46,6 +46,7 @@ gemini-cli|google/gemini-3.1-pro-preview|gemini31
 gemini-cli|google/gemini-3-flash-preview|geminiflash
 gemini-cli|google/gemini-3.5-flash|gemini35flash
 gemini-cli-high|google/gemini-3.5-flash|gemini35flash-high
+gemini37flash-opencode|google/gemini-3.7-flash|gemini37flash
 gemini36flash-opencode|google/gemini-3.6-flash|gemini36flash
 gemini35flashlite-opencode|google/gemini-3.5-flash-lite|gemini35flashlite
 glm-opencode|openrouter/z-ai/glm-5|glm
@@ -176,7 +177,7 @@ for model_name in $SELECTED_MODELS; do
       #   grep -l 'service_tier="fast"' jobs/<job>/*/trial.log | wc -l   # want 16
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900 --ak fast_mode=true"
       ;;
-    glm|glm52|glm52-wandb|gemma4|gptoss120b|kimi|kimi26|kimi27|kimi3|kimi3-low|qwen35|qwen3max|qwen37max|qwen38max|deepseek|deepseekflash|deepseekflash0731|inkling|laguna|gemini36flash|gemini35flashlite)
+    glm|glm52|glm52-wandb|gemma4|gptoss120b|kimi|kimi26|kimi27|kimi3|kimi3-low|qwen35|qwen3max|qwen37max|qwen38max|deepseek|deepseekflash|deepseekflash0731|inkling|laguna|gemini37flash|gemini36flash|gemini35flashlite)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1800"
       ;;
     grok46|grok46-medium|grok46-xhigh|grok45|grok45-medium|grok43|muse|muse12)

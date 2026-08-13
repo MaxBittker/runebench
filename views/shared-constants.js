@@ -36,6 +36,7 @@ const MODEL_CONFIG = {
   'gemini35flash': { displayName: 'Gemini 3.5 Flash', shortName: 'Gemini 3.5 Flash', color: '#5295e8', order: 6.6, icon: VIEWS_BASE + 'model-icons/gemini.webp', releaseDate: '2026-05-19' },
   'gemini35flash-high': { displayName: 'Gemini 3.5 Flash high', shortName: 'Gemini 3.5 Flash hi', color: '#1f6fd0', order: 6.65, icon: VIEWS_BASE + 'model-icons/gemini.webp', releaseDate: '2026-05-19' },
   'gemini36flash': { displayName: 'Gemini 3.6 Flash', shortName: 'Gemini 3.6 Flash', color: '#2d6bdf', order: 6.67, icon: VIEWS_BASE + 'model-icons/gemini.webp', releaseDate: '2026-07-21' },
+  'gemini37flash': { displayName: 'Gemini 3.7 Flash', shortName: 'Gemini 3.7 Flash', color: '#1a4fc0', order: 6.675, icon: VIEWS_BASE + 'model-icons/gemini.webp', releaseDate: '2026-08-13' },
   'gemini35flashlite': { displayName: 'Gemini 3.5 Flash-Lite', shortName: 'Gemini 3.5 F-Lite', color: '#9dc0f9', order: 6.68, icon: VIEWS_BASE + 'model-icons/gemini.webp', releaseDate: '2026-07-21' },
   'haiku':    { displayName: 'Claude Haiku 4.5',   shortName: 'Haiku 4.5',  color: '#e06090', order: 7, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2025-10-15' },
   'codex':    { displayName: 'Codex CLI 5.2',       shortName: 'Codex 5.2', color: '#10a37f', order: 8, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2025-12-11' },

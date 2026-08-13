@@ -106,6 +106,9 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // Run via OpenCode (google provider) which reports native cost_usd from the
   // same models.dev rates — these entries are for display/backfill parity only.
   gemini36flash:     { input: 1.5e-6, cachedInput: 0.15e-6, cacheWrite: 1.5e-6, output: 7.5e-6 },
+  // gemini-3.7-flash, launched 2026-08-13 (models.dev) — halves 3.6 Flash's
+  // rates ($0.75/$3.75, cache read $0.075). Same OpenCode-native cost note.
+  gemini37flash:     { input: 0.75e-6, cachedInput: 0.075e-6, cacheWrite: 0.75e-6, output: 3.75e-6 },
   gemini35flashlite: { input: 0.3e-6, cachedInput: 0.03e-6, cacheWrite: 0.3e-6, output: 2.5e-6 },
   glm:          { input: 0.72e-6,   cachedInput: 0,        cacheWrite: 0.72e-6,   output: 2.3e-6 },
   glm52:        { input: 1.4e-6,    cachedInput: 0,        cacheWrite: 1.4e-6,    output: 4.4e-6 }, // z-ai/glm-5.2, OpenRouter 2026-06-16
@@ -214,6 +217,7 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'google/gemini-3-flash-preview':     'geminiflash',
   'google/gemini-3.5-flash':           'gemini35flash',
   'google/gemini-3.6-flash':           'gemini36flash',
+  'google/gemini-3.7-flash':           'gemini37flash',
   'google/gemini-3.5-flash-lite':      'gemini35flashlite',
   'gemini/gemini-3-pro-preview':       'gemini',
   'gemini/gemini-3.1-pro-preview':     'gemini31',
