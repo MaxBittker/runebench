@@ -49,20 +49,43 @@ else
     cp ../shared/save-parser.ts save-parser.ts
     cp ../shared/agents.md agents.md
 
-    # Resolve the rs-sdk ref to a concrete SHA and pass it as a cache-bust arg.
-    # The Dockerfile's `git clone --branch main` layer is byte-identical between
-    # builds, so WITHOUT this Docker reuses the cached clone and a freshly-tagged
-    # image ships the OLD sdk. The Dockerfile also hard-fails if the baked SHA
-    # doesn't match what was requested, so a stale cache can't slip by silently.
     RS_SDK_REPO="${RS_SDK_REPO:-https://github.com/MaxBittker/rs-sdk.git}"
     RS_SDK_REF="${RS_SDK_REF:-main}"
-    echo "Resolving ${RS_SDK_REF} on ${RS_SDK_REPO} ..."
-    RS_SDK_COMMIT="$(git ls-remote "${RS_SDK_REPO}" "${RS_SDK_REF}" | cut -f1)"
-    if [ -z "$RS_SDK_COMMIT" ]; then
-        echo "ERROR: could not resolve ${RS_SDK_REF} on ${RS_SDK_REPO}" >&2
-        exit 1
+
+    # rs-sdk source. Default: resolve the remote ref to a concrete SHA and pass
+    # it as a cache-bust arg — the Dockerfile's `git clone --branch main` layer
+    # is byte-identical between builds, so WITHOUT this Docker reuses the cached
+    # clone and a freshly-tagged image ships the OLD sdk. (The Dockerfile also
+    # hard-fails if the baked SHA doesn't match what was requested.)
+    #
+    # RS_SDK_LOCAL=/path/to/rs-sdk instead bakes that WORKING TREE (tracked
+    # files + untracked-but-not-ignored, minus local junk) via the build
+    # context — for testing uncommitted SDK changes. The commit stamp becomes
+    # "<HEAD sha>-dirty".
+    rm -rf rs-sdk-local && mkdir rs-sdk-local
+    if [ -n "${RS_SDK_LOCAL:-}" ]; then
+        echo "Staging LOCAL rs-sdk working tree from ${RS_SDK_LOCAL} ..."
+        FILELIST="$(mktemp)"
+        (
+            cd "${RS_SDK_LOCAL}"
+            git ls-files
+            git ls-files --others --exclude-standard \
+                | grep -v -E '^(bots/|diagram/|iron-trajectories\.zip|server/engine/db\.sqlite)'
+        ) > "$FILELIST"
+        rsync -a --files-from="$FILELIST" "${RS_SDK_LOCAL}/" rs-sdk-local/
+        rm -f "$FILELIST"
+        RS_SDK_COMMIT="$(git -C "${RS_SDK_LOCAL}" rev-parse HEAD)-dirty"
+        echo "  rs-sdk local tree = ${RS_SDK_COMMIT} ($(du -sh rs-sdk-local | cut -f1) staged)"
+    else
+        touch rs-sdk-local/.keep
+        echo "Resolving ${RS_SDK_REF} on ${RS_SDK_REPO} ..."
+        RS_SDK_COMMIT="$(git ls-remote "${RS_SDK_REPO}" "${RS_SDK_REF}" | cut -f1)"
+        if [ -z "$RS_SDK_COMMIT" ]; then
+            echo "ERROR: could not resolve ${RS_SDK_REF} on ${RS_SDK_REPO}" >&2
+            exit 1
+        fi
+        echo "  rs-sdk ${RS_SDK_REF} = ${RS_SDK_COMMIT}"
     fi
-    echo "  rs-sdk ${RS_SDK_REF} = ${RS_SDK_COMMIT}"
 
     if [ "$PUSH" = "1" ] || [ "$PUSH" = "true" ]; then
         docker buildx build --platform "${PLATFORM}" \

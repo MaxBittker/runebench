@@ -11,7 +11,7 @@ per-provider subclass) so logs and cost tracking are uniform across providers.
 
 | Path | Purpose |
 |------|---------|
-| `generate-tasks.ts` | Generates all task directories (16 skills × {15m,30m} + 4 gold conditions × {15m,30m} + arrav-duo-30m + smith-team-30m + a 5m smoke task). Gold/arrav/smith-team starting states are **declarative `saveConfig` blocks** here. |
+| `generate-tasks.ts` | Generates all task directories (16 skills × {15m,30m} + 4 gold conditions × {15m,30m} + arrav-duo-45m + smith/magic/crafting team tasks × {30,45,60}m × n∈{1,3,6} + a 5m smoke task). Gold/arrav/team starting states are **declarative `saveConfig` blocks** here. |
 | `shared/save-generator.ts` | Writes binary `.sav` files from `SaveConfig` objects (Items/Locations enums, SAV header/CRC) at task-generation time |
 | `shared/check_skill_xp.ts` | XP verifier for single-skill tasks (embeds tracking data) |
 | `shared/check_gold.ts` | Gold verifier — reads the save file directly, counts coins in inventory + bank |
@@ -107,12 +107,13 @@ Each task has an `environment/Dockerfile` that `FROM`s the pre-built GHCR image,
 
 ## Shield of Arrav duo task
 
-`arrav-duo-30m` is a two-player cooperative quest speedrun (the quest
+`arrav-duo-45m` is a two-player cooperative quest speedrun (the quest
 *requires* two players, one per gang). `agents/opencode_duo_adapter.py` runs
 two concurrent OpenCode sessions of the **same model** in one sandbox — one
 drives bot `agenta` (Phoenix Gang route), one drives `agentb` (Black Arm
-route). They coordinate via the shared filesystem (`/tmp/team/`) and exchange
-items by dropping them in-game.
+route). They coordinate via in-game chat only (the chat CLI; filesystem
+coordination is forbidden by the instruction) and exchange items by dropping
+them in-game.
 
 - Completion is confirmed from save-file quest varps (145 blackarmgang == 4 /
   146 phoenixgang == 10); precise timing comes from the watcher observing the

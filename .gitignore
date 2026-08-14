@@ -48,3 +48,8 @@ docker/agents.md
 analysis/
 
 export/
+docker/rs-sdk-local/
+videos/
+results/*.mp4
+results/team/
+results/market/

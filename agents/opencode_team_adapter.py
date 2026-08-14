@@ -4,7 +4,9 @@ Team adapter for multi-bot cooperative tasks (smith/magic/crafting-team).
 Runs N concurrent OpenCode sessions of the SAME model in one sandbox, one per
 bot (agenta, agentb, ...). N defaults to 3; pass `--ak team_size=N` to match
 the -n<N> task variants (the task's BOT_NAMES env and save files are generated
-per size by generate-tasks.ts).
+per size by generate-tasks.ts). Tasks with non-default bot names (the market
+task's single-letter a..f) pass them explicitly via `--ak bot_names=a,b,...`,
+which overrides team_size.
 
 Each session receives the shared task instruction plus a role addendum naming
 its bot. Roles are symmetric — the task instruction asks the team to divide
@@ -18,6 +20,7 @@ Context: token counts and cost summed across all sessions.
 
 import json
 import logging
+import re
 import shlex
 
 from harbor.environments.base import BaseEnvironment
@@ -36,7 +39,9 @@ _ROLE_ADDENDUM = (
     "You are PLAYER {letter}. You control bot \"{bot}\" ONLY — every "
     "execute_code call must use bot_name: \"{bot}\". Your {n_word} "
     "teammate{plural} {verb} separate agent session{plural} controlling the "
-    "other bot{plural}. Coordinate with them through in-game chat."
+    "other bot{plural}. Talk to them through in-game chat using the chat CLI:\n"
+    "  cd /app && bun sdk/chat.ts {bot} \"your message\"   # send\n"
+    "  cd /app && bun sdk/chat.ts {bot}                   # read recent chat"
 )
 
 _SOLO_ADDENDUM = (
@@ -48,6 +53,16 @@ _SOLO_ADDENDUM = (
 
 def _team_bots(n: int) -> list[str]:
     return [f"agent{chr(ord('a') + i)}" for i in range(n)]
+
+
+def _resolve_bots(team_size: int | str | None, bot_names: str | None) -> list[str]:
+    """Explicit names (`--ak bot_names=a,b,c`) win over the derived agenta..N."""
+    if bot_names:
+        bots = [b for b in re.split(r"[,\s]+", str(bot_names)) if b]
+        if bots:
+            return bots
+    n = int(team_size) if team_size is not None else _DEFAULT_TEAM_SIZE
+    return _team_bots(n)
 
 
 def _role_addendum(bot: str, index: int, team_size: int) -> str:
@@ -72,10 +87,15 @@ class OpenCodeTeamAdapter(OpenCodeAdapter):
     # Seconds between session launches (avoids the shared-SQLite boot race)
     _LAUNCH_STAGGER_SEC = 1
 
-    def __init__(self, team_size: int | str | None = None, *args, **kwargs):
+    def __init__(
+        self,
+        team_size: int | str | None = None,
+        bot_names: str | None = None,
+        *args,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
-        n = int(team_size) if team_size is not None else _DEFAULT_TEAM_SIZE
-        self._bots = _team_bots(n)
+        self._bots = _resolve_bots(team_size, bot_names)
 
     @staticmethod
     def name() -> str:

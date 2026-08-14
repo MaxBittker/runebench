@@ -31,8 +31,9 @@ const KNOWN_MODELS = [
   'haiku',
   'codex53',
   'gpt55', 'gpt54nano', 'gpt54mini', 'gpt54',
-  'gemini35flash', 'gemini31', 'geminiflash', 'gemini',
+  'gemini37flash', 'gemini35flash', 'gemini31', 'geminiflash', 'gemini',
   'glm', 'kimi', 'qwen3max', 'qwen35', 'qwen3',
+  'gpt56luna-xhigh', 'grok46', 'grok45',
 ];
 
 interface SmithTeamTrial {

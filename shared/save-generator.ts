@@ -30,6 +30,22 @@ export const InvTypes = {
     BANK: 95,     // Bank (496 slots)
 };
 
+// Worn-equipment slot indices (engine ObjType.getWearPosId)
+export const WearSlots = {
+    HAT: 0,
+    CAPE: 1,
+    AMULET: 2,
+    WEAPON: 3,   // righthand
+    TORSO: 4,
+    SHIELD: 5,   // lefthand
+    ARMS: 6,
+    LEGS: 7,
+    HANDS: 9,
+    FEET: 10,
+    RING: 12,
+    AMMO: 13,
+};
+
 // Common item IDs
 export const Items = {
     // Tools
@@ -68,6 +84,9 @@ export const Items = {
     ADAMANTITE_BAR: 2361,
     RUNITE_BAR: 2363,
 
+    // Staves (elemental staves substitute for their rune)
+    STAFF_OF_FIRE: 1387,
+
     // Runes
     AIR_RUNE: 556,
     MIND_RUNE: 558,
@@ -104,6 +123,13 @@ export const Items = {
     RUNE_ESSENCE: 1436,      // Basic essence for crafting runes
     PURE_ESSENCE: 7936,      // Pure essence (for higher runes)
     AIR_TALISMAN: 1438,      // Talisman to enter air altar
+
+    // Clothing (role uniforms for team/market tasks)
+    BLUE_WIZARD_HAT: 579,    // bluewizhat (hat slot)
+    BLUE_WIZARD_ROBE: 577,   // wizards_robe (torso slot)
+    BLUE_SKIRT: 1011,        // blue_skirt (legs slot) — the wizard robe bottom
+    BROWN_APRON: 1757,       // brown_apron (torso slot)
+    WHITE_APRON: 1005,       // white_apron (torso slot)
 
     // Other
     COINS: 995,

@@ -42,7 +42,7 @@ import { execFileSync } from 'child_process';
 const REMOTE = process.env.REMOTE || 'runebench-nanny.exe.xyz';
 const REMOTE_JOBS = process.env.REMOTE_JOBS || 'rs-bench3/jobs';
 const CROP = process.env.CROP || 'crop=724:478:38:68'; // game client only (excludes Chrome banner + rs-sdk bottom bar)
-const CHAT_FONT = Number(process.env.CHAT_FONT || 20);
+const CHAT_FONT_ENV = Number(process.env.CHAT_FONT || 0);
 
 const FPS = 24;
 
@@ -114,10 +114,18 @@ const bots: string[] = reward.tracking?.botNames
   ?? BOT_POOL.filter(b => existsSync(join(vdir, `recording-${b}.mp4`)));
 
 // ── Grid geometry scales with team size (cropped client ≈ 1.51:1) ──
+// n=6 uses STRIP mode: a COLS×ROWS grid of feeds on top and a full-width
+// chat strip underneath taking the bottom 1/3 of the canvas (with ROWS=2 the
+// strip is exactly one pane-height tall). Smaller sizes keep chat as a pane.
 const N = bots.length;
-const [COLS, ROWS, PW] = N <= 1 ? [2, 1, 700] : N <= 3 ? [2, 2, 700] : N <= 5 ? [3, 2, 620] : [4, 2, 600];
+const STRIP = N >= 6;
+const [COLS, ROWS, PW] = N <= 1 ? [2, 1, 700] : N <= 3 ? [2, 2, 700] : N <= 5 ? [3, 2, 620] : [3, 2, 620];
 const PH = PW === 700 ? 460 : Math.round(PW / 1.5146 / 2) * 2;
-const W = PW * COLS, H = PH * ROWS;
+const W = PW * COLS;
+const CHAT_W = STRIP ? W : PW;
+const CHAT_H = STRIP ? Math.round(PH * ROWS / 2 / 2) * 2 : PH;
+const H = PH * ROWS + (STRIP ? CHAT_H : 0);
+const CHAT_FONT = CHAT_FONT_ENV || (STRIP ? 24 : 20);
 
 // One pane per bot (missing feed → dark placeholder), chat pane appended below.
 const feeds = bots.map(b => {
@@ -178,10 +186,11 @@ const chat: Chat[] = ((reward.chat ?? []) as Chat[])
   .sort((a, b) => a.elapsedMs - b.elapsedMs);
 
 const WINDOW = 8;                       // most-recent messages shown at once
-const WRAP = Math.round(PW / 10.6);     // wrap width (chars) — fills the pane at CHAT_FONT (66 @ PW=700)
+// Wrap width in chars: Arial runs ≈ 0.53 em per char (the old PW/10.6 at font 20).
+const WRAP = Math.floor((CHAT_W - 40) / (CHAT_FONT * 0.53));
 const LINEH = CHAT_FONT + 8;            // per-line height incl. spacing
 const HEADER_Y = 16, HEADER_BOTTOM = 58, PAD_BOTTOM = 18, PAD_X = 20;
-const MAXLINES = Math.floor((PH - HEADER_BOTTOM - PAD_BOTTOM) / LINEH);
+const MAXLINES = Math.floor((CHAT_H - HEADER_BOTTOM - PAD_BOTTOM) / LINEH);
 
 const wrap = (s: string) => {
   const out: string[] = []; let line = '';
@@ -212,7 +221,7 @@ function renderChatPng(msgs: Chat[]): string {
   // Bottom-anchor the block so the newest line is always visible. Each wrapped
   // line gets its own absolutely-positioned drawtext — drawtext's internal
   // line_spacing tracks glyph height, not fontsize, and drifts out of step.
-  let y = Math.max(HEADER_BOTTOM, PH - PAD_BOTTOM - total * LINEH);
+  let y = Math.max(HEADER_BOTTOM, CHAT_H - PAD_BOTTOM - total * LINEH);
   const draws = [headerDraw];
   entries.forEach((e, j) => {
     e.lines.forEach((line, li) => {
@@ -224,7 +233,7 @@ function renderChatPng(msgs: Chat[]): string {
     });
   });
   const png = join(TMP, `chat${pngN++}.png`);
-  ff(['-f', 'lavfi', '-i', `color=c=0x0d1117:s=${PW}x${PH}`, '-vf', draws.join(','), '-frames:v', '1', png]);
+  ff(['-f', 'lavfi', '-i', `color=c=0x0d1117:s=${CHAT_W}x${CHAT_H}`, '-vf', draws.join(','), '-frames:v', '1', png]);
   return png;
 }
 
@@ -264,14 +273,16 @@ ff(['-f', 'concat', '-safe', '0', '-i', chatList, '-vf', `fps=${FPS},format=yuv4
 // ── One-pass grid (COLS×ROWS) ──
 // Inputs: N bot feeds (or lavfi black for a missing one) + the pre-rendered
 // chat pane + dark lavfi fillers for any remaining slots.
-const SLOTS = COLS * ROWS;
+// STRIP mode: the chat pane is an extra full-width slot below the feed grid
+// (not one of the COLS×ROWS grid cells), so no fillers are needed.
+const SLOTS = STRIP ? feeds.length + 1 : COLS * ROWS;
 const inputs: string[] = [];
 feeds.forEach(f => {
   if (f.file) { inputs.push('-i', f.file); }
   else { inputs.push('-f', 'lavfi', '-i', `color=c=0x161b22:s=${PW}x${PH}:r=${FPS}:d=${OUTDUR}`); }
 });
 inputs.push('-i', chatMp4); // pre-rendered chat pane = input feeds.length
-const nFillers = SLOTS - feeds.length - 1;
+const nFillers = STRIP ? 0 : SLOTS - feeds.length - 1;
 for (let i = 0; i < nFillers; i++) {
   inputs.push('-f', 'lavfi', '-i', `color=c=0x0d1117:s=${PW}x${PH}:r=${FPS}:d=${OUTDUR}`);
 }
@@ -295,9 +306,13 @@ const chatIdx = feeds.length;
 const chatFilter = `[${chatIdx}:v]tpad=stop_mode=clone:stop_duration=5,format=yuv420p,setsar=1[p${chatIdx}]`;
 const fillerFilters = Array.from({ length: nFillers }, (_, i) =>
   `[${chatIdx + 1 + i}:v]format=yuv420p,setsar=1[p${chatIdx + 1 + i}]`);
-// xstack layout: row-major, absolute pixel offsets
-const layout = Array.from({ length: SLOTS }, (_, i) =>
-  `${(i % COLS) * PW}_${Math.floor(i / COLS) * PH}`).join('|');
+// xstack layout: row-major, absolute pixel offsets; in STRIP mode the last
+// slot is the full-width chat strip anchored below the feed rows.
+const layout = STRIP
+  ? [...feeds.map((_, i) => `${(i % COLS) * PW}_${Math.floor(i / COLS) * PH}`),
+     `0_${ROWS * PH}`].join('|')
+  : Array.from({ length: SLOTS }, (_, i) =>
+      `${(i % COLS) * PW}_${Math.floor(i / COLS) * PH}`).join('|');
 const stack = Array.from({ length: SLOTS }, (_, i) => `[p${i}]`).join('') +
   `xstack=inputs=${SLOTS}:layout=${layout}[grid]`;
 const filterComplex = [...paneFilters, chatFilter, ...fillerFilters, stack].join(';');

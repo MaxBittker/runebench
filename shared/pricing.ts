@@ -103,6 +103,10 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // Run via OpenCode (google provider) which reports native cost_usd from the
   // same models.dev rates — these entries are for display/backfill parity only.
   gemini36flash:     { input: 1.5e-6, cachedInput: 0.15e-6, cacheWrite: 1.5e-6, output: 7.5e-6 },
+  // gemini-3.7-flash, launched 2026-08-13. Introductory rates ($0.75/$3.75 per
+  // 1M, cache read 10% of input) good through 2026-12-31; standard rates from
+  // 2027-01-01 are $1.50/$7.50 — bump this entry then.
+  gemini37flash:     { input: 0.75e-6, cachedInput: 0.075e-6, cacheWrite: 0.75e-6, output: 3.75e-6 },
   gemini35flashlite: { input: 0.3e-6, cachedInput: 0.03e-6, cacheWrite: 0.3e-6, output: 2.5e-6 },
   glm:          { input: 0.72e-6,   cachedInput: 0,        cacheWrite: 0.72e-6,   output: 2.3e-6 },
   glm52:        { input: 1.4e-6,    cachedInput: 0,        cacheWrite: 1.4e-6,    output: 4.4e-6 }, // z-ai/glm-5.2, OpenRouter 2026-06-16
@@ -129,6 +133,8 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // x-ai/grok-4.5, OpenRouter 2026-07-09. ≤200k-context rates; xAI doubles
   // rates past 200k input but our runs stay well under that.
   grok45:       { input: 2e-6,      cachedInput: 0.5e-6,   cacheWrite: 2e-6,      output: 6e-6 },
+  // x-ai/grok-4.6, OpenRouter 2026-08-14 — same rate card as grok-4.5.
+  grok46:       { input: 2e-6,      cachedInput: 0.5e-6,   cacheWrite: 2e-6,      output: 6e-6 },
   // Same rate card — medium effort just emits fewer reasoning tokens (billed as output).
   'grok45-medium': { input: 2e-6,   cachedInput: 0.5e-6,   cacheWrite: 2e-6,      output: 6e-6 },
   // x-ai/grok-4.3, OpenRouter/models.dev 2026-07-09. ≤200k-context rates (2× past 200k).
@@ -136,6 +142,13 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // meta/muse-spark-1.1, OpenRouter 2026-07-16. $1.25/$4.25 per 1M; cache read
   // $0.15/1M. No cache-write premium listed → cacheWrite = input (inert).
   muse:         { input: 1.25e-6,   cachedInput: 0.15e-6,  cacheWrite: 1.25e-6,   output: 4.25e-6 },
+  // meta/muse-spark-1.2-contributor, Meta Model API direct (no OpenRouter
+  // route), dev.meta.ai pricing 2026-08-13. Contributor tier: $0.10/$0.20 per
+  // 1M, cache read $0.002/1M; training-consent discount vs the standard 1.2
+  // rates. No cache-write premium → cacheWrite = input (inert). Keep in sync
+  // with the per-1M `cost` block in agents/muse12_adapter.py (cost declared in
+  // opencode.json → OpenCode reports real cost_usd).
+  muse12:       { input: 0.1e-6,    cachedInput: 0.002e-6, cacheWrite: 0.1e-6,    output: 0.2e-6 },
   // thinkingmachines/inkling, OpenRouter (Together endpoint, the model's only
   // provider) 2026-07-21. No cache-write premium → cacheWrite = input (inert).
   // Keep in sync with the per-1M `cost` block in agents/inkling_adapter.py —
@@ -182,6 +195,8 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'google/gemini-3-flash-preview':     'geminiflash',
   'google/gemini-3.5-flash':           'gemini35flash',
   'google/gemini-3.6-flash':           'gemini36flash',
+  'google/gemini-3.7-flash':           'gemini37flash',
+  'gemini/gemini-3.7-flash':           'gemini37flash',
   'google/gemini-3.5-flash-lite':      'gemini35flashlite',
   'gemini/gemini-3-pro-preview':       'gemini',
   'gemini/gemini-3.1-pro-preview':     'gemini31',
@@ -204,8 +219,10 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'openrouter/moonshotai/kimi-k2.7-code': 'kimi27',
   'openrouter/moonshotai/kimi-k3':     'kimi3',
   'openrouter/x-ai/grok-4.5':          'grok45',
+  'openrouter/x-ai/grok-4.6':          'grok46',
   'openrouter/x-ai/grok-4.3':          'grok43',
   'openrouter/meta/muse-spark-1.1':    'muse',
+  'meta/muse-spark-1.2-contributor':   'muse12',
   'openrouter/thinkingmachines/inkling': 'inkling',
   'openrouter/poolside/laguna-s-2.1':  'laguna',
 };

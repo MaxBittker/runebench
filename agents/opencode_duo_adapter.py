@@ -6,8 +6,8 @@ Runs TWO concurrent OpenCode sessions of the SAME model in one sandbox:
   - session B drives bot "agentb" (Black Arm Gang route)
 
 Each session receives the shared task instruction plus a role addendum naming
-its bot. Both sessions share the container filesystem (/tmp/team/ is suggested
-to them for coordination) and each spawns its own MCP server process.
+its bot. Sessions coordinate through in-game chat via the chat CLI (the task
+forbids filesystem coordination); each spawns its own MCP server process.
 
 Logs:    /logs/agent/opencode-agenta.txt, /logs/agent/opencode-agentb.txt
 Output:  trajectory.json          (merged, A steps then B steps)
@@ -30,13 +30,19 @@ _ROLE_ADDENDA = {
         "=== YOUR ROLE ===\n"
         "You are PLAYER A. You control bot \"agenta\" ONLY — every execute_code "
         "call must use bot_name: \"agenta\". Your gang for this run: the "
-        "PHOENIX GANG."
+        "PHOENIX GANG. Talk to your partner through in-game chat using the "
+        "chat CLI:\n"
+        "  cd /app && bun sdk/chat.ts agenta \"your message\"   # send\n"
+        "  cd /app && bun sdk/chat.ts agenta                   # read recent chat"
     ),
     "agentb": (
         "=== YOUR ROLE ===\n"
         "You are PLAYER B. You control bot \"agentb\" ONLY — every execute_code "
         "call must use bot_name: \"agentb\". Your gang for this run: the "
-        "BLACK ARM GANG."
+        "BLACK ARM GANG. Talk to your partner through in-game chat using the "
+        "chat CLI:\n"
+        "  cd /app && bun sdk/chat.ts agentb \"your message\"   # send\n"
+        "  cd /app && bun sdk/chat.ts agentb                   # read recent chat"
     ),
 }
 

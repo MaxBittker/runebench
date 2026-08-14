@@ -1,46 +1,50 @@
 #!/bin/bash
-# Run the crafting-team benchmark: each run is ONE model controlling THREE bots
-# via three concurrent OpenCode sessions (opencode_team_adapter).
-# Score = highest single account's Crafting XP the team reaches in 30m.
+# Run the market benchmark: each run is ONE model controlling SIX bots
+# (3 miners / 2 smiths / 1 alchemist) via six concurrent OpenCode sessions
+# (opencode_team_adapter). Every bot scores INDIVIDUALLY on its final gold
+# (inventory + bank coins at the end of the run); harbor reward = the total
+# across all six.
 #
 # Usage:
-#   run-crafting-team.sh                 # all models
-#   run-crafting-team.sh -m opus48       # single model
-#   run-crafting-team.sh -k 4            # 4 trials per model
-#   run-crafting-team.sh --dry-run       # print harbor commands without launching
+#   run-market.sh                 # all models, 20m
+#   run-market.sh -m gemini37flash
+#   run-market.sh -k 4            # 4 trials per model
+#   run-market.sh --dry-run       # print harbor commands without launching
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$SCRIPT_DIR/run-common.sh"
 
-HORIZON="30m"
+HORIZON="20m"
+
+# The market task is a fixed 3→2→1 role pyramid = 6 bots with single-letter
+# names (a-c miners, d-e smiths, f alchemist) — must match MARKET_BOT_POOL in
+# generate-tasks.ts. bot_names overrides the adapter's derived agenta..agentf.
+TEAM_SIZE=6
+MARKET_BOTS="a,b,c,d,e,f"
 
 # ── Defaults ──────────────────────────────────────────────────────
 SELECTED_MODELS=""
 K_TRIALS=1
-TEAM_SIZE=3
-SOLO=0
 DRY_RUN=0
 EXTRA_ARGS=""
 
 # ── Parse args ────────────────────────────────────────────────────
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    -m|--model)    SELECTED_MODELS="$SELECTED_MODELS $2"; shift 2 ;;
-    -k|--k-trials) K_TRIALS="$2"; shift 2 ;;
-    -H|--horizon)  HORIZON="$2"; shift 2 ;;
-    -n|--team-size) TEAM_SIZE="$2"; shift 2 ;;
-    --solo)        SOLO=1; shift ;;
+    -m|--model)     SELECTED_MODELS="$SELECTED_MODELS $2"; shift 2 ;;
+    -k|--k-trials)  K_TRIALS="$2"; shift 2 ;;
+    -H|--horizon)   HORIZON="$2"; shift 2 ;;
     --dry-run)     DRY_RUN=1; shift ;;
     -h|--help)
-      echo "Usage: run-crafting-team.sh [-m model] [-k trials] [-H horizon] [-n team-size] [--dry-run]"
+      echo "Usage: run-market.sh [-m model] [-k trials] [-H horizon] [--dry-run]"
       echo ""
       echo "Models: $ALL_MODEL_LABELS (default: all)"
       echo ""
-      echo "Each trial runs one model as ALL THREE players of the cooperative"
-      echo "crafting challenge. Reward = the highest single account's Crafting XP"
-      echo "reached within ${HORIZON} (0 = nobody crafted)."
+      echo "Each trial runs one model as ALL SIX players of the market"
+      echo "challenge (3 miners / 2 smiths / 1 alchemist). Every player"
+      echo "scores individually on final gold; reward = total across bots."
       exit 0
       ;;
     *)
@@ -52,14 +56,7 @@ if [ -z "$SELECTED_MODELS" ]; then
   SELECTED_MODELS="$ALL_MODEL_LABELS"
 fi
 
-# n=3 is the canonical task; other sizes use the -n<N> variant dirs.
-SIZE_SUFFIX=""
-if [ "$TEAM_SIZE" != "3" ]; then SIZE_SUFFIX="-n${TEAM_SIZE}"; fi
-# --solo: ONE OpenCode session controls all bots (no chat) — comparison
-# condition vs the N-session team adapter. Job names gain a -solo marker.
-SOLO_TAG=""
-if [ "$SOLO" = "1" ]; then SOLO_TAG="-solo"; fi
-TASK="crafting-team-${HORIZON}${SIZE_SUFFIX}"
+TASK="market-${HORIZON}"
 SANDBOX_TIMEOUT=$(sandbox_timeout_for_horizon "$HORIZON")
 RUN_TIMEOUT=$(run_timeout_for_horizon "$HORIZON")
 
@@ -89,29 +86,18 @@ for model_name in $SELECTED_MODELS; do
     continue
   fi
 
-  # Every model runs through a team adapter for this task. OpenCode models
-  # share the unified opencode team adapter; claude-code-only models (e.g.
-  # hotteok EAP) keep the claude team adapter set by configure_model_env.
-  # NOTE: models whose adapter carries _model_options (reasoning effort etc.)
-  # need their OWN team subclass — the generic team adapter would drop them.
+  # Every model runs through a team adapter for this task (one session per
+  # bot). NOTE: models whose adapter carries _model_options (reasoning effort
+  # etc.) need their OWN team subclass — the generic team adapter drops them.
   case "$agent" in
     luna-xhigh-opencode) AGENT_FLAG="--agent-import-path 'luna_adapter:LunaXhighTeamAdapter'" ;;
     muse12-opencode) AGENT_FLAG="--agent-import-path 'muse12_adapter:Muse12TeamAdapter'" ;;
     *opencode*) AGENT_FLAG="--agent-import-path 'opencode_team_adapter:OpenCodeTeamAdapter'" ;;
   esac
-  # Solo condition only exists for the opencode family (single-session adapter).
-  # Models with _model_options need their own solo subclass (same gotcha as
-  # the team adapters above).
-  if [ "$SOLO" = "1" ]; then
-    case "$agent" in
-      luna-xhigh-opencode) AGENT_FLAG="--agent-import-path 'luna_adapter:LunaXhighSoloAdapter'" ;;
-      *) AGENT_FLAG="--agent-import-path 'opencode_solo_adapter:OpenCodeSoloTeamAdapter'" ;;
-    esac
-  fi
 
   team_model_extra_args "$model_name"
 
-  JOB_NAME="crafting-team${SIZE_SUFFIX}${SOLO_TAG}-${label}-${TIMESTAMP}"
+  JOB_NAME="market-${label}-${TIMESTAMP}"
   LOG_FILE="/tmp/harbor-${JOB_NAME}.log"
 
   CMD="$ENV_PREFIX harbor run \
@@ -123,6 +109,7 @@ for model_name in $SELECTED_MODELS; do
     --ek sandbox_timeout_secs=$SANDBOX_TIMEOUT \
     --ak run_timeout_sec=$RUN_TIMEOUT \
     --ak team_size=$TEAM_SIZE \
+    --ak bot_names=$MARKET_BOTS \
     $AGENT_ENV_FLAGS \
     -n 4 \
     -k $K_TRIALS \
@@ -135,7 +122,7 @@ for model_name in $SELECTED_MODELS; do
     continue
   fi
 
-  echo "  Launching $model_name (team × $K_TRIALS trial(s)) → $LOG_FILE"
+  echo "  Launching $model_name (market × $K_TRIALS trial(s)) → $LOG_FILE"
   eval "$CMD" > "$LOG_FILE" 2>&1 &
   PIDS="$PIDS $!"
   LAUNCHED="$LAUNCHED $model_name"
@@ -160,10 +147,7 @@ done
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 if [ "$FAILED" -eq 0 ]; then
-  echo "All crafting-team runs complete. ($TOTAL models:$LAUNCHED)"
+  echo "All market runs complete. ($TOTAL models:$LAUNCHED)"
 else
   echo "All runs finished. $FAILED of $TOTAL model(s) had errors."
 fi
-echo ""
-echo "Next steps:"
-echo "  bun extractors/extract-crafting-team-results.ts"

@@ -28,15 +28,20 @@ opencode|gemini/gemini-3-pro-preview|gemini
 opencode|gemini/gemini-3.1-pro-preview|gemini31
 opencode|gemini/gemini-3-flash-preview|geminiflash
 opencode|gemini/gemini-3.5-flash|gemini35flash
+opencode|gemini/gemini-3.7-flash|gemini37flash
 glm-opencode|openrouter/z-ai/glm-5|glm
 glm52-opencode|openrouter/z-ai/glm-5.2|glm52
 kimi-opencode|openrouter/moonshotai/kimi-k2.5|kimi
 qwen3-opencode|openrouter/qwen/qwen3-coder-next|qwen3
 qwen35-opencode|openrouter/qwen/qwen3.5-35b-a3b|qwen35
 qwen3max-opencode|openrouter/qwen/qwen3-max|qwen3max
+grok45-opencode|openrouter/x-ai/grok-4.5|grok45
+grok46-opencode|openrouter/x-ai/grok-4.6|grok46
+luna-xhigh-opencode|openai/gpt-5.6-luna|gpt56luna-xhigh
+muse12-opencode|meta/muse-spark-1.2-contributor|muse12
 "
 
-ALL_MODEL_LABELS="fable5 hotteok opus48 opus47 opus opus45 sonnet5 sonnet46 sonnet45 haiku codex53 gpt55 gpt54 gpt54mini gpt54nano gemini gemini31 geminiflash gemini35flash glm glm52 kimi qwen3 qwen35 qwen3max"
+ALL_MODEL_LABELS="fable5 hotteok opus48 opus47 opus opus45 sonnet5 sonnet46 sonnet45 haiku codex53 gpt55 gpt54 gpt54mini gpt54nano gemini gemini31 geminiflash gemini35flash gemini37flash glm glm52 kimi qwen3 qwen35 qwen3max grok45 grok46 gpt56luna-xhigh muse12"
 
 # ── sandbox_timeout_for_horizon: horizon → Modal sandbox backstop ──
 # Generous ceilings: a too-small value kills runs mid-flight (unfair zero
@@ -45,6 +50,7 @@ sandbox_timeout_for_horizon() {
   case "$1" in
     5m)   echo 3600 ;;
     15m)  echo 3600 ;;
+    20m)  echo 5400 ;;
     30m)  echo 7200 ;;
     45m)  echo 7200 ;;
     60m)  echo 10800 ;;
@@ -60,6 +66,7 @@ run_timeout_for_horizon() {
   case "$1" in
     5m)   echo 300 ;;
     15m)  echo 900 ;;
+    20m)  echo 1200 ;;
     30m)  echo 1800 ;;
     45m)  echo 2700 ;;
     60m)  echo 3600 ;;
@@ -236,6 +243,16 @@ configure_model_env() {
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'kimi3_adapter:Kimi3LowOpenCode'"
       ;;
+    muse12-opencode)
+      # Muse Spark 1.2 contributor tier — Meta Model API direct (api.meta.ai),
+      # not OpenRouter (the contributor model has no OpenRouter route).
+      if [ -z "${META_API_KEY:-}" ]; then
+        echo "  WARNING: META_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'muse12_adapter:Muse12OpenCode'"
+      ;;
     muse-opencode)
       if [ -z "${OPENROUTER_API_KEY:-}" ]; then
         echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
@@ -244,6 +261,14 @@ configure_model_env() {
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'muse_adapter:MuseSparkOpenCode'"
       ;;
+    grok46-opencode)
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'grok45_adapter:Grok46OpenCode'"
+      ;;
     grok45-opencode)
       if [ -z "${OPENROUTER_API_KEY:-}" ]; then
         echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
@@ -251,6 +276,16 @@ configure_model_env() {
       fi
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'grok45_adapter:Grok45OpenCode'"
+      ;;
+    luna-xhigh-opencode)
+      # GPT-5.6 Luna at xhigh effort, driven through OpenCode (the team tasks
+      # have no codex-CLI path). Uses the OpenAI API directly, not OpenRouter.
+      if [ -z "${OPENAI_API_KEY:-}" ]; then
+        echo "  WARNING: OPENAI_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'luna_adapter:LunaXhighOpenCode'"
       ;;
     grok43-opencode)
       if [ -z "${OPENROUTER_API_KEY:-}" ]; then
@@ -346,8 +381,23 @@ configure_model_env() {
     openai/*)           [ -n "${OPENAI_API_KEY:-}" ]     && AGENT_ENV_FLAGS="--ae OPENAI_API_KEY=${OPENAI_API_KEY}" ;;
     gemini/*|google/*)  [ -n "${GEMINI_API_KEY:-}" ]     && AGENT_ENV_FLAGS="--ae GEMINI_API_KEY=${GEMINI_API_KEY}" ;;
     openrouter/*)       [ -n "${OPENROUTER_API_KEY:-}" ] && AGENT_ENV_FLAGS="--ae OPENROUTER_API_KEY=${OPENROUTER_API_KEY}" ;;
+    meta/*)             [ -n "${META_API_KEY:-}" ]       && AGENT_ENV_FLAGS="--ae META_API_KEY=${META_API_KEY}" ;;
   esac
   return 0
+}
+
+# ── team_model_extra_args: per-model harbor flags for team runs ──
+# The multi-bot launch scripts reference $MODEL_EXTRA_ARGS but (unlike the
+# skill script) never set it. Call this right after configure_model_env.
+team_model_extra_args() {
+  MODEL_EXTRA_ARGS=""
+  case "$1" in
+    grok45|grok45-medium|grok43|grok46|muse|muse12)
+      # xAI/Meta 403 EU-origin requests ("not available in your region") — pin
+      # the Modal sandbox to a US region. Needs harbor's sandbox_region patch.
+      MODEL_EXTRA_ARGS="--ek sandbox_region=us-east"
+      ;;
+  esac
 }
 
 # ── regenerate_tasks: run the task generator ─────────────────────

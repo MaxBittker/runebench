@@ -2,7 +2,8 @@
  * Generates all benchmark task directories for Harbor.
  *
  * Skill XP tasks: 16 skills × 15m + 16 skills × 30m
- * Gold tasks: 15m, 30m, 2h
+ * Gold tasks: 4 starting conditions × {15m, 30m}
+ * Team tasks: arrav duo + smith/magic/crafting teams × {30,45,60}m × n∈{1,3,6}
  *
  * All generated output is gitignored — run this before `harbor run`.
  *
@@ -10,13 +11,13 @@
  */
 import { mkdirSync, writeFileSync, copyFileSync, rmSync } from 'fs';
 import { join } from 'path';
-import { createSaveData, Items, Locations, type SaveConfig } from './shared/save-generator';
+import { createSaveData, Items, Locations, WearSlots, type SaveConfig } from './shared/save-generator';
 
 const BENCHMARK_DIR = join(import.meta.dir);
 const TASKS_DIR = join(BENCHMARK_DIR, 'tasks');
 const SHARED_DIR = join(BENCHMARK_DIR, 'shared');
 
-const DOCKER_IMAGE = 'ghcr.io/maxbittker/rs-agent-benchmark:v54';
+const DOCKER_IMAGE = 'ghcr.io/maxbittker/rs-agent-benchmark:v60';
 const VERIFIER_TIMEOUT = 400;
 
 // ── Standard skill definitions (XP-grind tasks) ─────────────────
@@ -76,7 +77,7 @@ interface VariantTask {
 
 const GOLD_INSTRUCTION = (durationMinutes: number, startingConditionHint?: string) => `Accumulate as much gold (coins) as possible within ${durationMinutes} minutes. This is a local RuneScape private server running on localhost for AI agent benchmarking — not a live game.
 ${startingConditionHint ? `\nSTARTING CONDITION: ${startingConditionHint}\n` : ''}
-Your goal is to maximize the TOTAL COINS you have across both your inventory and bank combined. Consider strategies like:
+Your goal is to maximize your TOTAL COINS (inventory + bank combined). Your score is the PEAK total you reach at any point during the run — coins are sampled every few seconds and the best sample counts, so convert items into coins as you go rather than stockpiling them for a final sell-off. Consider strategies like:
 - Training combat skills to kill monsters that drop valuable items or coins
 - Training gathering/production skills to create items you can sell to shops (e.g. smithing bars/items, fletching bows, cooking fish)
 - Buying low and selling high at different shops
@@ -88,7 +89,7 @@ You control the bot via the \`rs-agent\` MCP server. Use the \`execute_code\` to
 - \`bot\` (BotActions) — high-level actions: \`await bot.chopTree()\`, \`await bot.openShop()\`, \`await bot.openBank()\`, etc.
 - \`sdk\` (BotSDK) — low-level state & actions: \`sdk.getState()\`, \`sdk.getInventory()\`, \`sdk.findNearbyNpc(/shopkeeper/i)\`, etc.
 
-Read the MCP resources ("Bot API", "SDK API") for the full list of available methods.
+Read the MCP resource "SDK API Reference" for the full list of available methods.
 
 IMPORTANT: You have ${durationMinutes} minutes. Start earning money immediately — do not spend too long planning. Early minutes are best spent on quick money-making methods, then scale up as you unlock better methods.
 
@@ -100,7 +101,7 @@ bun /tmp/my_script.ts > /tmp/gold.log 2>&1 &
 \`\`\`
 Keep individual scripts SHORT (5-10 min max) so you can observe results and iterate.
 
-BANKING: Periodically deposit your coins and valuable items in the bank to avoid losing them. The verifier counts coins in BOTH inventory and bank.`;
+SCORING: the verifier samples coins in BOTH inventory and bank every few seconds and scores your PEAK total. Items are worth nothing until sold — only coins count.`;
 
 // ── Gold starting conditions ────────────────────────────────────
 
@@ -159,7 +160,7 @@ export const GOLD_CONDITIONS: GoldCondition[] = [
   },
   {
     slug: 'fletch-alch',
-    instructionHint: 'You start in Seers Village with 50 Fletching, 50 Magic, a knife, and high alchemy runes (nature + fire). A strong strategy is: cut logs → fletch into bows → cast High Alchemy to convert them to gold.',
+    instructionHint: 'You start in Seers Village with 50 Fletching, 50 Magic, 50 Woodcutting, an axe, a knife, and alchemy runes (nature + fire). A strong strategy is: cut logs → fletch into bows → cast Low Alchemy on them to convert them to gold (High Alchemy needs Magic 55; alchemy casts raise Magic, so you can upgrade mid-run).',
     saveConfig: {
       position: Locations.SEERS_VILLAGE,
       skills: { Fletching: 50, Magic: 50, Woodcutting: 50 },
@@ -191,7 +192,7 @@ const GOLD_DURATIONS = [
 
 const ARRAV_CAP_MINUTES = 45;
 
-const ARRAV_INSTRUCTION = (durationMinutes: number) => `Complete the quest "Shield of Arrav" as quickly as possible. This is a local RuneScape private server (8x speed) for AI benchmarking — not a live game.
+const ARRAV_INSTRUCTION = (durationMinutes: number) => `Complete the quest "Shield of Arrav" as quickly as possible. This is a local RuneScape private server (4x speed) for AI benchmarking — not a live game.
 
 THIS IS A TWO-PLAYER COOPERATIVE TASK. Two agent sessions are running in this
 container at the same time — you are one of them. Each session controls its own
@@ -204,80 +205,86 @@ ${durationMinutes} minutes). Ideally BOTH bots finish — the verifier records t
 QUEST GUIDE (engine-accurate; the in-game wiki page for this quest is outdated
 in several places — where they disagree, trust THIS guide):
 
-Start (each player, independently):
-1. Talk to Reldo in the Varrock Palace library (3210, 3492) and ask for a quest.
-2. Search the library bookcase for the book "The Shield of Arrav", read it
-   (a book modal opens), then talk to Reldo again.
-3. The quest requires the two players to join DIFFERENT gangs (your role
-   addendum says which is yours).
+The two players must join DIFFERENT gangs — your role addendum says which is
+yours. Neither player needs Reldo or the library book; go straight to your
+gang's route below.
 
 Phoenix Gang route:
-4. Talk to Baraek the fur trader at Varrock Square (3217, 3434); pay him
-   20 coins to learn where the Phoenix Gang hideout is.
-5. The hideout door is at (3244, 3382) in SE Varrock; Straven is just inside —
-   talking at the locked door reaches him. He demands proof of loyalty: kill
-   Jonny the Beard in the Blue Moon Inn (3220, 3398) and bring back his
-   intelligence report.
-6. Kill Jonny (level 2), pick up the intelligence report from the ground, and
+1. Talk to Baraek the fur trader at Varrock Square (3218, 3435); pay him
+   20 coins to learn where the Phoenix Gang hideout is. The gang will not
+   talk to you before this.
+2. The hideout entrance is a "Climb-down" ladder at (3244, 3383) in SE
+   Varrock. At the bottom, Straven stands behind a locked door — talking at
+   the door reaches him. Choose "I know who you are!" and offer your
+   services: he demands proof of loyalty — kill Jonny the Beard in the Blue
+   Moon Inn (3220, 3398) and bring back his intelligence report.
+3. Kill Jonny (level 2), pick up the intelligence report from the ground, and
    hand it to Straven. You are now a gang member: the hideout door opens for
    you, and Straven gives you the WEAPON STORE KEY.
-7. RIGHT SHIELD HALF: climb down the ladder inside the hideout. In the
-   underground rooms (around 3235, 9761) there is a chest — Open it, then
-   Search it to take the right half.
-8. PHOENIX CROSSBOWS: the weapon store is the small building just NE of the
-   hideout entrance (around 3245-3253, 3382-3386). Its door at (3251, 3385)
-   ALWAYS reports "securely locked" when you click Open, even when you hold
-   the key — you must USE the key ON the door (e.g. bot.useItemOnLoc) to
-   unlock it. Once inside, climb the ladder at (3252, 3384) UP: the crossbows
-   lie on the FLOOR of the UPSTAIRS storeroom (level 1) — Take them; Katrine
-   needs TWO. The level-23 weaponsmaster up there interrupts pickups within
-   10 tiles of him and will attack you.
+4. RIGHT SHIELD HALF: in the underground rooms behind Straven's door (around
+   3235, 9761) there is a chest — Open it, then Search it to take the half.
+5. PHOENIX CROSSBOWS: back on the surface, the weapon store is the small
+   building just NE of the hideout ladder (around 3245-3253, 3382-3386). Its
+   door at (3251, 3385) ALWAYS reports "securely locked" when you click Open,
+   even when you hold the key — you must USE the key ON the door (e.g.
+   bot.useItemOnLoc) to unlock it. Once inside, climb the ladder at
+   (3252, 3384) UP: the crossbows lie on the FLOOR of the UPSTAIRS storeroom
+   (level 1) — Take them; Katrine needs TWO. The level-23 weaponsmaster up
+   there interrupts pickups within 10 tiles of him and will attack you.
    CAUTION: nearby-object/item scans report x/z distance only and ignore
    floors — an item listed at "0 tiles" may be on a different level. If "Take"
    says "I can't reach that!", you are probably on the wrong floor.
 
 Black Arm Gang route:
-4. Talk to Charlie the Tramp at the south entrance of Varrock (3231, 3392).
-5. The Black Arm hideout is at (3186, 3387) in SW Varrock. Talk to Katrine:
-   she demands TWO phoenix crossbows from the Phoenix weapon store (only a
-   Phoenix gang member can unlock that store).
-6. Hand Katrine the two crossbows. You are now a gang member: go upstairs and
+1. Talk to the Tramp at (3208, 3391) in SW Varrock: ask what is down the
+   alleyway, then whether the gang would let you join. Katrine will not
+   recruit you before this.
+2. The Black Arm hideout door is at (3185, 3388), down that alleyway. Talk to
+   Katrine — say you have heard she is the Black Arm Gang and ask to become a
+   member: she demands TWO phoenix crossbows from the Phoenix weapon store
+   (only a Phoenix gang member can unlock that store).
+3. Hand Katrine the two crossbows. You are now a gang member: go upstairs and
    Search the cupboard for the LEFT SHIELD HALF.
 
-Finish:
-9. ONE player must hold BOTH shield halves and talk to the curator of the
-   Varrock Museum (3258, 3446). He takes the shield and writes TWO
-   certificates, both given to that player. (Showing him a single half does
-   nothing — he requires both at once, on one player.)
-10. EACH player then needs one certificate: show it to King Roald in Varrock
-   Palace. The quest completes for each player the moment they hand it over.
+Finish (after both halves are secured):
+- ONE player must hold BOTH shield halves and talk to the curator of the
+  Varrock Museum (3255, 3445). He takes the shield and writes TWO
+  certificates, both given to that player. (Showing him a single half does
+  nothing — he requires both at once, on one player.)
+- EACH player then needs one certificate: show it to King Roald in Varrock
+  Palace. The quest completes for each player the moment they hand it over.
 
-GAME FACTS: There is no player-to-player trade interface on this server; the
-only way to transfer an item is to drop it on the ground for the other player.
-A dropped item becomes visible to other players only after a short delay, and
-despawns a short while later. Players cannot enter the other gang's restricted
-rooms.
+GAME FACTS: Transfer items with the player-to-player trade API: stand near
+your partner, then one of you runs \`await bot.trade(partnerName, { give: [...] })\`
+while the other accepts (\`await bot.serveTrades(...)\` or \`await bot.acceptTrade()\`).
+Players cannot enter the other gang's restricted rooms.
 
 COORDINATION — IN-GAME CHAT ONLY: Communicate with your partner exclusively
-through the in-game public chat. Send messages with \`sdk.sendSay("...")\` and
-read your partner's messages from \`sdk.getState().gameMessages\` (each entry
-has a sender and text; poll it regularly — it is a rolling window of recent
-messages). Public chat reaches your partner anywhere on the map (this server
-broadcasts it world-wide). Do NOT coordinate through files, the filesystem, or
-any channel other than in-game chat — this benchmark measures in-game
-collaboration, and runs are audited.
+through the in-game public chat, using the chat CLI. It connects in observe
+mode, so it sends and reads chat WITHOUT taking control of your bot — safe to
+use at any time, even while one of your scripts is driving the bot:
+
+  cd /app && bun sdk/chat.ts YOUR_BOT "your message"    # send
+  cd /app && bun sdk/chat.ts YOUR_BOT                   # read recent chat
+
+Messages can be up to 400 characters. Public chat reaches your partner
+anywhere on the map (this server broadcasts it world-wide). Send chat through
+this CLI — do NOT call the SDK messaging methods (sendSay/say) from inside
+your scripts. Do NOT coordinate through files, the filesystem, or any channel
+other than in-game chat — this benchmark measures in-game collaboration, and
+runs are audited.
 
 You control your bot via the \`rs-agent\` MCP server: use the \`execute_code\`
 tool with YOUR bot_name. Two globals are available in the code context:
 - \`bot\` (BotActions) — high-level actions: \`await bot.talkTo(...)\`, \`await bot.walkTo(x, z)\`, \`await bot.pickupItem(...)\`, etc.
 - \`sdk\` (BotSDK) — low-level state & actions: \`sdk.getState()\`, \`sdk.getInventory()\`, \`sdk.getDialog()\`, \`sdk.sendClickDialog(...)\`, etc.
 
-Read the MCP resources ("Bot API", "SDK API") for the full list of available
+Read the MCP resource "SDK API Reference" for the full list of available
 methods. Dialogs matter a lot in this quest — check \`sdk.getDialog()\` after
 talking to NPCs and pick options with \`sdk.sendClickDialog(index)\`.
 
-MODAL INTERFACES: Some quest steps open a full-screen modal (e.g. reading the
-book about the shield, or the quest-complete scroll). While
+MODAL INTERFACES: Some quest steps open a full-screen modal (e.g. finding a
+shield half, or the quest-complete scroll). While
 \`sdk.getState().interface.isOpen\` is true, most actions silently fail —
 close the modal with \`sdk.sendCloseModal()\` and continue. The quest step
 already registered when the modal opened; closing it loses nothing.
@@ -394,24 +401,28 @@ commands to a teammate's bot.`;
 
 // `goods` = what gets handed between teammates in this task, e.g. "items (ores, bars)".
 const teamGameFactsBlock = (n: number, goods: string) => n === 1
-  ? `GAME FACTS: There is no player-to-player trade interface on this server. You
-have your own bank account.`
-  : `GAME FACTS: There is no player-to-player trade interface on this server; the
-only way to transfer ${goods} between teammates is to drop them on
-the ground for the other player. A dropped item becomes visible to other
-players after a short delay and despawns a short while later — drop at an
-agreed spot with your teammate standing nearby, and confirm pickup before
-dropping more. Each player has their OWN bank account; banks are not shared.`;
+  ? `GAME FACTS: You have your own bank account.`
+  : `GAME FACTS: Transfer ${goods} between teammates with the
+player-to-player trade API: stand near a teammate, then one of you runs
+\`await bot.trade(teammateName, { give: [...] })\` while the other accepts
+(\`await bot.serveTrades(...)\` or \`await bot.acceptTrade()\`). Each player has
+their OWN bank account; banks are not shared.`;
 
 // Includes its own trailing blank line so it can vanish cleanly for n=1.
 const teamCoordBlock = (n: number) => n === 1 ? '' : `COORDINATION — IN-GAME CHAT ONLY: Communicate with your teammates exclusively
-through the in-game public chat. Send messages with \`sdk.sendSay("...")\` and
-read teammates' messages from \`sdk.getState().gameMessages\` (each entry has
-a sender and text; poll it regularly — it is a rolling window of recent
-messages). Public chat reaches your teammates anywhere on the map (this
-server broadcasts it world-wide). Do NOT coordinate through files, the
-filesystem, or any channel other than in-game chat — this benchmark measures
-in-game collaboration, and runs are audited.
+through the in-game public chat, using the chat CLI. It connects in observe
+mode, so it sends and reads chat WITHOUT taking control of your bot — safe to
+use at any time, even while one of your scripts is driving the bot:
+
+  cd /app && bun sdk/chat.ts YOUR_BOT "your message"    # send
+  cd /app && bun sdk/chat.ts YOUR_BOT                   # read recent chat
+
+Messages can be up to 400 characters. Public chat reaches your teammates
+anywhere on the map (this server broadcasts it world-wide). Send chat through
+this CLI — do NOT call the SDK messaging methods (sendSay/say) from inside
+your scripts. Do NOT coordinate through files, the filesystem, or any channel
+other than in-game chat — this benchmark measures in-game collaboration, and
+runs are audited.
 
 `;
 
@@ -421,7 +432,7 @@ files, save files, or use cheat commands.${n === 1 ? '' : ' Do NOT control a tea
 // "the other two gather and haul" at n=3; generalized for other sizes.
 const theOthers = (n: number) => (n === 3 ? 'the other two' : 'the others');
 
-const SMITH_TEAM_INSTRUCTION = (durationMinutes: number, bots: string[]) => `SMITH THE HIGHEST-VALUE ITEM — ${teamTitle(bots.length)}. This is a local RuneScape private server (8x speed) for AI benchmarking — not a live game.
+const SMITH_TEAM_INSTRUCTION = (durationMinutes: number, bots: string[]) => `SMITH THE HIGHEST-VALUE ITEM — ${teamTitle(bots.length)}. This is a local RuneScape private server (4x speed) for AI benchmarking — not a live game.
 
 ${teamIntroBlock(bots)}
 
@@ -464,7 +475,7 @@ tool with YOUR bot_name. Two globals are available in the code context:
 - \`bot\` (BotActions) — high-level actions: \`await bot.interactLoc("rock", "Mine")\`, \`await bot.useItemOnLoc(item, loc)\`, \`await bot.walkTo(x, z)\`, etc.
 - \`sdk\` (BotSDK) — low-level state & actions: \`sdk.getState()\`, \`sdk.getInventory()\`, \`sdk.findNearbyLoc(/anvil/i)\`, etc.
 
-Read the MCP resources ("Bot API", "SDK API") for the full list of available
+Read the MCP resource "SDK API Reference" for the full list of available
 methods — confirm exact method names there, and do NOT invent skill-specific
 methods. Smelting and smithing go through generic verbs (use ore on the
 furnace, use a bar on the anvil — the anvil opens an interface where you pick
@@ -551,7 +562,7 @@ pkill -f ffmpeg 2>/dev/null || true
 for pid in $(pgrep -f "bun" 2>/dev/null); do
   cmdline=$(cat /proc/$pid/cmdline 2>/dev/null | tr '\\0' ' ')
   case "$cmdline" in
-    *engine*|*gateway*|*skill_tracker*|*arrav_watcher*|*smith_team_watcher*|*magic_team_watcher*|*crafting_team_watcher*|*mcp/server*|*launch-bot*|*check_*|*ensure-services*) ;;
+    *engine*|*gateway*|*skill_tracker*|*arrav_watcher*|*smith_team_watcher*|*magic_team_watcher*|*crafting_team_watcher*|*market_watcher*|*mcp/server*|*launch-bot*|*check_*|*ensure-services*) ;;
     *) kill $pid 2>/dev/null || true ;;
   esac
 done
@@ -560,10 +571,10 @@ sleep 2`;
 // ── Magic-team task ─────────────────────────────────────────────
 //
 // One model, THREE bots, ONE goal: push the Magic level of a SINGLE account as
-// high as possible. Score = the highest Magic level reached by ANY of the three
+// high as possible. Score = the highest Magic level reached by ANY of the
 // accounts (not a sum). Magic is trained by casting spells, which burn runes;
-// each bot starts with an identical rune stash + coins, so the strong play is
-// to funnel ALL runes onto one designated caster (dropped in-game) so that
+// bots start with NO runes or coins, so the strong play is to earn coins, buy
+// runes, and funnel them onto one designated caster (traded in-game) so that
 // account casts far longer than any bot could alone.
 //
 // Unlike smith-team there is no item anti-cheat gate — a skill level can only
@@ -573,7 +584,7 @@ sleep 2`;
 
 const MAGIC_TEAM_CAP_MINUTES_LIST = [30, 45, 60];
 
-const MAGIC_TEAM_INSTRUCTION = (durationMinutes: number, bots: string[]) => `TRAIN THE HIGHEST MAGIC LEVEL — ${teamTitle(bots.length)}. This is a local RuneScape private server (8x speed) for AI benchmarking — not a live game.
+const MAGIC_TEAM_INSTRUCTION = (durationMinutes: number, bots: string[]) => `TRAIN THE HIGHEST MAGIC LEVEL — ${teamTitle(bots.length)}. This is a local RuneScape private server (4x speed) for AI benchmarking — not a live game.
 
 ${teamIntroBlock(bots)}
 
@@ -599,23 +610,21 @@ goblins) roam right around the spawn.
 HOW TO TRAIN MAGIC (from scratch — you have NO runes, and casting needs runes):
 - First get runes. With no coins, earn them: your 30 melee can kill weak
   monsters for coin (and sometimes rune) drops; then buy runes from Aubury's
-  Rune Shop (south-east Varrock) or Betty's shop (Port Sarim). Alternatively
-  mine rune essence with your pickaxe and runecraft it into runes at an altar.
+  Rune Shop (south-east Varrock, the nearest) or Betty's shop (Port Sarim).
 - Then cast combat "Strike" spells on weak NPCs: Wind Strike works from Magic
   level 1 (1 air + 1 mind rune); move up to Water/Earth/Fire Strike as you level.
-  From Magic 25+, repeatable Teleport spells (Law runes) also give XP.
 - Runes are the bottleneck — build a rune supply line so your caster never idles.
 
 ${teamGameFactsBlock(bots.length, 'runes (or coins)')}
 
 ${teamCoordBlock(bots.length)}You control your bot via the \`rs-agent\` MCP server: use the \`execute_code\`
 tool with YOUR bot_name. Two globals are available in the code context:
-- \`bot\` (BotActions) — high-level actions: \`await bot.attackNpc("chicken")\`, \`await bot.walkTo(x, z)\`, \`await bot.pickupItem(...)\`, etc.
+- \`bot\` (BotActions) — high-level actions: \`await bot.attack("chicken")\`, \`await bot.walkTo(x, z)\`, \`await bot.pickupItem(...)\`, etc.
 - \`sdk\` (BotSDK) — low-level state & actions: \`sdk.getState()\`, \`sdk.getInventory()\`, \`sdk.getSkills()\`, \`sdk.findNearbyNpc(/chicken/i)\`, etc.
 
-Read the MCP resources ("Bot API", "SDK API") for the full list of available
-methods — confirm the exact spell-casting method name there (spells are cast on
-an NPC target or, for teleports, cast directly), and do NOT invent method names.
+Read the MCP resource "SDK API Reference" for the full list of available
+methods — confirm the exact spell-casting method there (\`bot.castSpell\` casts
+on an NPC target), and do NOT invent method names.
 
 MODAL INTERFACES: some actions open a full-screen modal. While
 \`sdk.getState().interface.isOpen\` is true, most actions silently fail —
@@ -671,7 +680,7 @@ ENTRYPOINT ["/entrypoint-team.sh"]
       { src: 'entrypoint-team.sh', dst: 'entrypoint-team.sh' },
     ],
     // Spawn the bots a few tiles apart so they don't stack on one tile, each
-    // with an identical rune stash + coins to pool onto one caster.
+    // with the identical bare-bones team kit (pickaxe + axe, no runes/coins).
     saveConfigs: bots.map((bot, i) => ({
       config: {
         position: { x: Locations.LUMBRIDGE_CASTLE.x + i * 2, z: Locations.LUMBRIDGE_CASTLE.z },
@@ -695,7 +704,7 @@ ENTRYPOINT ["/entrypoint-team.sh"]
 
 const CRAFTING_TEAM_CAP_MINUTES_LIST = [30, 45, 60];
 
-const CRAFTING_TEAM_INSTRUCTION = (durationMinutes: number, bots: string[]) => `TRAIN THE HIGHEST CRAFTING XP — ${teamTitle(bots.length)}. This is a local RuneScape private server (8x speed) for AI benchmarking — not a live game.
+const CRAFTING_TEAM_INSTRUCTION = (durationMinutes: number, bots: string[]) => `TRAIN THE HIGHEST CRAFTING XP — ${teamTitle(bots.length)}. This is a local RuneScape private server (4x speed) for AI benchmarking — not a live game.
 
 ${teamIntroBlock(bots)}
 
@@ -717,12 +726,14 @@ Hitpoints. Nothing else: NO crafting materials, NO tools (no needle/chisel), and
 NO coins.
 
 HOW TO TRAIN CRAFTING (from scratch — you have no materials or crafting tools):
-- The fastest no-cost start is SPINNING WOOL: shear a sheep (the pen is just
-  north-west of Lumbridge) and spin the wool into a ball at the spinning wheel on
-  the top floor of Lumbridge Castle — pure Crafting XP with no tools or coins.
-- Earn coins by killing weak monsters (your 30 melee), then buy tools to make
-  higher-XP items: a needle + thread to sew LEATHER armour from tanned cowhides,
-  or a chisel to cut GEMS you mine with your pickaxe (higher gems = more XP).
+- The classic starter is SPINNING WOOL: buy shears (1gp at the Lumbridge
+  general store — one coin drop covers it), shear sheep in the pen just
+  north-west of Lumbridge, and spin the wool into balls at the spinning wheel
+  on the MIDDLE floor of Lumbridge Castle (one flight up the staircase).
+- Earn more coins by killing weak monsters (your 30 melee), then buy tools to
+  make higher-XP items: a needle + thread to sew LEATHER armour from tanned
+  cowhides, or a chisel to cut GEMS you mine with your pickaxe (higher gems =
+  more XP).
 - Gather -> process -> craft, and keep your crafter's inventory full so it never
   idles.
 
@@ -730,12 +741,13 @@ ${teamGameFactsBlock(bots.length, 'materials')}
 
 ${teamCoordBlock(bots.length)}You control your bot via the \`rs-agent\` MCP server: use the \`execute_code\`
 tool with YOUR bot_name. Two globals are available in the code context:
-- \`bot\` (BotActions) — high-level actions: \`await bot.useItemOnItem(a, b)\`, \`await bot.walkTo(x, z)\`, etc.
-- \`sdk\` (BotSDK) — low-level state & actions: \`sdk.getState()\`, \`sdk.getInventory()\`, \`sdk.getSkills()\`, etc.
+- \`bot\` (BotActions) — high-level actions: \`await bot.useItemOnNpc(item, npc)\`, \`await bot.walkTo(x, z)\`, etc.
+- \`sdk\` (BotSDK) — low-level state & actions: \`sdk.getState()\`, \`sdk.getInventory()\`, \`sdk.sendUseItemOnItem(srcSlot, dstSlot)\`, etc.
 
-Read the MCP resources ("Bot API", "SDK API") for the full list of available
-methods — confirm the exact method for "use item on item" and for answering a
-make-menu there, and do NOT invent method names.
+Read the MCP resource "SDK API Reference" for the full list of available
+methods — confirm the exact method for "use item on item" (it takes inventory
+SLOT indices) and for answering a make-menu there, and do NOT invent method
+names.
 
 MODAL INTERFACES: crafting opens a full-screen make menu. While
 \`sdk.getState().interface.isOpen\` is true, most actions silently fail — read
@@ -804,6 +816,261 @@ ENTRYPOINT ["/entrypoint-team.sh"]
   }),
 );
 
+// ── Market task ─────────────────────────────────────────────────
+//
+// Six bots, one model, INDIVIDUAL scores: a three-tier production economy
+// (3 miners → 2 smiths → 1 alchemist) where every player maximizes its OWN
+// gold (coins in inventory + bank at the END of the run — final, not peak).
+// The roles hold complementary starting kits, so gold only really flows if
+// the players trade (player-to-player trade API; coins are tradable too) —
+// the signal is negotiation and market formation, not leveling: NODE_XPRATE=1 turns the
+// engine's 25x XP boost OFF, so 20 minutes buys almost no levels.
+//
+// Scored by check_market.ts from final save files (with a last-watcher-sample
+// floor guard per bot); harbor reward = TOTAL final gold across all bots,
+// with per-bot / per-role breakdowns and the richest bot in reward.json.
+
+const MARKET_CAP_MINUTES_LIST = [20];
+
+// Market bots get short single-letter names (the engine's base37 usernames
+// allow 1–12 chars) — friendlier to read in chat and trade logs than
+// agenta..agentf. run-market.sh passes them to the adapter via
+// `--ak bot_names=a,b,c,d,e,f`.
+const MARKET_BOT_POOL = ['a', 'b', 'c', 'd', 'e', 'f'];
+
+// The "3→2→1" market pyramid. Bots are assigned from MARKET_BOT_POOL in order
+// (a-c miners, d-e smiths, f alchemist).
+const MARKET_ROLE_LAYOUT: Array<{ role: 'miner' | 'smith' | 'alchemist'; count: number }> = [
+  { role: 'miner', count: 3 },
+  { role: 'smith', count: 2 },
+  { role: 'alchemist', count: 1 },
+];
+
+// Distinct per-bot look so players can tell each other apart beyond the role
+// uniform. body = [hair, jaw, torso, arms, hands, legs, feet] kit ids
+// (female kits live in the 45+ range; jaw -1 = none); colors = [hair, torso,
+// legs, feet, skin] palette indices (Player.DESIGN_BODY_COLORS: hair 0-11,
+// torso 0-15, legs 0-15 (torso hue shifted +1), feet 0-5, skin 0-7).
+const MARKET_APPEARANCE: Record<string, NonNullable<SaveConfig['appearance']>> = {
+  // miners
+  a: { gender: 0, body: [8, 13, 22, 26, 33, 37, 42], colors: [4, 11, 12, 0, 1] },   // ginger spiked hair + moustache, orange shirt
+  b: { gender: 1, body: [50, -1, 57, 62, 67, 71, 79], colors: [3, 8, 9, 3, 4] },    // black pigtails, green top, dark skin
+  c: { gender: 0, body: [2, 10, 19, 28, 33, 38, 42], colors: [5, 10, 11, 2, 2] },   // blond long hair + goatee, mauve shirt
+  // smiths (brown apron worn on top)
+  d: { gender: 0, body: [1, 15, 20, 27, 33, 36, 42], colors: [3, 1, 2, 3, 3] },     // black dreadlocks, musclebound, black clothes
+  e: { gender: 1, body: [46, -1, 58, 63, 67, 70, 79], colors: [1, 2, 3, 0, 6] },    // white bun, crimson top, darkest skin
+  // alchemist (blue wizard garb worn on top)
+  f: { gender: 0, body: [0, 11, 18, 26, 33, 36, 42], colors: [1, 7, 8, 3, 7] },     // bald with long white beard, pale, blue under-clothes
+};
+
+// Each role spawns in a distinct "uniform" so players can identify each
+// other's jobs on sight: miners wield their pickaxe (the mining script
+// accepts a worn pick), smiths wear a brown apron, and the alchemist wears
+// the blue wizard hat/robe/skirt with the staff already wielded (it must be
+// wielded to supply fire runes anyway).
+const MARKET_SAVE_FOR_ROLE: Record<string, Omit<SaveConfig, 'position'>> = {
+  miner: {
+    skills: { Mining: 70 },
+    equipment: [{ id: Items.BRONZE_PICKAXE, count: 1, slot: WearSlots.WEAPON }],
+  },
+  smith: {
+    skills: { Smithing: 70 },
+    inventory: [{ id: Items.COINS, count: 200 }],
+    equipment: [{ id: Items.BROWN_APRON, count: 1, slot: WearSlots.TORSO }],
+    varps: DORICS_QUEST_COMPLETE,
+  },
+  alchemist: {
+    skills: { Magic: 60 },
+    inventory: [
+      { id: Items.NATURE_RUNE, count: 500 },
+      { id: Items.COINS, count: 200 },
+    ],
+    equipment: [
+      { id: Items.STAFF_OF_FIRE, count: 1, slot: WearSlots.WEAPON },
+      { id: Items.BLUE_WIZARD_HAT, count: 1, slot: WearSlots.HAT },
+      { id: Items.BLUE_WIZARD_ROBE, count: 1, slot: WearSlots.TORSO },
+      { id: Items.BLUE_SKIRT, count: 1, slot: WearSlots.LEGS },
+    ],
+  },
+};
+
+const marketBotRoles = (): Array<{ bot: string; role: string }> => {
+  const out: Array<{ bot: string; role: string }> = [];
+  let i = 0;
+  for (const { role, count } of MARKET_ROLE_LAYOUT) {
+    for (let k = 0; k < count; k++) out.push({ bot: MARKET_BOT_POOL[i++], role });
+  }
+  return out;
+};
+
+const MARKET_INSTRUCTION = (durationMinutes: number, botRoles: Array<{ bot: string; role: string }>) => {
+  const byRole = (role: string) => botRoles.filter((r) => r.role === role).map((r) => `"${r.bot}"`).join(', ');
+  const n = botRoles.length;
+  return `END WITH THE MOST GOLD — ${NUM_WORD[n]}-player market challenge. This is a local RuneScape private server (4x speed) for AI benchmarking — not a live game.
+
+THIS IS A ${NUM_WORD[n].toUpperCase()}-PLAYER MARKET TASK. ${cap1(NUM_WORD[n])} agent sessions are running in
+this container at the same time — you are one of them. Each session controls
+its own bot; your role addendum at the end of this message tells you which bot
+is yours. NEVER send commands to another player's bot.
+
+EVERY PLAYER SCORES INDIVIDUALLY. Your score is the number of COINS you
+personally hold (inventory + bank combined) when the run ENDS — your FINAL
+holdings, not a peak. Unsold items are worth NOTHING at the buzzer; only coins
+count. The other players are both your trading partners and your competitors.
+
+THE MARKET — the ${NUM_WORD[n]} bots have complementary roles and starting kits
+(public information; every player receives this same brief):
+- MINERS (${byRole('miner')}): Mining 70, a bronze pickaxe (already wielded),
+  0 coins.
+- SMITHS (${byRole('smith')}): Smithing 70, 200 coins, a brown apron (worn —
+  the smith's uniform), and Doric's Quest already done (free use of Doric's
+  anvil). No hammer — general stores sell one for a few coins.
+- ALCHEMIST (${byRole('alchemist')}): Magic 60, a Staff of fire (already
+  wielded), a blue wizard hat + robe (worn), 500 nature runes, 200 coins.
+  High Alchemy (Magic 55) converts an item into coins worth 60% of its store
+  value; the wielded staff supplies the fire runes, so each cast burns only
+  1 nature rune — 500 casts total. (Low Alchemy pays 40%.)
+
+Each role's worn outfit is its uniform — you can recognize a player's job on
+sight (wielded pickaxe = miner, brown apron = smith, blue wizard garb =
+alchemist).
+
+Everyone starts in Falador town center. Nearby:
+- Ore: the Dwarven Mine under Ice Mountain (north of Falador) has copper, tin,
+  iron, coal, mithril and adamantite — Mining 70 can mine ALL of it
+  (adamantite requires exactly 70). CAUTION: everyone is combat level 3 and
+  scorpions roam parts of the mine — stay clear of them.
+- Furnace: Falador, around (2975, 3368) — right by the spawn. Smelting needs
+  no hammer.
+- Anvils: Doric's anvil at (2950, 3451) north-west of Falador, and inside the
+  Dwarven Mine at (3012, 9811). Forging at an anvil needs a hammer.
+- Banks: Falador has east and west banks. Banked coins count toward your score.
+
+XP RATE IS 1x — the benchmark's usual 25x XP boost is OFF. You will gain
+almost no levels in ${durationMinutes} minutes, so do NOT plan on training into another
+role; make money with the levels you were given.
+
+HOW MONEY MOVES:
+- Shops pay coins for items, but at low prices that fall as their stock rises.
+- High Alchemy pays 60% of store value in fresh coins — usually far better
+  than shop-selling (e.g. a mithril platebody, Smithing 68, store value
+  5,200gp, alchs for 3,120 coins). But only the alchemist can cast it, and
+  each cast needs the item in the alchemist's own inventory.
+- Move anything between players — ore, bars, forged items, and COINS
+  themselves — with the player-to-player trade API: stand near your partner,
+  then one of you runs \`await bot.trade(partnerName, { give: [...], want: [...] })\`
+  while the other accepts (\`await bot.serveTrades(...)\` or \`await bot.acceptTrade()\`).
+  The \`want\` option makes an exchange ATOMIC: your side only completes when
+  the partner's offer contains what you asked for — agree a price in chat,
+  then encode it in the trade so neither side can be stiffed. Each player has
+  their OWN bank; banks are not shared.
+- The natural pipeline: miners pull ore → smiths smelt bars and forge items
+  worth alching → the alchemist converts them into coins — with payment
+  flowing back down the chain at whatever prices you negotiate. But prices,
+  partners, quantities, and any side hustle are entirely up to you.
+
+NEGOTIATION — IN-GAME CHAT ONLY: Communicate with the other players
+exclusively through the in-game public chat, using the chat CLI. It connects
+in observe mode, so it sends and reads chat WITHOUT taking control of your
+bot — safe to use at any time, even while one of your scripts is driving the
+bot:
+
+  cd /app && bun sdk/chat.ts YOUR_BOT "your message"    # send
+  cd /app && bun sdk/chat.ts YOUR_BOT                   # read recent chat
+
+Messages can be up to 400 characters. Public chat reaches everyone anywhere on
+the map (this server broadcasts it world-wide). Send chat through this CLI —
+do NOT call the SDK messaging methods (sendSay/say) from inside your scripts.
+Do NOT coordinate through files, the filesystem, or any channel other than
+in-game chat — this benchmark measures in-game negotiation, and runs are
+audited.
+
+You control your bot via the \`rs-agent\` MCP server: use the \`execute_code\`
+tool with YOUR bot_name. Two globals are available in the code context:
+- \`bot\` (BotActions) — high-level actions: \`await bot.interactLoc("rock", "Mine")\`, \`await bot.useItemOnLoc(item, loc)\`, \`await bot.trade(...)\`, \`await bot.serveTrades(...)\`, \`await bot.sellToShop(...)\`, \`await bot.openBank()\`, \`await bot.walkTo(x, z)\`, etc.
+- \`sdk\` (BotSDK) — low-level state & actions: \`sdk.getState()\`, \`sdk.getInventory()\`, \`sdk.findNearbyLoc(/anvil/i)\`, etc.
+
+Read the MCP resource "SDK API Reference" for the full list of available
+methods — confirm exact method names there, and do NOT invent skill-specific
+methods. Smelting and smithing go through generic verbs (use ore on the
+furnace, use a bar on the anvil — the anvil opens an interface where you pick
+the item to forge). Alchemy is cast ON AN INVENTORY ITEM via the
+spell-on-item method — find its exact name in the reference before using it.
+
+MODAL INTERFACES: some actions open a full-screen modal. While
+\`sdk.getState().interface.isOpen\` is true, most actions silently fail —
+close it with \`sdk.sendCloseModal()\` if you don't need it.
+
+PLAN FOR THE CLOCK: you have ${durationMinutes} minutes and only FINAL holdings count.
+Open negotiations in chat EARLY while your first production loop runs, keep
+goods and payments moving in small batches, and encode your price in each
+trade's \`want\` (goods handed over without payment are a total loss). Convert
+everything you can into coins before the end. Keep execute_code calls SMALL
+and iterative; verify each step worked before scaling it up.
+
+RULES: earn coins through legitimate in-game actions only. Do NOT modify
+server files, save files, or use cheat commands. Do NOT control another
+player's bot.`;
+};
+
+const marketVariants = (): VariantTask[] => MARKET_CAP_MINUTES_LIST.map((cap) => {
+  const botRoles = marketBotRoles();
+  const bots = botRoles.map((r) => r.bot);
+  return {
+    slug: `market-${cap}m`,
+    taskDescription: MARKET_INSTRUCTION(cap, botRoles),
+    agentTimeout: cap * 60 + 120,
+    verifier: 'check_market.ts',
+    testSh: `#!/bin/bash
+set -e
+mkdir -p /logs/verifier
+${VERIFIER_CLEANUP}
+export BOT_NAMES="${bots.join(' ')}"
+export MARKET_ROLES="${botRoles.map((r) => `${r.bot}:${r.role}`).join(' ')}"
+cd /app && bun run /tests/check_market.ts
+`,
+    tags: ['game', 'runescape', 'automation', 'mcp', 'benchmark', 'market'],
+    environmentDockerfile: `FROM ${DOCKER_IMAGE}
+# Collaborative tasks run at 100ms ticks (4x speed) — half the 50ms/8x used
+# by the skill/gold benchmarks. (Engine default is 400ms.)
+ENV NODE_TICKRATE=100
+# Real-game XP rate (engine default is 25x accelerated): the market roles are
+# meant to be FIXED within the horizon — the signal is trading, not training.
+ENV NODE_XPRATE=1
+ENV SAMPLE_INTERVAL_MS=5000
+ENV GATEWAY_URL=ws://localhost:7780
+ENV BENCHMARK_DURATION_SECS=${cap * 60}
+ENV BOT_NAMES="${bots.join(' ')}"
+ENV WATCHER_SCRIPT=benchmark/shared/market_watcher.ts
+ENV WATCHER_LOCK=/tmp/market_watcher.lock
+ENV TRACKING_FILE=/logs/tracking/market_tracking.json
+${bots.map((b) => `COPY ${b}.sav /app/server/engine/data/players/main/${b}.sav`).join('\n')}
+COPY market_watcher.ts /app/benchmark/shared/market_watcher.ts
+COPY save-parser.ts /app/benchmark/shared/save-parser.ts
+COPY entrypoint-team.sh /entrypoint-team.sh
+RUN chmod +x /entrypoint-team.sh
+ENTRYPOINT ["/entrypoint-team.sh"]
+`,
+    environmentFiles: [
+      { src: 'market_watcher.ts', dst: 'market_watcher.ts' },
+      { src: 'save-parser.ts', dst: 'save-parser.ts' },
+      { src: 'entrypoint-team.sh', dst: 'entrypoint-team.sh' },
+    ],
+    // Spawn the bots a few tiles apart so they don't stack on one tile, each
+    // with its role's starting kit and its own distinct appearance.
+    saveConfigs: botRoles.map(({ bot, role }, i) => ({
+      config: {
+        position: { x: Locations.FALADOR_CENTER.x + i * 2, z: Locations.FALADOR_CENTER.z },
+        appearance: MARKET_APPEARANCE[bot],
+        ...MARKET_SAVE_FOR_ROLE[role],
+      },
+      dst: `${bot}.sav`,
+    })),
+    // Each chromium client + opencode session needs headroom
+    ...teamResources(botRoles.length),
+  };
+});
+
 // Thin FROM layer: adds GATEWAY_URL and sample interval on top of base image.
 const TRACKER_DOCKERFILE = (sampleIntervalMs: number = 15000, benchmarkDurationSecs?: number) => `FROM ${DOCKER_IMAGE}
 ENV SAMPLE_INTERVAL_MS=${sampleIntervalMs}
@@ -820,10 +1087,10 @@ Scoring is normalized to real-game rates: raw XP is divided by 8 (the 8x game sp
 Check your peak rate anytime: \`bun /app/benchmark/shared/check_xp_rate.ts ${skillName}\`
 
 You control the bot via the \`rs-agent\` MCP server. Use the \`execute_code\` tool with \`bot_name: "agent"\`. Two globals are available in the code context:
-- \`bot\` (BotActions) — high-level actions: \`await bot.chopTree()\`, \`await bot.interactLoc("rock", "Mine")\`, \`await bot.attackNpc("chicken")\`, etc.
+- \`bot\` (BotActions) — high-level actions: \`await bot.chopTree()\`, \`await bot.interactLoc("rock", "Mine")\`, \`await bot.attack("chicken")\`, etc.
 - \`sdk\` (BotSDK) — low-level state & actions: \`sdk.getState()\`, \`sdk.getInventory()\`, \`sdk.findNearbyLoc(/tree/i)\`, etc.
 
-Read the MCP resources ("Bot API", "SDK API") for the full list of available methods. The examples above are illustrative — confirm exact method names there before relying on them, and do NOT invent skill-specific methods (there is no \`mineRock\`/\`fish\`/\`cook\`). Most gathering and processing skills go through generic verbs like \`bot.interactLoc(target, "Mine")\`, \`bot.interactNpc(target, "Fish")\`, or \`bot.useItemOnLoc(item, loc)\`.
+Read the MCP resource "SDK API Reference" for the full list of available methods. The examples above are illustrative — confirm exact method names there before relying on them, and do NOT invent skill-specific methods (there is no \`mineRock\`/\`fish\`/\`cook\`). Most gathering and processing skills go through generic verbs like \`bot.interactLoc(target, "Mine")\`, \`bot.interactNpc(target, "Fish")\`, or \`bot.useItemOnLoc(item, loc)\`.
 
 IMPORTANT: You have ${durationMinutes} minutes. Start experimenting immediately. Try to get a non-zero baseline then optimize or find new strategies.
 
@@ -927,8 +1194,10 @@ const VARIANTS: VariantTask[] = [
   ...smithTeamVariants(),
   // ── Magic-team three-bot cooperative Magic leveling ──
   ...magicTeamVariants(),
-  // ── Crafting-team three-bot cooperative TOTAL Crafting XP ──
+  // ── Crafting-team cooperative MAX-single-account Crafting XP ──
   ...craftingTeamVariants(),
+  // ── Market: 3 miners / 2 smiths / 1 alchemist, individual final gold ──
+  ...marketVariants(),
 ];
 
 // ── Template generators ──────────────────────────────────────────

@@ -87,6 +87,9 @@ _PROVIDER_KEY_MAP = {
     # Tinker (Thinking Machines) — custom openai-compatible provider declared by
     # inkling_adapter; the key is referenced as {env:TINKER_API_KEY} in opencode.json.
     "tinker": "TINKER_API_KEY",
+    # Meta Model API (api.meta.ai) — custom openai-compatible provider declared
+    # by muse12_adapter; referenced as {env:META_API_KEY} in opencode.json.
+    "meta": "META_API_KEY",
 }
 
 
