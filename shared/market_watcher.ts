@@ -1,12 +1,16 @@
 /**
- * Market watcher for the six-bot market benchmark (3 miners / 2 smiths /
- * 1 alchemist, each maximizing its OWN final gold).
+ * Market watcher for the six-bot market benchmark (2 miners / 2 smiths /
+ * 2 alchemists, each maximizing its OWN final gold).
  *
  * Connects to ALL bots in observe mode and records, every SAMPLE_INTERVAL_MS:
  *   - each bot's live inventory coins (via the observer SDK)
  *   - each bot's bank coins (parsed from its on-disk save file — the engine
  *     autosaves periodically, so this lags live state by up to ~2.5 min)
  *   - total = live inventory coins + bank coins (the per-bot score proxy)
+ *   - each bot's NON-COIN holdings: live inventory items (observer SDK) and
+ *     banked items (save file), as compact [itemId, count] pairs — so
+ *     end-of-run "assets at the buzzer" and stock flows are reconstructable.
+ *     Item names are learned from the live SDK into a top-level itemNames map.
  *   - Mining/Smithing/Magic levels + position for context
  *   - the full in-game chat transcript (the negotiation artifact)
  *
@@ -42,6 +46,8 @@ const savePathsFor = (bot: string) => [
 ];
 
 interface SkillSnap { level: number; xp: number; }
+/** Non-coin holdings as [itemId, count] pairs, aggregated by id, sorted by id. */
+type ItemPairs = Array<[number, number]>;
 interface BotSample {
   /** live coins in inventory (observer SDK); null if observer is down */
   invCoins: number | null;
@@ -49,13 +55,19 @@ interface BotSample {
   bankCoins: number | null;
   /** best-effort total: live inv (or save inv if observer down) + bank */
   gold: number | null;
+  /** live NON-COIN inventory items (observer SDK); null if observer is down */
+  invItems: ItemPairs | null;
+  /** banked NON-COIN items per the last on-disk autosave */
+  bankItems: ItemPairs | null;
   mining: SkillSnap | null;
   smithing: SkillSnap | null;
   magic: SkillSnap | null;
   position?: { x: number; z: number } | null;
 }
 interface Sample { timestamp: string; elapsedMs: number; bots: Record<string, BotSample>; }
-interface ChatMessage { sender: string; text: string; tick: number; type: number; elapsedMs: number; observedBy: string; }
+// `to` is set for private messages (type 6 = the observer's own outgoing PM;
+// its gameMessages entry names the RECIPIENT in `sender`).
+interface ChatMessage { sender: string; text: string; tick: number; type: number; elapsedMs: number; observedBy: string; to?: string; }
 interface TrackingData {
   botNames: string[];
   startTime: string;
@@ -63,6 +75,8 @@ interface TrackingData {
   chat: ChatMessage[];
   /** running per-bot peak of the `gold` total (context only; score is FINAL gold) */
   peak: Record<string, { gold: number; elapsedMs: number }>;
+  /** itemId → display name, learned from live observer inventories */
+  itemNames: Record<number, string>;
 }
 
 function isAlreadyRunning(): boolean {
@@ -103,8 +117,18 @@ async function connectObserver(botName: string): Promise<any | null> {
   return null;
 }
 
-/** Read a bot's on-disk save: coins in inventory / bank+worn. */
-function readSaveCoins(bot: string): { inv: number; bank: number } | null {
+/** Aggregate an item list into sorted non-coin [id, count] pairs. */
+function toItemPairs(items: Array<{ id: number; count: number }> | undefined): ItemPairs {
+  const agg = new Map<number, number>();
+  for (const it of items ?? []) {
+    if (it.id === COINS_ID) continue;
+    agg.set(it.id, (agg.get(it.id) ?? 0) + it.count);
+  }
+  return [...agg.entries()].sort((a, b) => a[0] - b[0]);
+}
+
+/** Read a bot's on-disk save: coins in inventory / bank+worn, + banked items. */
+function readSaveCoins(bot: string): { inv: number; bank: number; bankItems: ItemPairs } | null {
   for (const p of savePathsFor(bot)) {
     if (!existsSync(p)) continue;
     try {
@@ -113,6 +137,7 @@ function readSaveCoins(bot: string): { inv: number; bank: number } | null {
         inv: countItem(save.inventories.get(INV_TYPE), COINS_ID),
         bank: countItem(save.inventories.get(BANK_TYPE), COINS_ID)
           + countItem(save.inventories.get(WORN_TYPE), COINS_ID),
+        bankItems: toItemPairs(save.inventories.get(BANK_TYPE)),
       };
     } catch { /* mid-write or corrupt — try again next sample */ }
   }
@@ -138,16 +163,17 @@ async function main() {
       if (existing.startTime && existing.samples) {
         tracking = existing;
         tracking.peak ??= {};
+        tracking.itemNames ??= {};
         startTime = new Date(existing.startTime);
         console.log(`[market-watcher] Resuming with ${existing.samples.length} samples`);
       } else throw new Error('invalid format');
     } catch {
       startTime = new Date();
-      tracking = { botNames, startTime: startTime.toISOString(), samples: [], chat: [], peak: {} };
+      tracking = { botNames, startTime: startTime.toISOString(), samples: [], chat: [], peak: {}, itemNames: {} };
     }
   } else {
     startTime = new Date();
-    tracking = { botNames, startTime: startTime.toISOString(), samples: [], chat: [], peak: {} };
+    tracking = { botNames, startTime: startTime.toISOString(), samples: [], chat: [], peak: {}, itemNames: {} };
   }
 
   console.log(`[market-watcher] bots=${botNames.join(',')} interval=${intervalMs}ms output=${outFile}`);
@@ -167,6 +193,7 @@ async function main() {
     for (const name of botNames) {
       const sdk = sdks[name];
       let invCoins: number | null = null;
+      let invItems: ItemPairs | null = null;
       let mining: SkillSnap | null = null;
       let smithing: SkillSnap | null = null;
       let magic: SkillSnap | null = null;
@@ -181,36 +208,50 @@ async function main() {
             if (s.name === 'Magic') magic = { level, xp: s.experience };
           }
           let coins = 0;
-          for (const it of sdk.getInventory() ?? []) {
+          const liveInv = sdk.getInventory() ?? [];
+          for (const it of liveInv) {
             if (it.id === COINS_ID) coins += it.count;
+            else if (it.name && tracking.itemNames[it.id] == null) tracking.itemNames[it.id] = it.name;
           }
           invCoins = coins;
+          invItems = toItemPairs(liveInv);
           const state = sdk.getState();
           const p = state?.player;
           if (p) position = { x: p.worldX, z: p.worldZ };
           for (const msg of state?.gameMessages ?? []) {
-            if (msg.type !== 2 && msg.type !== 3) continue;
-            if (msg.sender?.toLowerCase() !== name.toLowerCase()) continue;
-            const key = `${msg.sender}|${msg.tick}|${msg.text}`;
+            // Public chat (2/3) is kept only when this bot SENT it (each
+            // observer logs its own bot's messages once). Private messages
+            // are logged from the sender's side too: type 6 is the outgoing
+            // "To <name>" echo, whose `sender` field is the recipient.
+            const isPm = msg.type === 6;
+            if (!isPm && msg.type !== 2 && msg.type !== 3) continue;
+            if (!isPm && msg.sender?.toLowerCase() !== name.toLowerCase()) continue;
+            const key = `${isPm ? 'pm>' : ''}${msg.sender}|${msg.tick}|${msg.text}`;
             if (seenChat.has(key)) continue;
             seenChat.add(key);
-            tracking.chat.push({ sender: msg.sender, text: msg.text, tick: msg.tick, type: msg.type, elapsedMs, observedBy: name });
-            console.log(`[market-watcher] chat ${msg.sender}: ${msg.text}`);
+            if (isPm) {
+              tracking.chat.push({ sender: name, to: msg.sender, text: msg.text, tick: msg.tick, type: msg.type, elapsedMs, observedBy: name });
+              console.log(`[market-watcher] pm ${name} -> ${msg.sender}: ${msg.text}`);
+            } else {
+              tracking.chat.push({ sender: msg.sender, text: msg.text, tick: msg.tick, type: msg.type, elapsedMs, observedBy: name });
+              console.log(`[market-watcher] chat ${msg.sender}: ${msg.text}`);
+            }
           }
         } catch { /* observer hiccup — next sample will catch up */ }
       }
 
       const saveCoins = readSaveCoins(name);
       const bankCoins = saveCoins?.bank ?? null;
-      const liveInv = invCoins ?? saveCoins?.inv ?? null;
-      const gold = liveInv != null || bankCoins != null ? (liveInv ?? 0) + (bankCoins ?? 0) : null;
+      const bankItems = saveCoins?.bankItems ?? null;
+      const liveInvCoins = invCoins ?? saveCoins?.inv ?? null;
+      const gold = liveInvCoins != null || bankCoins != null ? (liveInvCoins ?? 0) + (bankCoins ?? 0) : null;
 
       if (gold != null) {
         const prev = tracking.peak[name];
         if (!prev || gold > prev.gold) tracking.peak[name] = { gold, elapsedMs };
       }
 
-      botsSample[name] = { invCoins, bankCoins, gold, mining, smithing, magic, position };
+      botsSample[name] = { invCoins, bankCoins, gold, invItems, bankItems, mining, smithing, magic, position };
     }
 
     tracking.samples.push({ timestamp: now.toISOString(), elapsedMs, bots: botsSample });

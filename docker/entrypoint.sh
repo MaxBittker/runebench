@@ -31,7 +31,7 @@ fi
 
 # ── Helper: start engine and wait for readiness ──────────────────
 start_engine() {
-    cd /app/server/engine && bun run src/app.ts &
+    cd /app/server/engine && bun-svc run src/app.ts &
     ENGINE_PID=$!
     echo "[entrypoint] Engine starting (pid=$ENGINE_PID)..."
     for i in $(seq 1 120); do
@@ -51,7 +51,7 @@ start_engine() {
 
 # ── Helper: start gateway and wait for readiness ─────────────────
 start_gateway() {
-    cd /app/server/gateway && bun run gateway.ts &
+    cd /app/server/gateway && bun-svc run gateway.ts &
     GATEWAY_PID=$!
     echo "[entrypoint] Gateway starting (pid=$GATEWAY_PID)..."
     for i in $(seq 1 30); do
@@ -67,7 +67,7 @@ start_gateway() {
 
 # ── Helper: start bot client ─────────────────────────────────────
 start_bot() {
-    cd /app/server/gateway && bun run launch-bot.ts &
+    cd /app/server/gateway && bun-svc run launch-bot.ts &
     BOT_PID=$!
     echo "[entrypoint] Bot client starting (pid=$BOT_PID)..."
     for i in $(seq 1 120); do
@@ -99,7 +99,7 @@ start_bot
 echo "[entrypoint] Starting skill tracker..."
 mkdir -p /logs/tracking
 cd /app && TRACKING_FILE=/logs/tracking/skill_tracking.json \
-  nohup bun run benchmark/shared/skill_tracker.ts > /logs/tracking/skill_tracker.log 2>&1 &
+  nohup bun-svc run benchmark/shared/skill_tracker.ts > /logs/tracking/skill_tracker.log 2>&1 &
 TRACKER_PID=$!
 echo "[entrypoint] Skill tracker started (pid=$TRACKER_PID)"
 
@@ -202,7 +202,7 @@ while true; do
     if $engine_alive && $gateway_alive && $bot_alive && ! $tracker_alive; then
         echo "[watchdog] Tracker died, restarting..."
         cd /app && TRACKING_FILE=/logs/tracking/skill_tracking.json \
-          nohup bun run benchmark/shared/skill_tracker.ts >> /logs/tracking/skill_tracker.log 2>&1 &
+          nohup bun-svc run benchmark/shared/skill_tracker.ts >> /logs/tracking/skill_tracker.log 2>&1 &
         TRACKER_PID=$!
         echo "[watchdog] Tracker restarted (pid=$TRACKER_PID)"
         continue
@@ -237,7 +237,7 @@ while true; do
 
     # Restart tracker (game stack is fresh, tracker needs to reconnect)
     cd /app && TRACKING_FILE=/logs/tracking/skill_tracking.json \
-      nohup bun run benchmark/shared/skill_tracker.ts >> /logs/tracking/skill_tracker.log 2>&1 &
+      nohup bun-svc run benchmark/shared/skill_tracker.ts >> /logs/tracking/skill_tracker.log 2>&1 &
     TRACKER_PID=$!
 
     echo "[watchdog] Services restored (engine=$ENGINE_PID, gateway=$GATEWAY_PID, bot=$BOT_PID, tracker=$TRACKER_PID)"

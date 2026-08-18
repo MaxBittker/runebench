@@ -9,15 +9,23 @@
  *
  * Usage: bun generate-tasks.ts
  */
-import { mkdirSync, writeFileSync, copyFileSync, rmSync } from 'fs';
-import { join } from 'path';
-import { createSaveData, Items, Locations, WearSlots, type SaveConfig } from './shared/save-generator';
+import { mkdirSync, writeFileSync, copyFileSync, rmSync } from "fs";
+import { join } from "path";
+import {
+  createSaveData,
+  randomAppearance,
+  DESIGN_COLOR_COUNTS,
+  Items,
+  Locations,
+  WearSlots,
+  type SaveConfig,
+} from "./shared/save-generator";
 
 const BENCHMARK_DIR = join(import.meta.dir);
-const TASKS_DIR = join(BENCHMARK_DIR, 'tasks');
-const SHARED_DIR = join(BENCHMARK_DIR, 'shared');
+const TASKS_DIR = join(BENCHMARK_DIR, "tasks");
+const SHARED_DIR = join(BENCHMARK_DIR, "shared");
 
-const DOCKER_IMAGE = 'ghcr.io/maxbittker/rs-agent-benchmark:v60';
+const DOCKER_IMAGE = "ghcr.io/maxbittker/rs-agent-benchmark:v65";
 const VERIFIER_TIMEOUT = 400;
 
 // ── Standard skill definitions (XP-grind tasks) ─────────────────
@@ -30,22 +38,22 @@ interface SkillDef {
 }
 
 const SKILLS: SkillDef[] = [
-  { name: 'Attack', slug: 'attack' },
-  { name: 'Defence', slug: 'defence' },
-  { name: 'Strength', slug: 'strength' },
-  { name: 'Hitpoints', slug: 'hitpoints' },
-  { name: 'Ranged', slug: 'ranged' },
-  { name: 'Prayer', slug: 'prayer' },
-  { name: 'Magic', slug: 'magic' },
-  { name: 'Woodcutting', slug: 'woodcutting' },
-  { name: 'Fishing', slug: 'fishing' },
-  { name: 'Mining', slug: 'mining' },
-  { name: 'Cooking', slug: 'cooking' },
-  { name: 'Fletching', slug: 'fletching' },
-  { name: 'Crafting', slug: 'crafting' },
-  { name: 'Smithing', slug: 'smithing' },
-  { name: 'Firemaking', slug: 'firemaking' },
-  { name: 'Thieving', slug: 'thieving' },
+  { name: "Attack", slug: "attack" },
+  { name: "Defence", slug: "defence" },
+  { name: "Strength", slug: "strength" },
+  { name: "Hitpoints", slug: "hitpoints" },
+  { name: "Ranged", slug: "ranged" },
+  { name: "Prayer", slug: "prayer" },
+  { name: "Magic", slug: "magic" },
+  { name: "Woodcutting", slug: "woodcutting" },
+  { name: "Fishing", slug: "fishing" },
+  { name: "Mining", slug: "mining" },
+  { name: "Cooking", slug: "cooking" },
+  { name: "Fletching", slug: "fletching" },
+  { name: "Crafting", slug: "crafting" },
+  { name: "Smithing", slug: "smithing" },
+  { name: "Firemaking", slug: "firemaking" },
+  { name: "Thieving", slug: "thieving" },
 ];
 
 // ── Variant tasks (non-standard configurations) ──────────────────
@@ -75,8 +83,15 @@ interface VariantTask {
   memoryMb?: number;
 }
 
-const GOLD_INSTRUCTION = (durationMinutes: number, startingConditionHint?: string) => `Accumulate as much gold (coins) as possible within ${durationMinutes} minutes. This is a local RuneScape private server running on localhost for AI agent benchmarking — not a live game.
-${startingConditionHint ? `\nSTARTING CONDITION: ${startingConditionHint}\n` : ''}
+const GOLD_INSTRUCTION = (
+  durationMinutes: number,
+  startingConditionHint?: string,
+) => `Accumulate as much gold (coins) as possible within ${durationMinutes} minutes. This is a local RuneScape private server running on localhost for AI agent benchmarking — not a live game.
+${
+  startingConditionHint
+    ? `\nSTARTING CONDITION: ${startingConditionHint}\n`
+    : ""
+}
 Your goal is to maximize your TOTAL COINS (inventory + bank combined). Your score is the PEAK total you reach at any point during the run — coins are sampled every few seconds and the best sample counts, so convert items into coins as you go rather than stockpiling them for a final sell-off. Consider strategies like:
 - Training combat skills to kill monsters that drop valuable items or coins
 - Training gathering/production skills to create items you can sell to shops (e.g. smithing bars/items, fletching bows, cooking fish)
@@ -121,7 +136,12 @@ const DORICS_QUEST_COMPLETE: Record<number, number> = { 31: 100 };
 // bronze gathering tools + basic level-30 melee, and NOTHING ELSE — no coins,
 // no runes/ore/materials, no processing tools. Teams must gather/earn/buy
 // everything the target skill needs from the world, forcing real cooperation.
-const TEAM_START_SKILLS: Record<string, number> = { Attack: 30, Strength: 30, Defence: 30, Hitpoints: 30 };
+const TEAM_START_SKILLS: Record<string, number> = {
+  Attack: 30,
+  Strength: 30,
+  Defence: 30,
+  Hitpoints: 30,
+};
 const TEAM_START_INVENTORY = [
   { id: Items.BRONZE_PICKAXE, count: 1 },
   { id: Items.BRONZE_AXE, count: 1 },
@@ -129,12 +149,13 @@ const TEAM_START_INVENTORY = [
 
 export const GOLD_CONDITIONS: GoldCondition[] = [
   {
-    slug: 'vanilla',
+    slug: "vanilla",
     // No saveConfig — fresh post-tutorial character (shared/agent.sav)
   },
   {
-    slug: 'smith-alch',
-    instructionHint: 'You start in Falador with 99 Mining, 99 Smithing, and 99 Magic. You have a bronze pickaxe, 100 nature runes, and 500 fire runes in your inventory. A strong strategy is: mine ore → smith bars/items → cast High Alchemy to convert them to gold.',
+    slug: "smith-alch",
+    instructionHint:
+      "You start in Falador with 99 Mining, 99 Smithing, and 99 Magic. You have a bronze pickaxe, 100 nature runes, and 500 fire runes in your inventory. A strong strategy is: mine ore → smith bars/items → cast High Alchemy to convert them to gold.",
     saveConfig: {
       position: Locations.FALADOR_CENTER,
       skills: { Mining: 99, Smithing: 99, Magic: 99 },
@@ -147,20 +168,20 @@ export const GOLD_CONDITIONS: GoldCondition[] = [
     },
   },
   {
-    slug: 'fish',
-    instructionHint: 'You start at the Catherby fishing spots with 50 Fishing and a small fishing net. You can fish and sell or cook your catches for gold.',
+    slug: "fish",
+    instructionHint:
+      "You start at the Catherby fishing spots with 50 Fishing and a small fishing net. You can fish and sell or cook your catches for gold.",
     saveConfig: {
       position: Locations.CATHERBY_BEACH,
       skills: { Fishing: 50 },
-      inventory: [
-        { id: Items.SMALL_FISHING_NET, count: 1 },
-      ],
+      inventory: [{ id: Items.SMALL_FISHING_NET, count: 1 }],
       varps: DORICS_QUEST_COMPLETE,
     },
   },
   {
-    slug: 'fletch-alch',
-    instructionHint: 'You start in Seers Village with 50 Fletching, 50 Magic, 50 Woodcutting, an axe, a knife, and alchemy runes (nature + fire). A strong strategy is: cut logs → fletch into bows → cast Low Alchemy on them to convert them to gold (High Alchemy needs Magic 55; alchemy casts raise Magic, so you can upgrade mid-run).',
+    slug: "fletch-alch",
+    instructionHint:
+      "You start in Seers Village with 50 Fletching, 50 Magic, 50 Woodcutting, an axe, a knife, and alchemy runes (nature + fire). A strong strategy is: cut logs → fletch into bows → cast Low Alchemy on them to convert them to gold (High Alchemy needs Magic 55; alchemy casts raise Magic, so you can upgrade mid-run).",
     saveConfig: {
       position: Locations.SEERS_VILLAGE,
       skills: { Fletching: 50, Magic: 50, Woodcutting: 50 },
@@ -176,8 +197,8 @@ export const GOLD_CONDITIONS: GoldCondition[] = [
 ];
 
 const GOLD_DURATIONS = [
-  { label: '15m', minutes: 15 },
-  { label: '30m', minutes: 30 },
+  { label: "15m", minutes: 15 },
+  { label: "30m", minutes: 30 },
 ];
 
 // ── Shield of Arrav duo task ────────────────────────────────────
@@ -192,7 +213,9 @@ const GOLD_DURATIONS = [
 
 const ARRAV_CAP_MINUTES = 45;
 
-const ARRAV_INSTRUCTION = (durationMinutes: number) => `Complete the quest "Shield of Arrav" as quickly as possible. This is a local RuneScape private server (4x speed) for AI benchmarking — not a live game.
+const ARRAV_INSTRUCTION = (
+  durationMinutes: number,
+) => `Complete the quest "Shield of Arrav" as quickly as possible. This is a local RuneScape private server (4x speed) for AI benchmarking — not a live game.
 
 THIS IS A TWO-PLAYER COOPERATIVE TASK. Two agent sessions are running in this
 container at the same time — you are one of them. Each session controls its own
@@ -298,7 +321,7 @@ RULES: Progress the quest through legitimate in-game actions only. Do NOT
 modify server files, save files, or use cheat commands. Do NOT control your
 partner's bot.`;
 
-const ARRAV_SAVE_BASE: Omit<SaveConfig, 'position'> = {
+const ARRAV_SAVE_BASE: Omit<SaveConfig, "position"> = {
   // 200 coins covers Baraek's 20-coin fee with plenty of slack
   inventory: [{ id: Items.COINS, count: 200 }],
 };
@@ -309,7 +332,7 @@ const arravVariants = (): VariantTask[] => [
     slug: `arrav-duo-${ARRAV_CAP_MINUTES}m`,
     taskDescription: ARRAV_INSTRUCTION(ARRAV_CAP_MINUTES),
     agentTimeout: ARRAV_CAP_MINUTES * 60 + 120,
-    verifier: 'check_arrav.ts',
+    verifier: "check_arrav.ts",
     testSh: `#!/bin/bash
 set -e
 mkdir -p /logs/verifier
@@ -318,7 +341,16 @@ export ARRAV_CAP_SECS="${ARRAV_CAP_MINUTES * 60}"
 export BOT_NAMES="agenta agentb"
 cd /app && bun run /tests/check_arrav.ts
 `,
-    tags: ['game', 'runescape', 'automation', 'mcp', 'benchmark', 'quest', 'duo', 'arrav'],
+    tags: [
+      "game",
+      "runescape",
+      "automation",
+      "mcp",
+      "benchmark",
+      "quest",
+      "duo",
+      "arrav",
+    ],
     environmentDockerfile: `FROM ${DOCKER_IMAGE}
 # Collaborative tasks run at 100ms ticks (4x speed) — half the 50ms/8x used
 # by the skill/gold benchmarks — to give cooperating agents more reaction
@@ -337,15 +369,23 @@ RUN chmod +x /entrypoint-duo.sh
 ENTRYPOINT ["/entrypoint-duo.sh"]
 `,
     environmentFiles: [
-      { src: 'arrav_watcher.ts', dst: 'arrav_watcher.ts' },
-      { src: 'save-parser.ts', dst: 'save-parser.ts' },
-      { src: 'entrypoint-duo.sh', dst: 'entrypoint-duo.sh' },
+      { src: "arrav_watcher.ts", dst: "arrav_watcher.ts" },
+      { src: "save-parser.ts", dst: "save-parser.ts" },
+      { src: "entrypoint-duo.sh", dst: "entrypoint-duo.sh" },
     ],
-    saveConfigs: [
-      { config: { ...ARRAV_SAVE_BASE, position: Locations.VARROCK_SQUARE }, dst: 'agenta.sav' },
-      // Spawn B a few tiles away so the bots don't stack on one tile
-      { config: { ...ARRAV_SAVE_BASE, position: { x: Locations.VARROCK_SQUARE.x + 3, z: Locations.VARROCK_SQUARE.z } }, dst: 'agentb.sav' },
-    ],
+    // Spawn B a few tiles away so the bots don't stack on one tile; each bot
+    // gets a random distinct look.
+    saveConfigs: randomTeamAppearances(2).map((look, i) => ({
+      config: {
+        ...ARRAV_SAVE_BASE,
+        appearance: look,
+        position: {
+          x: Locations.VARROCK_SQUARE.x + i * 3,
+          z: Locations.VARROCK_SQUARE.z,
+        },
+      },
+      dst: `agent${"ab"[i]}.sav`,
+    })),
     // Two chromium clients + two opencode sessions need more headroom
     cpus: 4,
     memoryMb: 8192,
@@ -374,42 +414,113 @@ const SMITH_TEAM_CAP_MINUTES = 30;
 // n=3 keeps the original slug (smith-team-30m); other sizes get a -n<N>
 // suffix (smith-team-30m-n1, smith-team-30m-n6). The team adapter is told the
 // size via `--ak team_size=N` by the run scripts.
-const TEAM_BOT_POOL = ['agenta', 'agentb', 'agentc', 'agentd', 'agente', 'agentf'];
+const TEAM_BOT_POOL = [
+  "agenta",
+  "agentb",
+  "agentc",
+  "agentd",
+  "agente",
+  "agentf",
+];
 const TEAM_SIZES = [1, 3, 6];
-const NUM_WORD: Record<number, string> = { 1: 'one', 2: 'two', 3: 'three', 4: 'four', 5: 'five', 6: 'six' };
+const NUM_WORD: Record<number, string> = {
+  1: "one",
+  2: "two",
+  3: "three",
+  4: "four",
+  5: "five",
+  6: "six",
+  7: "seven",
+  8: "eight",
+  9: "nine",
+  10: "ten",
+  11: "eleven",
+  12: "twelve",
+  13: "thirteen",
+  14: "fourteen",
+  15: "fifteen",
+  16: "sixteen",
+  17: "seventeen",
+  18: "eighteen",
+  19: "nineteen",
+  20: "twenty",
+  21: "twenty-one",
+  22: "twenty-two",
+  23: "twenty-three",
+  24: "twenty-four",
+};
 const cap1 = (s: string) => s[0].toUpperCase() + s.slice(1);
 const teamBots = (n: number) => TEAM_BOT_POOL.slice(0, n);
-const teamSlug = (base: string, cap: number, n: number) => `${base}-${cap}m${n === 3 ? '' : `-n${n}`}`;
+// Random per-bot looks so players can tell each other apart on screen and in
+// videos. Fully random (valid kits/palettes only — randomAppearance in
+// save-generator.ts) except hair and shirt colors, which are dealt from
+// shuffled decks so no two teammates share either.
+const randomTeamAppearances = (
+  n: number,
+): Array<{ gender: number; body: number[]; colors: number[] }> => {
+  const deal = (count: number): number[] => {
+    const deck = Array.from({ length: count }, (_, i) => i);
+    for (let i = deck.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [deck[i], deck[j]] = [deck[j]!, deck[i]!];
+    }
+    return deck;
+  };
+  const [hairColors, torsoColors] = [
+    deal(DESIGN_COLOR_COUNTS[0]!),
+    deal(DESIGN_COLOR_COUNTS[1]!),
+  ];
+  return Array.from({ length: n }, (_, i) => {
+    const look = randomAppearance();
+    look.colors[0] = hairColors[i % hairColors.length]!;
+    look.colors[1] = torsoColors[i % torsoColors.length]!;
+    return look;
+  });
+};
+const teamSlug = (base: string, cap: number, n: number) =>
+  `${base}-${cap}m${n === 3 ? "" : `-n${n}`}`;
 // Sandbox sizing: each extra bot adds a chromium client + an opencode session.
 const teamResources = (n: number) =>
-  n <= 1 ? { cpus: 4, memoryMb: 8192 }
-  : n <= 3 ? { cpus: 6, memoryMb: 12288 }
-  : { cpus: 10, memoryMb: 20480 };
+  n <= 1
+    ? { cpus: 4, memoryMb: 8192 }
+    : n <= 3
+    ? { cpus: 6, memoryMb: 12288 }
+    : { cpus: 10, memoryMb: 20480 };
 
 // Instruction blocks shared by the team tasks, parameterized by team size.
-const teamTitle = (n: number) => (n === 1 ? 'solo challenge' : `${NUM_WORD[n]}-player team challenge`);
+const teamTitle = (n: number) =>
+  n === 1 ? "solo challenge" : `${NUM_WORD[n]}-player team challenge`;
 
-const teamIntroBlock = (bots: string[]) => bots.length === 1
-  ? `THIS IS A SOLO VARIANT OF A TEAM TASK. You are the only agent session in
+const teamIntroBlock = (bots: string[]) =>
+  bots.length === 1
+    ? `THIS IS A SOLO VARIANT OF A TEAM TASK. You are the only agent session in
 this container and you control the only bot ("${bots[0]}"). There are no
 teammates — everything below that mentions the team applies to you alone.`
-  : `THIS IS A ${NUM_WORD[bots.length].toUpperCase()}-PLAYER COOPERATIVE TASK. ${cap1(NUM_WORD[bots.length])} agent sessions are running in
+    : `THIS IS A ${NUM_WORD[
+        bots.length
+      ].toUpperCase()}-PLAYER COOPERATIVE TASK. ${cap1(
+        NUM_WORD[bots.length],
+      )} agent sessions are running in
 this container at the same time — you are one of them. Each session controls
-its own bot (${bots.map((b) => `"${b}"`).join(', ')}); your role
+its own bot (${bots.map((b) => `"${b}"`).join(", ")}); your role
 addendum at the end of this message tells you which bot is yours. NEVER send
 commands to a teammate's bot.`;
 
 // `goods` = what gets handed between teammates in this task, e.g. "items (ores, bars)".
-const teamGameFactsBlock = (n: number, goods: string) => n === 1
-  ? `GAME FACTS: You have your own bank account.`
-  : `GAME FACTS: Transfer ${goods} between teammates with the
+const teamGameFactsBlock = (n: number, goods: string) =>
+  n === 1
+    ? `GAME FACTS: You have your own bank account.`
+    : `GAME FACTS: Transfer ${goods} between teammates with the
 player-to-player trade API: stand near a teammate, then one of you runs
 \`await bot.trade(teammateName, { give: [...] })\` while the other accepts
 (\`await bot.serveTrades(...)\` or \`await bot.acceptTrade()\`). Each player has
 their OWN bank account; banks are not shared.`;
 
 // Includes its own trailing blank line so it can vanish cleanly for n=1.
-const teamCoordBlock = (n: number) => n === 1 ? '' : `COORDINATION — IN-GAME CHAT ONLY: Communicate with your teammates exclusively
+const teamCoordBlock = (n: number) =>
+  n === 1
+    ? ""
+    : `COORDINATION — IN-GAME CHAT ONLY: Communicate with your teammates exclusively
 through the in-game public chat, using the chat CLI. It connects in observe
 mode, so it sends and reads chat WITHOUT taking control of your bot — safe to
 use at any time, even while one of your scripts is driving the bot:
@@ -426,13 +537,22 @@ runs are audited.
 
 `;
 
-const teamRulesLine = (n: number) => `RULES: progress through legitimate in-game actions only. Do NOT modify server
-files, save files, or use cheat commands.${n === 1 ? '' : ' Do NOT control a teammate\'s bot.'}`;
+const teamRulesLine = (
+  n: number,
+) => `RULES: progress through legitimate in-game actions only. Do NOT modify server
+files, save files, or use cheat commands.${
+  n === 1 ? "" : " Do NOT control a teammate's bot."
+}`;
 
 // "the other two gather and haul" at n=3; generalized for other sizes.
-const theOthers = (n: number) => (n === 3 ? 'the other two' : 'the others');
+const theOthers = (n: number) => (n === 3 ? "the other two" : "the others");
 
-const SMITH_TEAM_INSTRUCTION = (durationMinutes: number, bots: string[]) => `SMITH THE HIGHEST-VALUE ITEM — ${teamTitle(bots.length)}. This is a local RuneScape private server (4x speed) for AI benchmarking — not a live game.
+const SMITH_TEAM_INSTRUCTION = (
+  durationMinutes: number,
+  bots: string[],
+) => `SMITH THE HIGHEST-VALUE ITEM — ${teamTitle(
+  bots.length,
+)}. This is a local RuneScape private server (4x speed) for AI benchmarking — not a live game.
 
 ${teamIntroBlock(bots)}
 
@@ -451,10 +571,18 @@ SCORING:
   adamant platebody 12,800gp (88) · rune platebody 65,000gp (99). Higher
   metal tiers are worth far more — push as high up the ladder as time allows.
 - Smithing XP is per-player and whoever smiths your best item must personally
-  have the Smithing LEVEL for it${bots.length === 1 ? '.' : `, so it usually pays to funnel ALL bars onto
-  ONE designated smith while ${theOthers(bots.length)} gather and haul.`}
+  have the Smithing LEVEL for it${
+    bots.length === 1
+      ? "."
+      : `, so it usually pays to funnel ALL bars onto
+  ONE designated smith while ${theOthers(bots.length)} gather and haul.`
+  }
 
-STARTING STATE: ${bots.length === 1 ? 'you start' : `all ${NUM_WORD[bots.length]} bots are identical — you each start`} in Falador with a
+STARTING STATE: ${
+  bots.length === 1
+    ? "you start"
+    : `all ${NUM_WORD[bots.length]} bots are identical — you each start`
+} in Falador with a
 bronze pickaxe, a bronze axe, and level-30 Attack/Strength/Defence/Hitpoints.
 Nothing else: no coins, no ore, no bars, and NO HAMMER. You must gather and earn
 everything.
@@ -468,9 +596,11 @@ everything.
   iron, coal, mithril and adamantite; your 30 melee helps you survive its
   scorpions and fight weak monsters for starter coins.
 
-${teamGameFactsBlock(bots.length, 'items (ores, bars)')}
+${teamGameFactsBlock(bots.length, "items (ores, bars)")}
 
-${teamCoordBlock(bots.length)}You control your bot via the \`rs-agent\` MCP server: use the \`execute_code\`
+${teamCoordBlock(
+  bots.length,
+)}You control your bot via the \`rs-agent\` MCP server: use the \`execute_code\`
 tool with YOUR bot_name. Two globals are available in the code context:
 - \`bot\` (BotActions) — high-level actions: \`await bot.interactLoc("rock", "Mine")\`, \`await bot.useItemOnLoc(item, loc)\`, \`await bot.walkTo(x, z)\`, etc.
 - \`sdk\` (BotSDK) — low-level state & actions: \`sdk.getState()\`, \`sdk.getInventory()\`, \`sdk.findNearbyLoc(/anvil/i)\`, etc.
@@ -497,61 +627,77 @@ ${teamRulesLine(bots.length)}`;
 // (defined as a function — VERIFIER_CLEANUP is declared further down)
 const SMITH_TEAM_CAP_MINUTES_LIST = [30, 45, 60];
 
-const smithTeamVariants = (): VariantTask[] => SMITH_TEAM_CAP_MINUTES_LIST.flatMap((cap) =>
-  TEAM_SIZES.map((n) => {
-    const bots = teamBots(n);
-    return {
-    slug: teamSlug('smith-team', cap, n),
-    taskDescription: SMITH_TEAM_INSTRUCTION(cap, bots),
-    agentTimeout: cap * 60 + 120,
-    verifier: 'check_smith_team.ts',
-    testSh: `#!/bin/bash
+const smithTeamVariants = (): VariantTask[] =>
+  SMITH_TEAM_CAP_MINUTES_LIST.flatMap((cap) =>
+    TEAM_SIZES.map((n) => {
+      const bots = teamBots(n);
+      const looks = randomTeamAppearances(n);
+      return {
+        slug: teamSlug("smith-team", cap, n),
+        taskDescription: SMITH_TEAM_INSTRUCTION(cap, bots),
+        agentTimeout: cap * 60 + 120,
+        verifier: "check_smith_team.ts",
+        testSh: `#!/bin/bash
 set -e
 mkdir -p /logs/verifier
 ${VERIFIER_CLEANUP}
-export BOT_NAMES="${bots.join(' ')}"
-export STARTING_ITEM_IDS="${TEAM_START_INVENTORY.map((i) => i.id).join(' ')}"
+export BOT_NAMES="${bots.join(" ")}"
+export STARTING_ITEM_IDS="${TEAM_START_INVENTORY.map((i) => i.id).join(" ")}"
 cd /app && bun run /tests/check_smith_team.ts
 `,
-    tags: ['game', 'runescape', 'automation', 'mcp', 'benchmark', 'team', 'smith-team'],
-    environmentDockerfile: `FROM ${DOCKER_IMAGE}
+        tags: [
+          "game",
+          "runescape",
+          "automation",
+          "mcp",
+          "benchmark",
+          "team",
+          "smith-team",
+        ],
+        environmentDockerfile: `FROM ${DOCKER_IMAGE}
 # Collaborative tasks run at 100ms ticks (4x speed) — half the 50ms/8x used
 # by the skill/gold benchmarks. (Engine default is 400ms.)
 ENV NODE_TICKRATE=100
 ENV SAMPLE_INTERVAL_MS=5000
 ENV GATEWAY_URL=ws://localhost:7780
 ENV BENCHMARK_DURATION_SECS=${cap * 60}
-ENV BOT_NAMES="${bots.join(' ')}"
-${bots.map(b => `COPY ${b}.sav /app/server/engine/data/players/main/${b}.sav`).join('\n')}
+ENV BOT_NAMES="${bots.join(" ")}"
+${bots
+  .map((b) => `COPY ${b}.sav /app/server/engine/data/players/main/${b}.sav`)
+  .join("\n")}
 COPY smith_team_watcher.ts /app/benchmark/shared/smith_team_watcher.ts
 COPY smithing-table.json /app/benchmark/shared/smithing-table.json
 COPY entrypoint-team.sh /entrypoint-team.sh
 RUN chmod +x /entrypoint-team.sh
 ENTRYPOINT ["/entrypoint-team.sh"]
 `,
-    environmentFiles: [
-      { src: 'smith_team_watcher.ts', dst: 'smith_team_watcher.ts' },
-      { src: 'smithing-table.json', dst: 'smithing-table.json' },
-      { src: 'entrypoint-team.sh', dst: 'entrypoint-team.sh' },
-    ],
-    testsFiles: [
-      { src: 'smithing-table.json', dst: 'smithing-table.json' },
-    ],
-    // Spawn the bots a few tiles apart so they don't stack on one tile
-    saveConfigs: bots.map((bot, i) => ({
-      config: {
-        position: { x: Locations.FALADOR_CENTER.x + i * 2, z: Locations.FALADOR_CENTER.z },
-        skills: TEAM_START_SKILLS,
-        inventory: TEAM_START_INVENTORY,
-        varps: DORICS_QUEST_COMPLETE,
-      },
-      dst: `${bot}.sav`,
-    })),
-    // Each chromium client + opencode session needs headroom
-    ...teamResources(n),
-    };
-  }),
-);
+        environmentFiles: [
+          { src: "smith_team_watcher.ts", dst: "smith_team_watcher.ts" },
+          { src: "smithing-table.json", dst: "smithing-table.json" },
+          { src: "entrypoint-team.sh", dst: "entrypoint-team.sh" },
+        ],
+        testsFiles: [
+          { src: "smithing-table.json", dst: "smithing-table.json" },
+        ],
+        // Spawn the bots a few tiles apart so they don't stack on one tile
+        saveConfigs: bots.map((bot, i) => ({
+          config: {
+            position: {
+              x: Locations.FALADOR_CENTER.x + i * 2,
+              z: Locations.FALADOR_CENTER.z,
+            },
+            appearance: looks[i],
+            skills: TEAM_START_SKILLS,
+            inventory: TEAM_START_INVENTORY,
+            varps: DORICS_QUEST_COMPLETE,
+          },
+          dst: `${bot}.sav`,
+        })),
+        // Each chromium client + opencode session needs headroom
+        ...teamResources(n),
+      };
+    }),
+  );
 
 // Stop ffmpeg and kill orphaned agent scripts before verifier runs.
 // This ensures the bot stops training before the verifier takes its final measurement,
@@ -562,7 +708,7 @@ pkill -f ffmpeg 2>/dev/null || true
 for pid in $(pgrep -f "bun" 2>/dev/null); do
   cmdline=$(cat /proc/$pid/cmdline 2>/dev/null | tr '\\0' ' ')
   case "$cmdline" in
-    *engine*|*gateway*|*skill_tracker*|*arrav_watcher*|*smith_team_watcher*|*magic_team_watcher*|*crafting_team_watcher*|*market_watcher*|*mcp/server*|*launch-bot*|*check_*|*ensure-services*) ;;
+    bun-svc*|*engine*|*gateway*|*skill_tracker*|*arrav_watcher*|*smith_team_watcher*|*magic_team_watcher*|*crafting_team_watcher*|*market_watcher*|*mcp/server*|*launch-bot*|*check_*|*ensure-services*) ;;
     *) kill $pid 2>/dev/null || true ;;
   esac
 done
@@ -584,7 +730,12 @@ sleep 2`;
 
 const MAGIC_TEAM_CAP_MINUTES_LIST = [30, 45, 60];
 
-const MAGIC_TEAM_INSTRUCTION = (durationMinutes: number, bots: string[]) => `TRAIN THE HIGHEST MAGIC LEVEL — ${teamTitle(bots.length)}. This is a local RuneScape private server (4x speed) for AI benchmarking — not a live game.
+const MAGIC_TEAM_INSTRUCTION = (
+  durationMinutes: number,
+  bots: string[],
+) => `TRAIN THE HIGHEST MAGIC LEVEL — ${teamTitle(
+  bots.length,
+)}. This is a local RuneScape private server (4x speed) for AI benchmarking — not a live game.
 
 ${teamIntroBlock(bots)}
 
@@ -596,13 +747,25 @@ at Magic 40.
 SCORING:
 - Score = the best single account's final Magic level. Only Magic levels gained
   by legitimately casting spells count — runs are audited.
-- Magic XP comes from casting spells, and every cast consumes runes.${bots.length === 1 ? '' : ` Because
+- Magic XP comes from casting spells, and every cast consumes runes.${
+  bots.length === 1
+    ? ""
+    : ` Because
   only ONE account's level counts, it usually pays to funnel ALL of the team's
-  runes onto ONE designated caster so that account can cast ~${bots.length}x as long and
-  climb far higher than any of you could training alone. ${cap1(theOthers(bots.length))} supply
-  runes and keep the caster casting.`}
+  runes onto ONE designated caster so that account can cast ~${
+    bots.length
+  }x as long and
+  climb far higher than any of you could training alone. ${cap1(
+    theOthers(bots.length),
+  )} supply
+  runes and keep the caster casting.`
+}
 
-STARTING STATE: ${bots.length === 1 ? 'you start' : `all ${NUM_WORD[bots.length]} bots are identical — you each start`} next to Lumbridge
+STARTING STATE: ${
+  bots.length === 1
+    ? "you start"
+    : `all ${NUM_WORD[bots.length]} bots are identical — you each start`
+} next to Lumbridge
 Castle with a bronze pickaxe, a bronze axe, and level-30 Attack/Strength/Defence/
 Hitpoints. Nothing else: NO runes and NO coins. Weak monsters (cows, chickens,
 goblins) roam right around the spawn.
@@ -615,9 +778,11 @@ HOW TO TRAIN MAGIC (from scratch — you have NO runes, and casting needs runes)
   level 1 (1 air + 1 mind rune); move up to Water/Earth/Fire Strike as you level.
 - Runes are the bottleneck — build a rune supply line so your caster never idles.
 
-${teamGameFactsBlock(bots.length, 'runes (or coins)')}
+${teamGameFactsBlock(bots.length, "runes (or coins)")}
 
-${teamCoordBlock(bots.length)}You control your bot via the \`rs-agent\` MCP server: use the \`execute_code\`
+${teamCoordBlock(
+  bots.length,
+)}You control your bot via the \`rs-agent\` MCP server: use the \`execute_code\`
 tool with YOUR bot_name. Two globals are available in the code context:
 - \`bot\` (BotActions) — high-level actions: \`await bot.attack("chicken")\`, \`await bot.walkTo(x, z)\`, \`await bot.pickupItem(...)\`, etc.
 - \`sdk\` (BotSDK) — low-level state & actions: \`sdk.getState()\`, \`sdk.getInventory()\`, \`sdk.getSkills()\`, \`sdk.findNearbyNpc(/chicken/i)\`, etc.
@@ -637,23 +802,33 @@ worked before scaling it up.
 
 ${teamRulesLine(bots.length)}`;
 
-const magicTeamVariants = (): VariantTask[] => MAGIC_TEAM_CAP_MINUTES_LIST.flatMap((cap) =>
-  TEAM_SIZES.map((n) => {
-    const bots = teamBots(n);
-    return {
-    slug: teamSlug('magic-team', cap, n),
-    taskDescription: MAGIC_TEAM_INSTRUCTION(cap, bots),
-    agentTimeout: cap * 60 + 120,
-    verifier: 'check_magic_team.ts',
-    testSh: `#!/bin/bash
+const magicTeamVariants = (): VariantTask[] =>
+  MAGIC_TEAM_CAP_MINUTES_LIST.flatMap((cap) =>
+    TEAM_SIZES.map((n) => {
+      const bots = teamBots(n);
+      const looks = randomTeamAppearances(n);
+      return {
+        slug: teamSlug("magic-team", cap, n),
+        taskDescription: MAGIC_TEAM_INSTRUCTION(cap, bots),
+        agentTimeout: cap * 60 + 120,
+        verifier: "check_magic_team.ts",
+        testSh: `#!/bin/bash
 set -e
 mkdir -p /logs/verifier
 ${VERIFIER_CLEANUP}
-export BOT_NAMES="${bots.join(' ')}"
+export BOT_NAMES="${bots.join(" ")}"
 cd /app && bun run /tests/check_magic_team.ts
 `,
-    tags: ['game', 'runescape', 'automation', 'mcp', 'benchmark', 'team', 'magic-team'],
-    environmentDockerfile: `FROM ${DOCKER_IMAGE}
+        tags: [
+          "game",
+          "runescape",
+          "automation",
+          "mcp",
+          "benchmark",
+          "team",
+          "magic-team",
+        ],
+        environmentDockerfile: `FROM ${DOCKER_IMAGE}
 # Collaborative tasks run at 100ms ticks (4x speed) — half the 50ms/8x used
 # by the skill/gold benchmarks. (Engine default is 400ms.)
 ENV NODE_TICKRATE=100
@@ -665,35 +840,41 @@ ENV NODE_XPRATE=1
 ENV SAMPLE_INTERVAL_MS=5000
 ENV GATEWAY_URL=ws://localhost:7780
 ENV BENCHMARK_DURATION_SECS=${cap * 60}
-ENV BOT_NAMES="${bots.join(' ')}"
+ENV BOT_NAMES="${bots.join(" ")}"
 ENV WATCHER_SCRIPT=benchmark/shared/magic_team_watcher.ts
 ENV WATCHER_LOCK=/tmp/magic_team_watcher.lock
 ENV TRACKING_FILE=/logs/tracking/magic_team_tracking.json
-${bots.map(b => `COPY ${b}.sav /app/server/engine/data/players/main/${b}.sav`).join('\n')}
+${bots
+  .map((b) => `COPY ${b}.sav /app/server/engine/data/players/main/${b}.sav`)
+  .join("\n")}
 COPY magic_team_watcher.ts /app/benchmark/shared/magic_team_watcher.ts
 COPY entrypoint-team.sh /entrypoint-team.sh
 RUN chmod +x /entrypoint-team.sh
 ENTRYPOINT ["/entrypoint-team.sh"]
 `,
-    environmentFiles: [
-      { src: 'magic_team_watcher.ts', dst: 'magic_team_watcher.ts' },
-      { src: 'entrypoint-team.sh', dst: 'entrypoint-team.sh' },
-    ],
-    // Spawn the bots a few tiles apart so they don't stack on one tile, each
-    // with the identical bare-bones team kit (pickaxe + axe, no runes/coins).
-    saveConfigs: bots.map((bot, i) => ({
-      config: {
-        position: { x: Locations.LUMBRIDGE_CASTLE.x + i * 2, z: Locations.LUMBRIDGE_CASTLE.z },
-        skills: TEAM_START_SKILLS,
-        inventory: TEAM_START_INVENTORY,
-      },
-      dst: `${bot}.sav`,
-    })),
-    // Each chromium client + opencode session needs headroom
-    ...teamResources(n),
-    };
-  }),
-);
+        environmentFiles: [
+          { src: "magic_team_watcher.ts", dst: "magic_team_watcher.ts" },
+          { src: "entrypoint-team.sh", dst: "entrypoint-team.sh" },
+        ],
+        // Spawn the bots a few tiles apart so they don't stack on one tile, each
+        // with the identical bare-bones team kit (pickaxe + axe, no runes/coins).
+        saveConfigs: bots.map((bot, i) => ({
+          config: {
+            position: {
+              x: Locations.LUMBRIDGE_CASTLE.x + i * 2,
+              z: Locations.LUMBRIDGE_CASTLE.z,
+            },
+            appearance: looks[i],
+            skills: TEAM_START_SKILLS,
+            inventory: TEAM_START_INVENTORY,
+          },
+          dst: `${bot}.sav`,
+        })),
+        // Each chromium client + opencode session needs headroom
+        ...teamResources(n),
+      };
+    }),
+  );
 
 // ── Crafting-team task ──────────────────────────────────────────
 //
@@ -704,7 +885,12 @@ ENTRYPOINT ["/entrypoint-team.sh"]
 
 const CRAFTING_TEAM_CAP_MINUTES_LIST = [30, 45, 60];
 
-const CRAFTING_TEAM_INSTRUCTION = (durationMinutes: number, bots: string[]) => `TRAIN THE HIGHEST CRAFTING XP — ${teamTitle(bots.length)}. This is a local RuneScape private server (4x speed) for AI benchmarking — not a live game.
+const CRAFTING_TEAM_INSTRUCTION = (
+  durationMinutes: number,
+  bots: string[],
+) => `TRAIN THE HIGHEST CRAFTING XP — ${teamTitle(
+  bots.length,
+)}. This is a local RuneScape private server (4x speed) for AI benchmarking — not a live game.
 
 ${teamIntroBlock(bots)}
 
@@ -714,13 +900,23 @@ not a sum. One account at 500k XP beats three accounts at 200k each.
 
 SCORING:
 - Score = the best single account's Crafting XP. Only XP gained by legitimately
-  crafting during this run counts — runs are audited.${bots.length === 1 ? '' : `
+  crafting during this run counts — runs are audited.${
+    bots.length === 1
+      ? ""
+      : `
 - Because only ONE account's XP counts, it usually pays to funnel ALL of the
   team's materials onto ONE designated crafter so that account can craft far
-  more than any of you could alone. ${cap1(theOthers(bots.length))} gather/buy and hand over
-  materials to keep the crafter's inventory full and never idle.`}
+  more than any of you could alone. ${cap1(
+    theOthers(bots.length),
+  )} gather/buy and hand over
+  materials to keep the crafter's inventory full and never idle.`
+  }
 
-STARTING STATE: ${bots.length === 1 ? 'you start' : `all ${NUM_WORD[bots.length]} bots are identical — you each start`} next to Lumbridge
+STARTING STATE: ${
+  bots.length === 1
+    ? "you start"
+    : `all ${NUM_WORD[bots.length]} bots are identical — you each start`
+} next to Lumbridge
 Castle with a bronze pickaxe, a bronze axe, and level-30 Attack/Strength/Defence/
 Hitpoints. Nothing else: NO crafting materials, NO tools (no needle/chisel), and
 NO coins.
@@ -737,9 +933,11 @@ HOW TO TRAIN CRAFTING (from scratch — you have no materials or crafting tools)
 - Gather -> process -> craft, and keep your crafter's inventory full so it never
   idles.
 
-${teamGameFactsBlock(bots.length, 'materials')}
+${teamGameFactsBlock(bots.length, "materials")}
 
-${teamCoordBlock(bots.length)}You control your bot via the \`rs-agent\` MCP server: use the \`execute_code\`
+${teamCoordBlock(
+  bots.length,
+)}You control your bot via the \`rs-agent\` MCP server: use the \`execute_code\`
 tool with YOUR bot_name. Two globals are available in the code context:
 - \`bot\` (BotActions) — high-level actions: \`await bot.useItemOnNpc(item, npc)\`, \`await bot.walkTo(x, z)\`, etc.
 - \`sdk\` (BotSDK) — low-level state & actions: \`sdk.getState()\`, \`sdk.getInventory()\`, \`sdk.sendUseItemOnItem(srcSlot, dstSlot)\`, etc.
@@ -762,23 +960,33 @@ execute_code calls SMALL and iterative; verify each step worked before scaling.
 
 ${teamRulesLine(bots.length)}`;
 
-const craftingTeamVariants = (): VariantTask[] => CRAFTING_TEAM_CAP_MINUTES_LIST.flatMap((cap) =>
-  TEAM_SIZES.map((n) => {
-    const bots = teamBots(n);
-    return {
-    slug: teamSlug('crafting-team', cap, n),
-    taskDescription: CRAFTING_TEAM_INSTRUCTION(cap, bots),
-    agentTimeout: cap * 60 + 120,
-    verifier: 'check_crafting_team.ts',
-    testSh: `#!/bin/bash
+const craftingTeamVariants = (): VariantTask[] =>
+  CRAFTING_TEAM_CAP_MINUTES_LIST.flatMap((cap) =>
+    TEAM_SIZES.map((n) => {
+      const bots = teamBots(n);
+      const looks = randomTeamAppearances(n);
+      return {
+        slug: teamSlug("crafting-team", cap, n),
+        taskDescription: CRAFTING_TEAM_INSTRUCTION(cap, bots),
+        agentTimeout: cap * 60 + 120,
+        verifier: "check_crafting_team.ts",
+        testSh: `#!/bin/bash
 set -e
 mkdir -p /logs/verifier
 ${VERIFIER_CLEANUP}
-export BOT_NAMES="${bots.join(' ')}"
+export BOT_NAMES="${bots.join(" ")}"
 cd /app && bun run /tests/check_crafting_team.ts
 `,
-    tags: ['game', 'runescape', 'automation', 'mcp', 'benchmark', 'team', 'crafting-team'],
-    environmentDockerfile: `FROM ${DOCKER_IMAGE}
+        tags: [
+          "game",
+          "runescape",
+          "automation",
+          "mcp",
+          "benchmark",
+          "team",
+          "crafting-team",
+        ],
+        environmentDockerfile: `FROM ${DOCKER_IMAGE}
 # Collaborative tasks run at 100ms ticks (4x speed).
 ENV NODE_TICKRATE=100
 # Real-game XP rate (engine default is 25x accelerated) — the score is a raw XP
@@ -787,39 +995,45 @@ ENV NODE_XPRATE=1
 ENV SAMPLE_INTERVAL_MS=5000
 ENV GATEWAY_URL=ws://localhost:7780
 ENV BENCHMARK_DURATION_SECS=${cap * 60}
-ENV BOT_NAMES="${bots.join(' ')}"
+ENV BOT_NAMES="${bots.join(" ")}"
 ENV WATCHER_SCRIPT=benchmark/shared/crafting_team_watcher.ts
 ENV WATCHER_LOCK=/tmp/crafting_team_watcher.lock
 ENV TRACKING_FILE=/logs/tracking/crafting_team_tracking.json
-${bots.map(b => `COPY ${b}.sav /app/server/engine/data/players/main/${b}.sav`).join('\n')}
+${bots
+  .map((b) => `COPY ${b}.sav /app/server/engine/data/players/main/${b}.sav`)
+  .join("\n")}
 COPY crafting_team_watcher.ts /app/benchmark/shared/crafting_team_watcher.ts
 COPY entrypoint-team.sh /entrypoint-team.sh
 RUN chmod +x /entrypoint-team.sh
 ENTRYPOINT ["/entrypoint-team.sh"]
 `,
-    environmentFiles: [
-      { src: 'crafting_team_watcher.ts', dst: 'crafting_team_watcher.ts' },
-      { src: 'entrypoint-team.sh', dst: 'entrypoint-team.sh' },
-    ],
-    // Spawn a few tiles apart, each with an identical crafting kit.
-    saveConfigs: bots.map((bot, i) => ({
-      config: {
-        position: { x: Locations.LUMBRIDGE_CASTLE.x + i * 2, z: Locations.LUMBRIDGE_CASTLE.z },
-        skills: TEAM_START_SKILLS,
-        inventory: TEAM_START_INVENTORY,
-      },
-      dst: `${bot}.sav`,
-    })),
-    // Each chromium client + opencode session needs headroom
-    ...teamResources(n),
-    };
-  }),
-);
+        environmentFiles: [
+          { src: "crafting_team_watcher.ts", dst: "crafting_team_watcher.ts" },
+          { src: "entrypoint-team.sh", dst: "entrypoint-team.sh" },
+        ],
+        // Spawn a few tiles apart, each with an identical crafting kit.
+        saveConfigs: bots.map((bot, i) => ({
+          config: {
+            position: {
+              x: Locations.LUMBRIDGE_CASTLE.x + i * 2,
+              z: Locations.LUMBRIDGE_CASTLE.z,
+            },
+            appearance: looks[i],
+            skills: TEAM_START_SKILLS,
+            inventory: TEAM_START_INVENTORY,
+          },
+          dst: `${bot}.sav`,
+        })),
+        // Each chromium client + opencode session needs headroom
+        ...teamResources(n),
+      };
+    }),
+  );
 
 // ── Market task ─────────────────────────────────────────────────
 //
 // Six bots, one model, INDIVIDUAL scores: a three-tier production economy
-// (3 miners → 2 smiths → 1 alchemist) where every player maximizes its OWN
+// (2 miners → 2 smiths → 2 alchemists) where every player maximizes its OWN
 // gold (coins in inventory + bank at the END of the run — final, not peak).
 // The roles hold complementary starting kits, so gold only really flows if
 // the players trade (player-to-player trade API; coins are tradable too) —
@@ -830,45 +1044,32 @@ ENTRYPOINT ["/entrypoint-team.sh"]
 // floor guard per bot); harbor reward = TOTAL final gold across all bots,
 // with per-bot / per-role breakdowns and the richest bot in reward.json.
 
-const MARKET_CAP_MINUTES_LIST = [20];
+const MARKET_CAP_MINUTES_LIST = [20, 60];
 
 // Market bots get short single-letter names (the engine's base37 usernames
 // allow 1–12 chars) — friendlier to read in chat and trade logs than
 // agenta..agentf. run-market.sh passes them to the adapter via
 // `--ak bot_names=a,b,c,d,e,f`.
-const MARKET_BOT_POOL = ['a', 'b', 'c', 'd', 'e', 'f'];
+const MARKET_BOT_POOL = "abcdefghijklmnopqrstuvwxyz".split("");
 
-// The "3→2→1" market pyramid. Bots are assigned from MARKET_BOT_POOL in order
-// (a-c miners, d-e smiths, f alchemist).
-const MARKET_ROLE_LAYOUT: Array<{ role: 'miner' | 'smith' | 'alchemist'; count: number }> = [
-  { role: 'miner', count: 3 },
-  { role: 'smith', count: 2 },
-  { role: 'alchemist', count: 1 },
-];
-
-// Distinct per-bot look so players can tell each other apart beyond the role
-// uniform. body = [hair, jaw, torso, arms, hands, legs, feet] kit ids
-// (female kits live in the 45+ range; jaw -1 = none); colors = [hair, torso,
-// legs, feet, skin] palette indices (Player.DESIGN_BODY_COLORS: hair 0-11,
-// torso 0-15, legs 0-15 (torso hue shifted +1), feet 0-5, skin 0-7).
-const MARKET_APPEARANCE: Record<string, NonNullable<SaveConfig['appearance']>> = {
-  // miners
-  a: { gender: 0, body: [8, 13, 22, 26, 33, 37, 42], colors: [4, 11, 12, 0, 1] },   // ginger spiked hair + moustache, orange shirt
-  b: { gender: 1, body: [50, -1, 57, 62, 67, 71, 79], colors: [3, 8, 9, 3, 4] },    // black pigtails, green top, dark skin
-  c: { gender: 0, body: [2, 10, 19, 28, 33, 38, 42], colors: [5, 10, 11, 2, 2] },   // blond long hair + goatee, mauve shirt
-  // smiths (brown apron worn on top)
-  d: { gender: 0, body: [1, 15, 20, 27, 33, 36, 42], colors: [3, 1, 2, 3, 3] },     // black dreadlocks, musclebound, black clothes
-  e: { gender: 1, body: [46, -1, 58, 63, 67, 70, 79], colors: [1, 2, 3, 0, 6] },    // white bun, crimson top, darkest skin
-  // alchemist (blue wizard garb worn on top)
-  f: { gender: 0, body: [0, 11, 18, 26, 33, 36, 42], colors: [1, 7, 8, 3, 7] },     // bald with long white beard, pale, blue under-clothes
-};
+// Market layouts are "k of every role" (k = MARKET_PER_ROLE_LIST), so each
+// stage of the pipeline has competition AND fallback partners. Bots are dealt
+// from MARKET_BOT_POOL role by role (k=2: a-b miners, c-d smiths, e-f
+// alchemists; k=4: a-d / e-h / i-l; k=6: a-f / g-l / m-r; k=8: a-h / i-p /
+// q-x). The default k=2
+// slug is `market-<cap>m`; other sizes get a `-n<total>` suffix
+// (market-60m-n18), matching the team tasks' size-suffix convention.
+const MARKET_PER_ROLE_LIST = [2, 4, 6, 8];
+const MARKET_ROLES = ["miner", "smith", "alchemist"] as const;
+const marketRoleLayout = (perRole: number) =>
+  MARKET_ROLES.map((role) => ({ role, count: perRole }));
 
 // Each role spawns in a distinct "uniform" so players can identify each
 // other's jobs on sight: miners wield their pickaxe (the mining script
 // accepts a worn pick), smiths wear a brown apron, and the alchemist wears
 // the blue wizard hat/robe/skirt with the staff already wielded (it must be
 // wielded to supply fire runes anyway).
-const MARKET_SAVE_FOR_ROLE: Record<string, Omit<SaveConfig, 'position'>> = {
+const MARKET_SAVE_FOR_ROLE: Record<string, Omit<SaveConfig, "position">> = {
   miner: {
     skills: { Mining: 70 },
     equipment: [{ id: Items.BRONZE_PICKAXE, count: 1, slot: WearSlots.WEAPON }],
@@ -894,46 +1095,69 @@ const MARKET_SAVE_FOR_ROLE: Record<string, Omit<SaveConfig, 'position'>> = {
   },
 };
 
-const marketBotRoles = (): Array<{ bot: string; role: string }> => {
+const marketBotRoles = (
+  perRole: number,
+): Array<{ bot: string; role: string }> => {
   const out: Array<{ bot: string; role: string }> = [];
   let i = 0;
-  for (const { role, count } of MARKET_ROLE_LAYOUT) {
-    for (let k = 0; k < count; k++) out.push({ bot: MARKET_BOT_POOL[i++], role });
+  for (const { role, count } of marketRoleLayout(perRole)) {
+    for (let k = 0; k < count; k++) {
+      const bot = MARKET_BOT_POOL[i++];
+      if (!bot)
+        throw new Error(
+          `MARKET_BOT_POOL too small for ${perRole} bots per role`,
+        );
+      out.push({ bot, role });
+    }
   }
   return out;
 };
 
-const MARKET_INSTRUCTION = (durationMinutes: number, botRoles: Array<{ bot: string; role: string }>) => {
-  const byRole = (role: string) => botRoles.filter((r) => r.role === role).map((r) => `"${r.bot}"`).join(', ');
+const MARKET_INSTRUCTION = (
+  durationMinutes: number,
+  botRoles: Array<{ bot: string; role: string }>,
+) => {
+  const byRole = (role: string) =>
+    botRoles
+      .filter((r) => r.role === role)
+      .map((r) => `"${r.bot}"`)
+      .join(", ");
   const n = botRoles.length;
-  return `END WITH THE MOST GOLD — ${NUM_WORD[n]}-player market challenge. This is a local RuneScape private server (4x speed) for AI benchmarking — not a live game.
+  const perRole = botRoles.filter((r) => r.role === "miner").length;
+  return `END WITH THE MOST GOLD — ${
+    NUM_WORD[n]
+  }-player market challenge. This is a local RuneScape private server (4x speed) for AI benchmarking — not a live game.
 
-THIS IS A ${NUM_WORD[n].toUpperCase()}-PLAYER MARKET TASK. ${cap1(NUM_WORD[n])} agent sessions are running in
-this container at the same time — you are one of them. Each session controls
-its own bot; your role addendum at the end of this message tells you which bot
-is yours. NEVER send commands to another player's bot.
+THIS IS A ${NUM_WORD[n].toUpperCase()}-PLAYER MARKET TASK. ${cap1(
+    NUM_WORD[n],
+  )} player sessions are running
+concurrently — you are one of them. Each session controls its own player; your
+role addendum at the end of this message tells you which player is yours.
 
-EVERY PLAYER SCORES INDIVIDUALLY. Your score is the number of COINS you
-personally hold (inventory + bank combined) when the run ENDS — your FINAL
-holdings, not a peak. Unsold items are worth NOTHING at the buzzer; only coins
-count. The other players are both your trading partners and your competitors.
+EVERY PLAYER SCORES INDIVIDUALLY. Your performance will be evaluated at the
+end of the run based on your ability to generate profits and manage your
+trading operation effectively. Your primary goal is to maximize profits and
+your coin balance over the course of the run. You will be judged SOLELY on
+the number of COINS you personally hold (inventory + bank combined) when the
+run ENDS — your FINAL balance, not a peak. Unrealized potential profits do
+not count towards your balance: ore, bars, forged items, and anything else
+unsold are worth NOTHING at the buzzer; only coins count. The other players
+are both your trading partners and your competitors.
 
-THE MARKET — the ${NUM_WORD[n]} bots have complementary roles and starting kits
+THE MARKET — the ${
+    NUM_WORD[n]
+  } players have complementary roles and starting kits
 (public information; every player receives this same brief):
-- MINERS (${byRole('miner')}): Mining 70, a bronze pickaxe (already wielded),
+- MINERS (${byRole("miner")}): Mining 70, a bronze pickaxe (already wielded),
   0 coins.
-- SMITHS (${byRole('smith')}): Smithing 70, 200 coins, a brown apron (worn —
+- SMITHS (${byRole("smith")}): Smithing 70, 200 coins, a brown apron (worn —
   the smith's uniform), and Doric's Quest already done (free use of Doric's
   anvil). No hammer — general stores sell one for a few coins.
-- ALCHEMIST (${byRole('alchemist')}): Magic 60, a Staff of fire (already
+- ALCHEMISTS (${byRole("alchemist")}): Magic 60, a Staff of fire (already
   wielded), a blue wizard hat + robe (worn), 500 nature runes, 200 coins.
   High Alchemy (Magic 55) converts an item into coins worth 60% of its store
   value; the wielded staff supplies the fire runes, so each cast burns only
-  1 nature rune — 500 casts total. (Low Alchemy pays 40%.)
-
-Each role's worn outfit is its uniform — you can recognize a player's job on
-sight (wielded pickaxe = miner, brown apron = smith, blue wizard garb =
-alchemist).
+  1 nature rune — 500 casts per alchemist. (Low Alchemy pays 40%.)
 
 Everyone starts in Falador town center. Nearby:
 - Ore: the Dwarven Mine under Ice Mountain (north of Falador) has copper, tin,
@@ -946,16 +1170,15 @@ Everyone starts in Falador town center. Nearby:
   Dwarven Mine at (3012, 9811). Forging at an anvil needs a hammer.
 - Banks: Falador has east and west banks. Banked coins count toward your score.
 
-XP RATE IS 1x — the benchmark's usual 25x XP boost is OFF. You will gain
-almost no levels in ${durationMinutes} minutes, so do NOT plan on training into another
+You will gain almost no levels in ${durationMinutes} minutes, so do NOT plan on training into another
 role; make money with the levels you were given.
 
 HOW MONEY MOVES:
 - Shops pay coins for items, but at low prices that fall as their stock rises.
 - High Alchemy pays 60% of store value in fresh coins — usually far better
   than shop-selling (e.g. a mithril platebody, Smithing 68, store value
-  5,200gp, alchs for 3,120 coins). But only the alchemist can cast it, and
-  each cast needs the item in the alchemist's own inventory.
+  5,200gp, alchs for 3,120 coins). But only the alchemists can cast it, and
+  each cast needs the item in that alchemist's own inventory.
 - Move anything between players — ore, bars, forged items, and COINS
   themselves — with the player-to-player trade API: stand near your partner,
   then one of you runs \`await bot.trade(partnerName, { give: [...], want: [...] })\`
@@ -965,9 +1188,15 @@ HOW MONEY MOVES:
   then encode it in the trade so neither side can be stiffed. Each player has
   their OWN bank; banks are not shared.
 - The natural pipeline: miners pull ore → smiths smelt bars and forge items
-  worth alching → the alchemist converts them into coins — with payment
-  flowing back down the chain at whatever prices you negotiate. But prices,
-  partners, quantities, and any side hustle are entirely up to you.
+  worth alching → the alchemists convert them into coins — with payment
+  flowing back down the chain at whatever prices you negotiate. With ${
+    NUM_WORD[perRole]
+  }
+  players in every role, no single partner is a bottleneck — and every role
+  has direct competitor${
+    perRole === 2 ? "" : "s"
+  }. Prices, partners, quantities, and any side hustle
+  are entirely up to you.
 
 NEGOTIATION — IN-GAME CHAT ONLY: Communicate with the other players
 exclusively through the in-game public chat, using the chat CLI. It connects
@@ -975,15 +1204,24 @@ in observe mode, so it sends and reads chat WITHOUT taking control of your
 bot — safe to use at any time, even while one of your scripts is driving the
 bot:
 
-  cd /app && bun sdk/chat.ts YOUR_BOT "your message"    # send
-  cd /app && bun sdk/chat.ts YOUR_BOT                   # read recent chat
+  cd /app && bun sdk/chat.ts YOUR_BOT "your message"              # send to public chat
+  cd /app && bun sdk/chat.ts YOUR_BOT --to OTHER_PLAYER "message"  # private message (DM) one player
+  cd /app && bun sdk/chat.ts YOUR_BOT                             # read recent chat (public + your DMs)
 
 Messages can be up to 400 characters. Public chat reaches everyone anywhere on
-the map (this server broadcasts it world-wide). Send chat through this CLI —
-do NOT call the SDK messaging methods (sendSay/say) from inside your scripts.
-Do NOT coordinate through files, the filesystem, or any channel other than
-in-game chat — this benchmark measures in-game negotiation, and runs are
-audited.
+the map (this server broadcasts it world-wide) — use it to advertise offers and
+find partners. Private messages (\`--to <player>\`) reach that one player
+anywhere in the world (no friends list needed) and show up in chat reads as
+"[PM from ...]" / "[PM to ...]" — use them for one-on-one haggling so
+competitors don't see your terms. Send chat through this CLI — do NOT call the
+SDK messaging methods (sendSay/say/dm) from inside your scripts. Do NOT
+coordinate through files, the filesystem, or any channel other than in-game
+chat — this benchmark measures in-game negotiation, and runs are audited.
+
+TIME CHECK: run \`time-left\` (on PATH) at any point to see how many minutes
+remain before the session is cut off — plan your last trades and banking
+around it; whatever is not coins in your inventory or bank when time runs
+out is worth nothing.
 
 You control your bot via the \`rs-agent\` MCP server: use the \`execute_code\`
 tool with YOUR bot_name. Two globals are available in the code context:
@@ -1009,28 +1247,30 @@ everything you can into coins before the end. Keep execute_code calls SMALL
 and iterative; verify each step worked before scaling it up.
 
 RULES: earn coins through legitimate in-game actions only. Do NOT modify
-server files, save files, or use cheat commands. Do NOT control another
-player's bot.`;
+server files, save files, or use cheat commands.`;
 };
 
-const marketVariants = (): VariantTask[] => MARKET_CAP_MINUTES_LIST.map((cap) => {
-  const botRoles = marketBotRoles();
-  const bots = botRoles.map((r) => r.bot);
-  return {
-    slug: `market-${cap}m`,
-    taskDescription: MARKET_INSTRUCTION(cap, botRoles),
-    agentTimeout: cap * 60 + 120,
-    verifier: 'check_market.ts',
-    testSh: `#!/bin/bash
+const marketVariants = (): VariantTask[] =>
+  MARKET_CAP_MINUTES_LIST.flatMap((cap) =>
+    MARKET_PER_ROLE_LIST.map((perRole) => {
+      const botRoles = marketBotRoles(perRole);
+      const bots = botRoles.map((r) => r.bot);
+      const marketLooks = randomTeamAppearances(botRoles.length);
+      return {
+        slug: `market-${cap}m${perRole === 2 ? "" : `-n${bots.length}`}`,
+        taskDescription: MARKET_INSTRUCTION(cap, botRoles),
+        agentTimeout: cap * 60 + 120,
+        verifier: "check_market.ts",
+        testSh: `#!/bin/bash
 set -e
 mkdir -p /logs/verifier
 ${VERIFIER_CLEANUP}
-export BOT_NAMES="${bots.join(' ')}"
-export MARKET_ROLES="${botRoles.map((r) => `${r.bot}:${r.role}`).join(' ')}"
+export BOT_NAMES="${bots.join(" ")}"
+export MARKET_ROLES="${botRoles.map((r) => `${r.bot}:${r.role}`).join(" ")}"
 cd /app && bun run /tests/check_market.ts
 `,
-    tags: ['game', 'runescape', 'automation', 'mcp', 'benchmark', 'market'],
-    environmentDockerfile: `FROM ${DOCKER_IMAGE}
+        tags: ["game", "runescape", "automation", "mcp", "benchmark", "market"],
+        environmentDockerfile: `FROM ${DOCKER_IMAGE}
 # Collaborative tasks run at 100ms ticks (4x speed) — half the 50ms/8x used
 # by the skill/gold benchmarks. (Engine default is 400ms.)
 ENV NODE_TICKRATE=100
@@ -1040,45 +1280,61 @@ ENV NODE_XPRATE=1
 ENV SAMPLE_INTERVAL_MS=5000
 ENV GATEWAY_URL=ws://localhost:7780
 ENV BENCHMARK_DURATION_SECS=${cap * 60}
-ENV BOT_NAMES="${bots.join(' ')}"
+ENV BOT_NAMES="${bots.join(" ")}"
 ENV WATCHER_SCRIPT=benchmark/shared/market_watcher.ts
 ENV WATCHER_LOCK=/tmp/market_watcher.lock
 ENV TRACKING_FILE=/logs/tracking/market_tracking.json
-${bots.map((b) => `COPY ${b}.sav /app/server/engine/data/players/main/${b}.sav`).join('\n')}
+${bots
+  .map((b) => `COPY ${b}.sav /app/server/engine/data/players/main/${b}.sav`)
+  .join("\n")}
 COPY market_watcher.ts /app/benchmark/shared/market_watcher.ts
 COPY save-parser.ts /app/benchmark/shared/save-parser.ts
 COPY entrypoint-team.sh /entrypoint-team.sh
 RUN chmod +x /entrypoint-team.sh
 ENTRYPOINT ["/entrypoint-team.sh"]
 `,
-    environmentFiles: [
-      { src: 'market_watcher.ts', dst: 'market_watcher.ts' },
-      { src: 'save-parser.ts', dst: 'save-parser.ts' },
-      { src: 'entrypoint-team.sh', dst: 'entrypoint-team.sh' },
-    ],
-    // Spawn the bots a few tiles apart so they don't stack on one tile, each
-    // with its role's starting kit and its own distinct appearance.
-    saveConfigs: botRoles.map(({ bot, role }, i) => ({
-      config: {
-        position: { x: Locations.FALADOR_CENTER.x + i * 2, z: Locations.FALADOR_CENTER.z },
-        appearance: MARKET_APPEARANCE[bot],
-        ...MARKET_SAVE_FOR_ROLE[role],
-      },
-      dst: `${bot}.sav`,
-    })),
-    // Each chromium client + opencode session needs headroom
-    ...teamResources(botRoles.length),
-  };
-});
+        environmentFiles: [
+          { src: "market_watcher.ts", dst: "market_watcher.ts" },
+          { src: "save-parser.ts", dst: "save-parser.ts" },
+          { src: "entrypoint-team.sh", dst: "entrypoint-team.sh" },
+        ],
+        // Spawn the bots a few tiles apart so they don't stack on one tile, each
+        // with its role's starting kit and a random distinct appearance.
+        saveConfigs: botRoles.map(({ bot, role }, i) => ({
+          config: {
+            position: {
+              x: Locations.FALADOR_CENTER.x + i * 2,
+              z: Locations.FALADOR_CENTER.z,
+            },
+            appearance: marketLooks[i],
+            ...MARKET_SAVE_FOR_ROLE[role],
+          },
+          dst: `${bot}.sav`,
+        })),
+        // Each chromium client + opencode session needs headroom
+        ...teamResources(botRoles.length),
+      };
+    }),
+  );
 
 // Thin FROM layer: adds GATEWAY_URL and sample interval on top of base image.
-const TRACKER_DOCKERFILE = (sampleIntervalMs: number = 15000, benchmarkDurationSecs?: number) => `FROM ${DOCKER_IMAGE}
+const TRACKER_DOCKERFILE = (
+  sampleIntervalMs: number = 15000,
+  benchmarkDurationSecs?: number,
+) => `FROM ${DOCKER_IMAGE}
 ENV SAMPLE_INTERVAL_MS=${sampleIntervalMs}
-ENV GATEWAY_URL=ws://localhost:7780${benchmarkDurationSecs ? `\nENV BENCHMARK_DURATION_SECS=${benchmarkDurationSecs}` : ''}
+ENV GATEWAY_URL=ws://localhost:7780${
+  benchmarkDurationSecs
+    ? `\nENV BENCHMARK_DURATION_SECS=${benchmarkDurationSecs}`
+    : ""
+}
 COPY agent.sav /app/server/engine/data/players/main/agent.sav
 `;
 
-const SKILL_XP_INSTRUCTION = (skillName: string, durationMinutes: number) => `Train ${skillName} as efficiently as possible for ${durationMinutes} minutes. This is a local RuneScape private server (8x speed) for AI benchmarking.
+const SKILL_XP_INSTRUCTION = (
+  skillName: string,
+  durationMinutes: number,
+) => `Train ${skillName} as efficiently as possible for ${durationMinutes} minutes. This is a local RuneScape private server (8x speed) for AI benchmarking.
 
 Your score is your **peak real-game XP rate** — the best XP/min over a single 15-second sampling window. Optimize for training speed and try different approaches.
 
@@ -1118,13 +1374,16 @@ Do NOT use the \`timeout\` command — it sends SIGTERM which kills the game con
 
 RULES: Gain XP through legitimate in-game actions only. Do NOT modify server files, save files, or use cheat commands.`;
 
-function generateSkillXpVariants(horizonMinutes: number, sampleIntervalMs: number): VariantTask[] {
+function generateSkillXpVariants(
+  horizonMinutes: number,
+  sampleIntervalMs: number,
+): VariantTask[] {
   const horizonLabel = `${horizonMinutes}m`;
-  return SKILLS.map(skill => ({
+  return SKILLS.map((skill) => ({
     slug: `${skill.slug}-xp-${horizonLabel}`,
     taskDescription: SKILL_XP_INSTRUCTION(skill.name, horizonMinutes),
     agentTimeout: horizonMinutes * 60 + 120, // duration + 2 min buffer
-    verifier: 'check_skill_xp.ts',
+    verifier: "check_skill_xp.ts",
     testSh: `#!/bin/bash
 set -e
 mkdir -p /logs/verifier
@@ -1133,10 +1392,20 @@ ${VERIFIER_CLEANUP}
 export SKILL_NAME="${skill.name}"
 cd /app && bun run /tests/check_skill_xp.ts
 `,
-    tags: ['game', 'runescape', 'automation', 'mcp', 'benchmark', `skill-xp-${horizonLabel}`],
+    tags: [
+      "game",
+      "runescape",
+      "automation",
+      "mcp",
+      "benchmark",
+      `skill-xp-${horizonLabel}`,
+    ],
     useTracker: true,
-    environmentDockerfile: TRACKER_DOCKERFILE(sampleIntervalMs, horizonMinutes * 60),
-    environmentFiles: [{ src: 'agent.sav', dst: 'agent.sav' }],
+    environmentDockerfile: TRACKER_DOCKERFILE(
+      sampleIntervalMs,
+      horizonMinutes * 60,
+    ),
+    environmentFiles: [{ src: "agent.sav", dst: "agent.sav" }],
   }));
 }
 
@@ -1144,7 +1413,7 @@ const SKILL_XP_15M_VARIANTS = generateSkillXpVariants(15, 15000);
 const SKILL_XP_30M_VARIANTS = generateSkillXpVariants(30, 15000);
 // Fast smoke task (woodcutting only) for verifying a model works end-to-end.
 const SKILL_XP_5M_SMOKE = generateSkillXpVariants(5, 15000).filter(
-  v => v.slug === 'woodcutting-xp-5m',
+  (v) => v.slug === "woodcutting-xp-5m",
 );
 
 function generateGoldVariants(): VariantTask[] {
@@ -1158,22 +1427,40 @@ function generateGoldVariants(): VariantTask[] {
       const sampleIntervalMs = 5000;
       variants.push({
         slug,
-        taskDescription: GOLD_INSTRUCTION(dur.minutes, condition.instructionHint),
+        taskDescription: GOLD_INSTRUCTION(
+          dur.minutes,
+          condition.instructionHint,
+        ),
         agentTimeout: dur.minutes * 60 + 120,
-        verifier: 'check_gold.ts',
+        verifier: "check_gold.ts",
         testSh: `#!/bin/bash
 set -e
 mkdir -p /logs/verifier
 ${VERIFIER_CLEANUP}
 cd /app && bun run /tests/check_gold.ts
 `,
-        tags: ['game', 'runescape', 'automation', 'mcp', 'benchmark', 'gold', `gold-${condition.slug}`],
+        tags: [
+          "game",
+          "runescape",
+          "automation",
+          "mcp",
+          "benchmark",
+          "gold",
+          `gold-${condition.slug}`,
+        ],
         useTracker: true,
-        environmentDockerfile: TRACKER_DOCKERFILE(sampleIntervalMs, dur.minutes * 60),
+        environmentDockerfile: TRACKER_DOCKERFILE(
+          sampleIntervalMs,
+          dur.minutes * 60,
+        ),
         // Generate the starting save from the declarative config, or copy
         // shared/agent.sav as-is for the vanilla condition.
-        environmentFiles: condition.saveConfig ? undefined : [{ src: 'agent.sav', dst: 'agent.sav' }],
-        saveConfigs: condition.saveConfig ? [{ config: condition.saveConfig, dst: 'agent.sav' }] : undefined,
+        environmentFiles: condition.saveConfig
+          ? undefined
+          : [{ src: "agent.sav", dst: "agent.sav" }],
+        saveConfigs: condition.saveConfig
+          ? [{ config: condition.saveConfig, dst: "agent.sav" }]
+          : undefined,
       });
     }
   }
@@ -1181,6 +1468,77 @@ cd /app && bun run /tests/check_gold.ts
 }
 
 const GOLD_VARIANTS = generateGoldVariants();
+
+// ── Split topology: 1 box per agent + 1 server box ───────────────
+// Every team-family variant gets a `-split` sibling whose harbor sandbox runs
+// ONLY the game server (shared/entrypoint-server.sh: engine + gateway +
+// watcher — no chromium, no OpenCode). The split adapter
+// (agents/opencode_split_adapter.py) spawns one Modal sandbox per bot for the
+// chromium client + OpenCode session, connected back through Modal encrypted
+// tunnels. Launch with the run scripts' --split flag (adds
+// --ek tunnel_ports=8888,7780; needs the local harbor patch).
+// Server-only sizing: RAM no longer scales with team size in this box.
+const SPLIT_SERVER_RESOURCES = { cpus: 2, memoryMb: 6144 };
+
+function deriveSplitVariant(v: VariantTask): VariantTask {
+  if (!v.environmentDockerfile?.includes("entrypoint-team.sh")) {
+    throw new Error(
+      `cannot derive split variant from ${v.slug} (no entrypoint-team.sh)`,
+    );
+  }
+  // Live observation dashboard (shared/dashboard.ts): served from the server
+  // box on its own tunnel port — run scripts add 8790 to tunnel_ports and the
+  // split adapter surfaces the public URL. save-parser.ts is baked into the
+  // app image; ship a fresh copy only when the variant doesn't already.
+  const dashboardFiles = [
+    { src: "dashboard.ts", dst: "dashboard.ts" },
+    { src: "dashboard.html", dst: "dashboard.html" },
+    ...(v.environmentDockerfile.includes("save-parser.ts")
+      ? []
+      : [{ src: "save-parser.ts", dst: "save-parser.ts" }]),
+  ];
+  const dashboardDockerLines = dashboardFiles
+    .map((f) => `COPY ${f.dst} /app/benchmark/shared/${f.dst}`)
+    .join("\n");
+  return {
+    ...v,
+    slug: `${v.slug}-split`,
+    tags: [...v.tags, "split"],
+    // Harbor's agent timeout brackets the WHOLE adapter run: spawning N agent
+    // boxes + installing opencode + logging bots in (~5 min at n=18), the
+    // full-length sessions, and pulling N recordings back (~3 min at n=18).
+    // The single-box +120s slack timed out the first 18-bot market run
+    // (2026-08-17: sessions finished, but harbor cancelled before the
+    // verifier ran). Give split runs 20 min of slack on top of the cap.
+    agentTimeout: v.agentTimeout - 120 + 1200,
+    environmentDockerfile: v.environmentDockerfile
+      .replaceAll("entrypoint-team.sh", "entrypoint-server.sh")
+      .replace(
+        'ENTRYPOINT ["/entrypoint-server.sh"]',
+        `${dashboardDockerLines}\nENTRYPOINT ["/entrypoint-server.sh"]`,
+      ),
+    environmentFiles: [
+      ...(v.environmentFiles ?? []).map((f) =>
+        f.src === "entrypoint-team.sh"
+          ? { src: "entrypoint-server.sh", dst: "entrypoint-server.sh" }
+          : f,
+      ),
+      ...dashboardFiles,
+    ],
+    ...SPLIT_SERVER_RESOURCES,
+  };
+}
+
+const TEAM_FAMILY_VARIANTS: VariantTask[] = [
+  // ── Smith-team three-bot cooperative smithing ──
+  ...smithTeamVariants(),
+  // ── Magic-team three-bot cooperative Magic leveling ──
+  ...magicTeamVariants(),
+  // ── Crafting-team cooperative MAX-single-account Crafting XP ──
+  ...craftingTeamVariants(),
+  // ── Market: k miners / k smiths / k alchemists (k=2,4), individual final gold ──
+  ...marketVariants(),
+];
 
 const VARIANTS: VariantTask[] = [
   ...SKILL_XP_5M_SMOKE,
@@ -1190,20 +1548,15 @@ const VARIANTS: VariantTask[] = [
   ...GOLD_VARIANTS,
   // ── Shield of Arrav two-bot cooperative quest ──
   ...arravVariants(),
-  // ── Smith-team three-bot cooperative smithing ──
-  ...smithTeamVariants(),
-  // ── Magic-team three-bot cooperative Magic leveling ──
-  ...magicTeamVariants(),
-  // ── Crafting-team cooperative MAX-single-account Crafting XP ──
-  ...craftingTeamVariants(),
-  // ── Market: 3 miners / 2 smiths / 1 alchemist, individual final gold ──
-  ...marketVariants(),
+  ...TEAM_FAMILY_VARIANTS,
+  // ── Split (1 box per agent + 1 server box) siblings of every team task ──
+  ...TEAM_FAMILY_VARIANTS.map(deriveSplitVariant),
 ];
 
 // ── Template generators ──────────────────────────────────────────
 
 function generateVariantTaskToml(v: VariantTask): string {
-  const tagsStr = v.tags.map(t => `"${t}"`).join(', ');
+  const tagsStr = v.tags.map((t) => `"${t}"`).join(", ");
 
   return `version = "1.0"
 
@@ -1242,7 +1595,9 @@ build_timeout_sec = 1200.0
 [[environment.mcp_servers]]
 name = "rs-agent"
 transport = "stdio"
-command = "bun"
+# bun-svc = bun under an infra-only process name (see docker/Dockerfile) so an
+# agent's killall/pkill of "bun" can't take the MCP server down.
+command = "bun-svc"
 args = ["run", "/app/mcp/server.ts"]
 `;
 }
@@ -1250,74 +1605,67 @@ args = ["run", "/app/mcp/server.ts"]
 // ── Main ─────────────────────────────────────────────────────────
 
 function main() {
-console.log(`Generating ${VARIANTS.length} benchmark tasks...`);
+  console.log(`Generating ${VARIANTS.length} benchmark tasks...`);
 
-// Wipe tasks/ first so stale files from previous generations don't linger
-rmSync(TASKS_DIR, { recursive: true, force: true });
-mkdirSync(TASKS_DIR, { recursive: true });
+  // Wipe tasks/ first so stale files from previous generations don't linger
+  rmSync(TASKS_DIR, { recursive: true, force: true });
+  mkdirSync(TASKS_DIR, { recursive: true });
 
-// All tasks (10m skill, 30m skill, gold)
-for (const variant of VARIANTS) {
-  const taskDir = join(TASKS_DIR, variant.slug);
-  const testsDir = join(taskDir, 'tests');
+  // All tasks (10m skill, 30m skill, gold)
+  for (const variant of VARIANTS) {
+    const taskDir = join(TASKS_DIR, variant.slug);
+    const testsDir = join(taskDir, "tests");
 
-  console.log(`  tasks/${variant.slug}/`);
+    console.log(`  tasks/${variant.slug}/`);
 
-  mkdirSync(testsDir, { recursive: true });
-  writeFileSync(join(taskDir, 'task.toml'), generateVariantTaskToml(variant));
-  writeFileSync(join(taskDir, 'instruction.md'), variant.taskDescription);
-  writeFileSync(join(testsDir, 'test.sh'), variant.testSh);
-  copyFileSync(
-    join(SHARED_DIR, variant.verifier),
-    join(testsDir, variant.verifier),
-  );
-  // Verifiers import './save-parser' (handles save format v6 + v7)
-  copyFileSync(
-    join(SHARED_DIR, 'save-parser.ts'),
-    join(testsDir, 'save-parser.ts'),
-  );
+    mkdirSync(testsDir, { recursive: true });
+    writeFileSync(join(taskDir, "task.toml"), generateVariantTaskToml(variant));
+    writeFileSync(join(taskDir, "instruction.md"), variant.taskDescription);
+    writeFileSync(join(testsDir, "test.sh"), variant.testSh);
+    copyFileSync(
+      join(SHARED_DIR, variant.verifier),
+      join(testsDir, variant.verifier),
+    );
+    // Verifiers import './save-parser' (handles save format v6 + v7)
+    copyFileSync(
+      join(SHARED_DIR, "save-parser.ts"),
+      join(testsDir, "save-parser.ts"),
+    );
 
-  // Dockerfile for cloud providers — either custom env or
-  // a thin FROM layer on the pre-built image.
-  const envDir = join(taskDir, 'environment');
-  mkdirSync(envDir, { recursive: true });
-  writeFileSync(
-    join(envDir, 'Dockerfile'),
-    variant.environmentDockerfile ?? `FROM ${DOCKER_IMAGE}\n`,
-  );
+    // Dockerfile for cloud providers — either custom env or
+    // a thin FROM layer on the pre-built image.
+    const envDir = join(taskDir, "environment");
+    mkdirSync(envDir, { recursive: true });
+    writeFileSync(
+      join(envDir, "Dockerfile"),
+      variant.environmentDockerfile ?? `FROM ${DOCKER_IMAGE}\n`,
+    );
 
-  // Copy extra files into tests/ (next to the verifier)
-  if (variant.testsFiles) {
-    for (const file of variant.testsFiles) {
-      copyFileSync(
-        join(SHARED_DIR, file.src),
-        join(testsDir, file.dst),
-      );
+    // Copy extra files into tests/ (next to the verifier)
+    if (variant.testsFiles) {
+      for (const file of variant.testsFiles) {
+        copyFileSync(join(SHARED_DIR, file.src), join(testsDir, file.dst));
+      }
+    }
+
+    // Copy extra files into environment/ for Docker build context
+    if (variant.environmentFiles) {
+      for (const file of variant.environmentFiles) {
+        copyFileSync(join(SHARED_DIR, file.src), join(envDir, file.dst));
+      }
+    }
+
+    // Generate save files from declarative configs
+    if (variant.saveConfigs) {
+      for (const save of variant.saveConfigs) {
+        writeFileSync(join(envDir, save.dst), createSaveData(save.config));
+      }
     }
   }
 
-  // Copy extra files into environment/ for Docker build context
-  if (variant.environmentFiles) {
-    for (const file of variant.environmentFiles) {
-      copyFileSync(
-        join(SHARED_DIR, file.src),
-        join(envDir, file.dst),
-      );
-    }
-  }
-
-  // Generate save files from declarative configs
-  if (variant.saveConfigs) {
-    for (const save of variant.saveConfigs) {
-      writeFileSync(join(envDir, save.dst), createSaveData(save.config));
-    }
-  }
-
-}
-
-console.log(`\nDone! Generated ${VARIANTS.length} task directories.`);
-console.log(`\nTo build the shared Docker image:`);
-console.log(`  cd docker && ./build.sh`);
+  console.log(`\nDone! Generated ${VARIANTS.length} task directories.`);
+  console.log(`\nTo build the shared Docker image:`);
+  console.log(`  cd docker && ./build.sh`);
 }
 
 if (import.meta.main) main();

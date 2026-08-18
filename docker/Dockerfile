@@ -24,6 +24,13 @@ ENV NODE_OBJ_DESPAWN_SCALE=2000
 ENV NODE_PROFANITY_FILTER=false
 ENV PROFANITY_FILTER=false
 
+# Private messages (sdk.dm / `chat.ts --to`) are relayed by the engine's
+# friend server, which is a separate worker: EASY_STARTUP spawns it (plus the
+# idle login/logger workers) in-process and FRIEND_SERVER makes the world
+# actually connect to it — without both, PMs are dropped silently.
+ENV EASY_STARTUP=true
+ENV FRIEND_SERVER=true
+
 # rs-sdk source: cloned from GitHub by default, OR baked from a local working
 # tree when build.sh populated rs-sdk-local/ (RS_SDK_LOCAL=/path builds — used
 # for testing uncommitted SDK changes). The COPY layer is content-hashed, so
@@ -149,8 +156,19 @@ RUN test -f /app/mcp/server.ts || (echo "FATAL: /app/mcp/server.ts missing — r
 RUN bun -e 'require.resolve("@modelcontextprotocol/sdk/server/mcp.js")' \
     || (echo "FATAL: @modelcontextprotocol/sdk not installed by root bun install" >&2; exit 1)
 
+# `bun-svc`: the same bun binary under a different process name, used for
+# every INFRA process (engine, gateway, launch-bot, watchers, MCP server).
+# Agents routinely run `killall -9 bun` / `pkill -f "bun run"` to restart
+# their own scripts; with everything named `bun` that took out the MCP server
+# and game client mid-run (market-split 2026-08-17: bot e lost execute_code
+# for 40 min, bot d killed its client four times). A distinct argv[0] keeps
+# those out of reach without changing behavior. A real copy (~100 MB), not a
+# symlink: killall/pgrep can match on the resolved exe, which for a symlink
+# is still `bun`.
+RUN cp -p /root/.bun/bin/bun /usr/local/bin/bun-svc
+
 # Write .mcp.json so Claude Code can use the MCP server
-RUN echo '{"mcpServers":{"rs-agent":{"command":"bun","args":["run","/app/mcp/server.ts"]}}}' > /app/.mcp.json
+RUN echo '{"mcpServers":{"rs-agent":{"command":"bun-svc","args":["run","/app/mcp/server.ts"]}}}' > /app/.mcp.json
 
 # GEMINI.md: heredoc syntax is rejected by gemini-cli's bash parser,
 # so create a Gemini-specific file with writefile guidance.
@@ -193,6 +211,11 @@ PATCH
 
 # writefile helper — reads stdin and writes to the path given as $1
 RUN printf '#!/bin/bash\ncat > "$1"\n' > /usr/local/bin/writefile && chmod +x /usr/local/bin/writefile
+
+# time-left — minutes remaining in the task (reads the deadline the agent
+# adapter records at /tmp/task-deadline when it launches the session).
+COPY time-left.sh /usr/local/bin/time-left
+RUN chmod +x /usr/local/bin/time-left
 
 # SDK daemon defaults to remote demo server — force localhost for Docker runs.
 # (belt-and-suspenders; bot.env already has SERVER=localhost for the daemon)

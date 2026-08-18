@@ -22,5 +22,5 @@ done
 if ! pgrep -f skill_tracker > /dev/null 2>&1; then
     echo "[ensure-services] Starting skill tracker..."
     mkdir -p /logs/tracking
-    cd /app && TRACKING_FILE=/logs/tracking/skill_tracking.json nohup bun run benchmark/shared/skill_tracker.ts > /logs/tracking/skill_tracker.log 2>&1 &
+    cd /app && TRACKING_FILE=/logs/tracking/skill_tracking.json nohup bun-svc run benchmark/shared/skill_tracker.ts > /logs/tracking/skill_tracker.log 2>&1 &
 fi

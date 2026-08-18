@@ -324,6 +324,10 @@ class OpenCodeAdapter(BaseInstalledAgent):
             "cd /app; "
             f"{vp}_START=$(date +%s); "
             f"{bash_timeout_expr}"
+            # Wall-clock deadline for the image's `time-left` CLI (agents ask
+            # it how long they have). Written per session; team sessions in
+            # one sandbox overwrite each other with near-identical values.
+            f"echo $(( {vp}_START + {vp}_TIMEOUT )) > /tmp/task-deadline; "
             f"{vp}_MIN_RESTART=180; "
             f"{vp}_FAST_FAILS=0; "
             f"{vp}_MAX_FAST_FAILS=3; "

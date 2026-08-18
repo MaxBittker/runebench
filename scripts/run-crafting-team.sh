@@ -21,6 +21,7 @@ SELECTED_MODELS=""
 K_TRIALS=1
 TEAM_SIZE=3
 SOLO=0
+SPLIT=0
 DRY_RUN=0
 EXTRA_ARGS=""
 
@@ -32,6 +33,7 @@ while [[ $# -gt 0 ]]; do
     -H|--horizon)  HORIZON="$2"; shift 2 ;;
     -n|--team-size) TEAM_SIZE="$2"; shift 2 ;;
     --solo)        SOLO=1; shift ;;
+    --split)       SPLIT=1; shift ;;
     --dry-run)     DRY_RUN=1; shift ;;
     -h|--help)
       echo "Usage: run-crafting-team.sh [-m model] [-k trials] [-H horizon] [-n team-size] [--dry-run]"
@@ -59,7 +61,9 @@ if [ "$TEAM_SIZE" != "3" ]; then SIZE_SUFFIX="-n${TEAM_SIZE}"; fi
 # condition vs the N-session team adapter. Job names gain a -solo marker.
 SOLO_TAG=""
 if [ "$SOLO" = "1" ]; then SOLO_TAG="-solo"; fi
-TASK="crafting-team-${HORIZON}${SIZE_SUFFIX}"
+# --split: 1 Modal sandbox per agent + 1 server-only sandbox (opencode_split_adapter).
+apply_split_mode "$SOLO"
+TASK="crafting-team-${HORIZON}${SIZE_SUFFIX}${SPLIT_SUFFIX}"
 SANDBOX_TIMEOUT=$(sandbox_timeout_for_horizon "$HORIZON")
 RUN_TIMEOUT=$(run_timeout_for_horizon "$HORIZON")
 
@@ -108,10 +112,19 @@ for model_name in $SELECTED_MODELS; do
       *) AGENT_FLAG="--agent-import-path 'opencode_solo_adapter:OpenCodeSoloTeamAdapter'" ;;
     esac
   fi
+  # Split topology only has the generic opencode adapter so far.
+  if [ "$SPLIT" = "1" ]; then
+    case "$agent" in
+      *opencode*) AGENT_FLAG="--agent-import-path 'opencode_split_adapter:OpenCodeSplitTeamAdapter'" ;;
+      *)
+        echo "  Skipping $model_name: --split only supports opencode-family agents"
+        continue ;;
+    esac
+  fi
 
   team_model_extra_args "$model_name"
 
-  JOB_NAME="crafting-team${SIZE_SUFFIX}${SOLO_TAG}-${label}-${TIMESTAMP}"
+  JOB_NAME="crafting-team${SIZE_SUFFIX}${SOLO_TAG}${SPLIT_TAG}-${label}-${TIMESTAMP}"
   LOG_FILE="/tmp/harbor-${JOB_NAME}.log"
 
   CMD="$ENV_PREFIX harbor run \
@@ -123,6 +136,7 @@ for model_name in $SELECTED_MODELS; do
     --ek sandbox_timeout_secs=$SANDBOX_TIMEOUT \
     --ak run_timeout_sec=$RUN_TIMEOUT \
     --ak team_size=$TEAM_SIZE \
+    $SPLIT_FLAGS \
     $AGENT_ENV_FLAGS \
     -n 4 \
     -k $K_TRIALS \

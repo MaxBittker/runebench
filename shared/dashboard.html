@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RuneBench — live run</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --page:           #0d0d0d;
+    --surface-1:      #1a1a19;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --gridline:       #2c2c2a;
+    --baseline:       #383835;
+    --border:         rgba(255,255,255,0.10);
+    /* categorical dark slots (validated order — do not re-sort) */
+    --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70;
+    --series-4: #c98500; --series-5: #d55181; --series-6: #008300;
+    --series-7: #9085e9; --series-8: #e66767;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page); color: var(--text-secondary);
+    font: 13px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  header {
+    display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+    padding: 12px 18px; border-bottom: 1px solid var(--border);
+  }
+  header h1 { font-size: 15px; color: var(--text-primary); margin: 0; font-weight: 600; }
+  header .meta { color: var(--text-muted); }
+  #status { margin-left: auto; color: var(--text-muted); }
+  #status.stale { color: #fab219; }
+
+  .layout { display: grid; grid-template-columns: 1fr 360px; gap: 14px; padding: 14px 18px; align-items: start; }
+  @media (max-width: 1100px) { .layout { grid-template-columns: 1fr; } }
+
+  .card { background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+  .card h2 { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin: 0 0 8px; }
+
+  /* chart */
+  #legend { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 6px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  #chart-wrap { position: relative; }
+  #chart text { fill: var(--text-muted); font: 11px system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+  #tooltip {
+    position: absolute; pointer-events: none; display: none; z-index: 5;
+    background: var(--page); border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 9px; white-space: nowrap; font-variant-numeric: tabular-nums;
+  }
+  #tooltip .t { color: var(--text-muted); margin-bottom: 3px; }
+  #tooltip .row { display: flex; align-items: center; gap: 6px; }
+  #tooltip .row b { color: var(--text-primary); font-weight: 600; margin-left: auto; padding-left: 12px; }
+
+  /* bot cards */
+  #bots { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; margin-top: 14px; }
+  .bot-head { display: flex; align-items: baseline; gap: 8px; }
+  .bot-head .name { color: var(--text-primary); font-weight: 600; font-size: 14px; }
+  .bot-head .gold { margin-left: auto; color: var(--text-primary); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .bot-head .gold small { color: var(--text-muted); font-weight: 400; }
+  .bot-sub { color: var(--text-muted); margin: 2px 0 8px; }
+  .section { margin-top: 8px; }
+  .section .label { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .section .label small { text-transform: none; letter-spacing: 0; }
+  .items { display: flex; flex-wrap: wrap; gap: 4px 6px; margin-top: 4px; }
+  .item {
+    background: var(--page); border: 1px solid var(--border); border-radius: 4px;
+    padding: 1px 6px; font-variant-numeric: tabular-nums;
+  }
+  .item b { color: var(--text-primary); font-weight: 600; }
+  .skills { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .skills span b { color: var(--text-primary); font-weight: 600; }
+  .empty { color: var(--text-muted); font-style: italic; }
+
+  /* chat */
+  #chat-card { position: sticky; top: 14px; }
+  #chat { max-height: calc(100vh - 120px); overflow-y: auto; }
+  .msg { margin: 3px 0; }
+  .msg .ts { color: var(--text-muted); font-variant-numeric: tabular-nums; margin-right: 6px; }
+  .msg .sender { color: var(--text-primary); font-weight: 600; }
+  .msg .dot { display: inline-block; margin-right: 4px; position: relative; top: 0.5px; }
+  #waiting { padding: 40px; text-align: center; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>RuneBench — live run</h1>
+  <span class="meta" id="run-meta"></span>
+  <span id="status">connecting…</span>
+</header>
+
+<div id="waiting">Waiting for the watcher's first sample…</div>
+
+<div class="layout" id="layout" style="display:none">
+  <div>
+    <div class="card">
+      <h2 id="chart-title">Gold over time</h2>
+      <div id="legend"></div>
+      <div id="chart-wrap">
+        <svg id="chart" width="100%" height="240"></svg>
+        <div id="tooltip"></div>
+      </div>
+    </div>
+    <div id="bots"></div>
+  </div>
+  <div class="card" id="chat-card">
+    <h2>Chat transcript</h2>
+    <div id="chat"><div class="empty">No messages yet.</div></div>
+  </div>
+</div>
+
+<script>
+const SERIES = ['#3987e5','#d95926','#199e70','#c98500','#d55181','#008300','#9085e9','#e66767'];
+const $ = (id) => document.getElementById(id);
+let data = null;
+let lastFetch = 0;
+
+const botColor = (name) => SERIES[(data?.botNames ?? []).indexOf(name) % SERIES.length] ?? 'var(--text-muted)';
+const fmt = (n) => n == null ? '—' :
+  Math.abs(n) >= 1e6 ? (n/1e6).toFixed(2) + 'm' :
+  Math.abs(n) >= 10000 ? (n/1e3).toFixed(1) + 'k' : n.toLocaleString();
+const mmss = (ms) => {
+  const s = Math.floor(ms / 1000);
+  return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+};
+const esc = (s) => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+// ── header ───────────────────────────────────────────────────────
+function renderMeta() {
+  const bits = [];
+  if (data.elapsedMs != null) bits.push('elapsed ' + mmss(data.elapsedMs));
+  bits.push(data.sampleCount + ' samples');
+  if (data.startTime) bits.push('started ' + new Date(data.startTime).toLocaleTimeString());
+  $('run-meta').textContent = bits.join(' · ');
+}
+
+// ── chart (one line per bot; crosshair + tooltip) ────────────────
+let chartGeom = null;
+function renderChart() {
+  const svg = $('chart');
+  const { metric, points } = data.series;
+  $('chart-title').textContent = (metric === 'gold' ? 'Gold' : 'Total XP') + ' over time';
+  $('legend').innerHTML = data.botNames.map(b =>
+    `<span class="chip"><span class="dot" style="background:${botColor(b)}"></span>${esc(b)}</span>`).join('');
+
+  const W = svg.clientWidth || 700, H = 240, m = { t: 10, r: 46, b: 22, l: 46 };
+  const all = data.botNames.flatMap(b => points[b] ?? []);
+  if (all.length < 2) { svg.innerHTML = ''; chartGeom = null; return; }
+  const xMax = Math.max(...all.map(p => p[0]));
+  const yTop = Math.max(1, ...all.map(p => p[1]));
+  // Round tick step (1/2/5 × 10^k) covering the range in 3–5 steps
+  const rawStep = yTop / 4;
+  const pow = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const step = [1,2,5,10].map(f => f*pow).find(sv => yTop / sv <= 5) ?? rawStep;
+  const yMax = Math.ceil(yTop / step) * step;
+  const x = (v) => m.l + (v / xMax) * (W - m.l - m.r);
+  const y = (v) => H - m.b - (v / yMax) * (H - m.t - m.b);
+  chartGeom = { x, y, xMax, m, W, H };
+
+  let s = '';
+  for (let v = 0; v <= yMax; v += step) {
+    const yy = y(v);
+    s += `<line x1="${m.l}" y1="${yy}" x2="${W-m.r}" y2="${yy}" stroke="var(--gridline)" stroke-width="1"/>`;
+    s += `<text x="${m.l-6}" y="${yy+3.5}" text-anchor="end">${fmt(v)}</text>`;
+  }
+  const everyMin = xMax > 30*60000 ? 10 : 5;
+  for (let t = 0; t <= xMax; t += everyMin*60000) {
+    s += `<text x="${x(t)}" y="${H-6}" text-anchor="middle">${Math.round(t/60000)}m</text>`;
+  }
+  s += `<line x1="${m.l}" y1="${y(0)}" x2="${W-m.r}" y2="${y(0)}" stroke="var(--baseline)" stroke-width="1"/>`;
+  s += `<line id="crosshair" y1="${m.t}" y2="${H-m.b}" stroke="var(--baseline)" stroke-width="1" visibility="hidden"/>`;
+  data.botNames.forEach((b) => {
+    const pts = points[b] ?? [];
+    if (pts.length < 2) return;
+    const d = pts.map((p, i) => (i ? 'L' : 'M') + x(p[0]).toFixed(1) + ' ' + y(p[1]).toFixed(1)).join('');
+    s += `<path d="${d}" fill="none" stroke="${botColor(b)}" stroke-width="2" stroke-linejoin="round"/>`;
+    if (data.botNames.length <= 4) {
+      const last = pts[pts.length-1];
+      s += `<text x="${x(last[0])+5}" y="${y(last[1])+3.5}" style="fill:var(--text-secondary)">${esc(b)}</text>`;
+    }
+  });
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = s;
+}
+
+$('chart-wrap').addEventListener('mousemove', (e) => {
+  if (!chartGeom || !data) return;
+  const rect = $('chart').getBoundingClientRect();
+  const px = e.clientX - rect.left;
+  const { x, xMax, m, W } = chartGeom;
+  if (px < m.l || px > W - m.r) { hideTooltip(); return; }
+  const t = ((px - m.l) / (W - m.l - m.r)) * xMax;
+  const rows = data.botNames.map(b => {
+    const pts = data.series.points[b] ?? [];
+    let best = null;
+    for (const p of pts) if (!best || Math.abs(p[0]-t) < Math.abs(best[0]-t)) best = p;
+    return best && { b, v: best[1] };
+  }).filter(Boolean).sort((a,z) => z.v - a.v);
+  if (!rows.length) { hideTooltip(); return; }
+  const ch = document.getElementById('crosshair');
+  if (ch) { ch.setAttribute('x1', x(t)); ch.setAttribute('x2', x(t)); ch.setAttribute('visibility', 'visible'); }
+  const tip = $('tooltip');
+  tip.innerHTML = `<div class="t">${mmss(t)}</div>` + rows.map(r =>
+    `<div class="row"><span class="dot" style="background:${botColor(r.b)}"></span>${esc(r.b)}<b>${fmt(r.v)}</b></div>`).join('');
+  tip.style.display = 'block';
+  const flip = px > rect.width - 180;
+  tip.style.left = flip ? '' : (px + 14) + 'px';
+  tip.style.right = flip ? (rect.width - px + 14) + 'px' : '';
+  tip.style.top = (e.clientY - rect.top + 10) + 'px';
+});
+function hideTooltip() {
+  $('tooltip').style.display = 'none';
+  document.getElementById('crosshair')?.setAttribute('visibility', 'hidden');
+}
+$('chart-wrap').addEventListener('mouseleave', hideTooltip);
+
+// ── bot cards ────────────────────────────────────────────────────
+function itemChips(pairs) {
+  if (!pairs?.length) return '<div class="empty">empty</div>';
+  const named = pairs.map(([id, n]) => ({ name: data.itemNames[id] ?? 'obj ' + id, n }));
+  return '<div class="items">' + named.map(it =>
+    `<span class="item">${esc(it.name)}${it.n > 1 ? ' <b>×' + it.n.toLocaleString() + '</b>' : ''}</span>`).join('') + '</div>';
+}
+
+function renderBots() {
+  $('bots').innerHTML = data.botNames.map(b => {
+    const { save, live } = data.bots[b] ?? {};
+    const gold = live?.gold ?? (save ? save.invCoins + save.bankCoins : null);
+    // Inventory: live watcher items when the task's watcher records them
+    // (market), else the on-disk save. Bank always comes from the save.
+    const invPairs = live?.invItems ?? save?.inv ?? null;
+    const invLive = live?.invItems != null;
+    const bankPairs = live?.bankItems ?? save?.bank ?? null;
+    const saveAge = save ? (save.ageSec < 90 ? save.ageSec + 's ago' : Math.round(save.ageSec/60) + 'm ago') : null;
+    const sub = [];
+    if (save) sub.push('total level ' + save.totalLevel);
+    const pos = live?.position ?? save?.position;
+    if (pos) sub.push(`(${pos.x}, ${pos.z})`);
+    if (saveAge) sub.push('save ' + saveAge);
+    return `<div class="card">
+      <div class="bot-head">
+        <span class="dot" style="background:${botColor(b)}"></span>
+        <span class="name">${esc(b)}</span>
+        <span class="gold">${fmt(gold)} <small>gp</small></span>
+      </div>
+      <div class="bot-sub">${sub.join(' · ') || 'no data yet'}</div>
+      ${save?.skills?.length ? `<div class="section"><div class="label">Skills</div>
+        <div class="skills">${save.skills.map(s => `<span>${esc(s.name)} <b>${s.level}</b></span>`).join('')}</div></div>` : ''}
+      <div class="section"><div class="label">Inventory <small>${invPairs ? (invLive ? '· live' : '· from save') : ''}</small></div>
+        ${itemChips(invPairs)}</div>
+      <div class="section"><div class="label">Bank <small>${bankPairs ? '· from save' : ''}</small></div>
+        ${itemChips(bankPairs)}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── chat ─────────────────────────────────────────────────────────
+let chatCount = -1;
+function renderChat() {
+  if (data.chat.length === chatCount) return;
+  chatCount = data.chat.length;
+  const el = $('chat');
+  const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
+  el.innerHTML = data.chat.length
+    ? data.chat.slice(-500).map(c =>
+        `<div class="msg"><span class="ts">${mmss(c.elapsedMs)}</span><span class="dot" style="background:${botColor(c.sender)}"></span><span class="sender">${esc(c.sender)}${c.to ? ` &rarr; ${esc(c.to)} <span class="ts">(pm)</span>` : ''}</span> ${esc(c.text)}</div>`).join('')
+    : '<div class="empty">No messages yet.</div>';
+  if (atBottom) el.scrollTop = el.scrollHeight;
+}
+
+// ── poll loop ────────────────────────────────────────────────────
+async function tick() {
+  try {
+    const res = await fetch('/data');
+    if (!res.ok) throw new Error(res.status);
+    data = await res.json();
+    lastFetch = Date.now();
+    if (data.botNames.length && data.sampleCount > 0) {
+      $('waiting').style.display = 'none';
+      $('layout').style.display = '';
+      renderMeta(); renderChart(); renderBots(); renderChat();
+    }
+  } catch (e) { /* stale marker below covers it */ }
+  const age = Math.round((Date.now() - lastFetch) / 1000);
+  const st = $('status');
+  st.textContent = lastFetch ? (age <= 7 ? 'live' : `stale · last update ${age}s ago`) : 'connecting…';
+  st.className = lastFetch && age > 15 ? 'stale' : '';
+}
+tick();
+setInterval(tick, 5000);
+window.addEventListener('resize', () => { if (data) renderChart(); });
+</script>
+</body>
+</html>

@@ -34,7 +34,7 @@ start_displays() {
 
 # ── Helper: start engine and wait for readiness ──────────────────
 start_engine() {
-    cd /app/server/engine && bun run src/app.ts &
+    cd /app/server/engine && bun-svc run src/app.ts &
     ENGINE_PID=$!
     echo "[entrypoint-duo] Engine starting (pid=$ENGINE_PID)..."
     for i in $(seq 1 120); do
@@ -54,7 +54,7 @@ start_engine() {
 
 # ── Helper: start gateway and wait for readiness ─────────────────
 start_gateway() {
-    cd /app/server/gateway && bun run gateway.ts &
+    cd /app/server/gateway && bun-svc run gateway.ts &
     GATEWAY_PID=$!
     echo "[entrypoint-duo] Gateway starting (pid=$GATEWAY_PID)..."
     for i in $(seq 1 30); do
@@ -101,7 +101,7 @@ start_bots() {
     local i=0
     for name in $BOT_NAMES; do
         local disp; disp="$(disp_for $i)"
-        cd /app/server/gateway && DISPLAY="$disp" BOT_NAME="$name" bun run launch-bot.ts &
+        cd /app/server/gateway && DISPLAY="$disp" BOT_NAME="$name" bun-svc run launch-bot.ts &
         BOT_PIDS="$BOT_PIDS $!"
         echo "[entrypoint-duo] Bot client \"$name\" starting on $disp (pid=$!)..."
         # Stagger logins so the engine handles one new session at a time
@@ -117,7 +117,7 @@ start_bots() {
 start_watcher() {
     mkdir -p /logs/tracking
     cd /app && BOT_NAMES="$BOT_NAMES" TRACKING_FILE=/logs/tracking/arrav_tracking.json \
-      nohup bun run benchmark/shared/arrav_watcher.ts >> /logs/tracking/arrav_watcher.log 2>&1 &
+      nohup bun-svc run benchmark/shared/arrav_watcher.ts >> /logs/tracking/arrav_watcher.log 2>&1 &
     WATCHER_PID=$!
     echo "[entrypoint-duo] Arrav watcher started (pid=$WATCHER_PID)"
 }

@@ -1,90 +1,3 @@
---- a/harbor/environments/modal.py
-+++ b/harbor/environments/modal.py
-@@ -777,6 +777,7 @@
-         app_name: str = "__harbor__",
-         sandbox_timeout_secs: int = 60 * 60 * 24,
-         sandbox_idle_timeout_secs: int | None = None,
-+        sandbox_region: str | None = None,
-         *args,
-         **kwargs,
-     ):
-@@ -833,6 +834,7 @@
-         self._app_name = app_name
-         self._sandbox_timeout = sandbox_timeout_secs
-         self._sandbox_idle_timeout = sandbox_idle_timeout_secs
-+        self._sandbox_region = sandbox_region
- 
-         # Select strategy based on compose mode
-         self._strategy: _ModalStrategy = (
-@@ -903,11 +905,18 @@
-             idle_timeout=self._sandbox_idle_timeout,
-             name=self.session_id,
-             cpu=self.task_env_config.cpus,
--            memory=self.task_env_config.memory_mb,
-+            # Local patch: (request, limit) instead of a flat reservation.
-+            # Modal bills max(request, actual usage); a plain int reserves —
-+            # and bills — the full amount even when idle. 4096 MiB floor
-+            # (memory above the request is best-effort — keep the always-
-+            # resident baseline reserved), task's memory_mb as the hard cap.
-+            # Re-apply after harbor upgrades.
-+            memory=(4096, self.task_env_config.memory_mb),
-             gpu=self._gpu_config(),
-             block_network=block_network,
-             secrets=self._secrets_config(),
-             volumes=self._volumes_config(),  # type: ignore[arg-type]
-+            region=self._sandbox_region,
-             **kwargs,
-         )
- 
-@@ -968,7 +977,7 @@
-         )
- 
-     @retry(
--        stop=stop_after_attempt(2),
-+        stop=stop_after_attempt(3),
-         wait=wait_exponential(multiplier=1, min=1, max=10),
-         reraise=True,
-     )
-@@ -984,7 +993,13 @@
-             raise RuntimeError("Sandbox not found. Please start the environment first.")
- 
-         # Creates parent directories on the remote side if needed.
--        await self._sandbox.filesystem.copy_from_local.aio(source_path, target_path)
-+        # LOCAL PATCH (rs-bench2): Modal's filesystem API can stall indefinitely,
-+        # which hangs the trial (the @retry above never fires because attempt 1
-+        # never returns). Bound each attempt so the retry is reachable.
-+        await asyncio.wait_for(
-+            self._sandbox.filesystem.copy_from_local.aio(source_path, target_path),
-+            timeout=180,
-+        )
- 
-     async def _sdk_upload_dir(self, source_dir: Path | str, target_dir: str) -> None:
-         """
-@@ -1017,7 +1032,7 @@
-                 await self._sdk_upload_file(file_path, target_file_path)
- 
-     @retry(
--        stop=stop_after_attempt(2),
-+        stop=stop_after_attempt(3),
-         wait=wait_exponential(multiplier=1, min=1, max=10),
-         reraise=True,
-     )
-@@ -1035,7 +1050,14 @@
-             raise RuntimeError("Sandbox not found. Please start the environment first.")
- 
-         # Creates parent directories locally if needed.
--        await self._sandbox.filesystem.copy_to_local.aio(source_path, target_path)
-+        # LOCAL PATCH (rs-bench2): bound each attempt so a stalled Modal
-+        # filesystem call converts to TimeoutError and the @retry fires,
-+        # instead of hanging the trial indefinitely. 600s covers large
-+        # artifacts (recording.mp4 ~20-30MB at slow transfer rates).
-+        await asyncio.wait_for(
-+            self._sandbox.filesystem.copy_to_local.aio(source_path, target_path),
-+            timeout=600,
-+        )
- 
-     async def _sdk_download_dir(self, source_dir: str, target_dir: Path | str) -> None:
-         """
 --- a/harbor/agents/installed/claude_code.py
 +++ b/harbor/agents/installed/claude_code.py
 @@ -41,7 +41,7 @@
@@ -128,3 +41,108 @@
  
          await self.exec_as_agent(
              environment,
+--- a/harbor/environments/modal.py
++++ b/harbor/environments/modal.py
+@@ -777,6 +777,8 @@
+         app_name: str = "__harbor__",
+         sandbox_timeout_secs: int = 60 * 60 * 24,
+         sandbox_idle_timeout_secs: int | None = None,
++        sandbox_region: str | None = None,
++        tunnel_ports: str | None = None,
+         *args,
+         **kwargs,
+     ):
+@@ -833,6 +835,12 @@
+         self._app_name = app_name
+         self._sandbox_timeout = sandbox_timeout_secs
+         self._sandbox_idle_timeout = sandbox_idle_timeout_secs
++        self._sandbox_region = sandbox_region
++        # Local patch (rs-bench3): comma-separated ports to expose via Modal
++        # encrypted tunnels (`--ek tunnel_ports=8888,7780`). Adapters can then
++        # call `environment._sandbox.tunnels()` to get public TLS endpoints —
++        # used by the split (1-box-per-agent) team topology.
++        self._tunnel_ports = tunnel_ports
+ 
+         # Select strategy based on compose mode
+         self._strategy: _ModalStrategy = (
+@@ -895,6 +903,11 @@
+         kwargs: dict[str, Any] = {}
+         if experimental_options:
+             kwargs["experimental_options"] = experimental_options
++        # Local patch (rs-bench3): request encrypted tunnels for tunnel_ports.
++        if getattr(self, "_tunnel_ports", None):
++            kwargs["encrypted_ports"] = [
++                int(p) for p in str(self._tunnel_ports).split(",") if p.strip()
++            ]
+ 
+         return await Sandbox.create.aio(
+             app=self._app,
+@@ -903,11 +916,18 @@
+             idle_timeout=self._sandbox_idle_timeout,
+             name=self.session_id,
+             cpu=self.task_env_config.cpus,
+-            memory=self.task_env_config.memory_mb,
++            # Local patch: (request, limit) instead of a flat reservation.
++            # Modal bills max(request, actual usage); a plain int reserves —
++            # and bills — the full amount even when idle. 4096 MiB floor
++            # (memory above the request is best-effort — keep the always-
++            # resident baseline reserved), task's memory_mb as the hard cap.
++            # Re-apply after harbor upgrades.
++            memory=(4096, self.task_env_config.memory_mb),
+             gpu=self._gpu_config(),
+             block_network=block_network,
+             secrets=self._secrets_config(),
+             volumes=self._volumes_config(),  # type: ignore[arg-type]
++            region=self._sandbox_region,
+             **kwargs,
+         )
+ 
+@@ -968,7 +988,7 @@
+         )
+ 
+     @retry(
+-        stop=stop_after_attempt(2),
++        stop=stop_after_attempt(3),
+         wait=wait_exponential(multiplier=1, min=1, max=10),
+         reraise=True,
+     )
+@@ -984,7 +1004,13 @@
+             raise RuntimeError("Sandbox not found. Please start the environment first.")
+ 
+         # Creates parent directories on the remote side if needed.
+-        await self._sandbox.filesystem.copy_from_local.aio(source_path, target_path)
++        # LOCAL PATCH (rs-bench2): Modal's filesystem API can stall indefinitely,
++        # which hangs the trial (the @retry above never fires because attempt 1
++        # never returns). Bound each attempt so the retry is reachable.
++        await asyncio.wait_for(
++            self._sandbox.filesystem.copy_from_local.aio(source_path, target_path),
++            timeout=180,
++        )
+ 
+     async def _sdk_upload_dir(self, source_dir: Path | str, target_dir: str) -> None:
+         """
+@@ -1017,7 +1043,7 @@
+                 await self._sdk_upload_file(file_path, target_file_path)
+ 
+     @retry(
+-        stop=stop_after_attempt(2),
++        stop=stop_after_attempt(3),
+         wait=wait_exponential(multiplier=1, min=1, max=10),
+         reraise=True,
+     )
+@@ -1035,7 +1061,14 @@
+             raise RuntimeError("Sandbox not found. Please start the environment first.")
+ 
+         # Creates parent directories locally if needed.
+-        await self._sandbox.filesystem.copy_to_local.aio(source_path, target_path)
++        # LOCAL PATCH (rs-bench2): bound each attempt so a stalled Modal
++        # filesystem call converts to TimeoutError and the @retry fires,
++        # instead of hanging the trial indefinitely. 600s covers large
++        # artifacts (recording.mp4 ~20-30MB at slow transfer rates).
++        await asyncio.wait_for(
++            self._sandbox.filesystem.copy_to_local.aio(source_path, target_path),
++            timeout=600,
++        )
+ 
+     async def _sdk_download_dir(self, source_dir: str, target_dir: Path | str) -> None:
+         """

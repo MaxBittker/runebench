@@ -5,7 +5,8 @@
  * results/market/_data.js: window.MARKET_RUNS = [ { meta, bots, samples,
  * events, chat } ] — one entry per trial, newest first.
  *
- *   samples  [{ t, gold: { bot: gp } }]   forward-filled 5s balance series
+ *   samples  [{ t, gold: { bot: gp }, bank: { bot: gp } }]   forward-filled 5s balance
+ *            series (gold = inventory + bank; bank = banked part, when the watcher records it)
  *   events   the derived trade ledger: per-bot balance deltas, with opposite
  *            deltas of equal size within a ±2-sample window paired into
  *            `transfer` events (from → to); unpaired deltas stay `gain`/`loss`.
@@ -22,7 +23,7 @@
  *
  * Usage: bun scripts/extract-market-viz.ts
  */
-import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
 
 const REPO = join(import.meta.dir, '..');
@@ -39,8 +40,8 @@ interface RunOut {
     totalGold: number; winner: { bot: string; role: string; gold: number };
     capSecs: number;
   };
-  bots: Array<{ name: string; role: string; finalGold: number }>;
-  samples: Array<{ t: number; gold: Record<string, number> }>;
+  bots: Array<{ name: string; role: string; finalGold: number; model?: string }>;
+  samples: Array<{ t: number; gold: Record<string, number>; bank?: Record<string, number> }>;
   events: Array<{
     t: number; type: 'transfer' | 'gain' | 'loss';
     bot?: string; from?: string; to?: string; amount: number;
@@ -355,17 +356,22 @@ function extractRun(jobName: string, trialDir: string, rewardPath: string): RunO
 
   // ── Forward-filled gold series ─────────────────────────────────
   const last: Record<string, number> = {};
-  for (const b of botNames) last[b] = 0;
+  const lastBank: Record<string, number> = {};
+  for (const b of botNames) { last[b] = 0; lastBank[b] = 0; }
   const samples: RunOut['samples'] = [];
   for (const s of tracking.samples) {
     const t = Math.round((s.elapsedMs ?? 0) / 1000);
     const gold: Record<string, number> = {};
+    const bank: Record<string, number> = {};
     for (const b of botNames) {
       const g = s.bots?.[b]?.gold;
       if (typeof g === 'number') last[b] = g;
       gold[b] = last[b];
+      const bk = s.bots?.[b]?.bankCoins;
+      if (typeof bk === 'number') lastBank[b] = bk;
+      bank[b] = lastBank[b];
     }
-    samples.push({ t, gold });
+    samples.push({ t, gold, bank });
   }
 
   // ── Ledger: deltas → paired transfers ──────────────────────────
@@ -416,6 +422,7 @@ function extractRun(jobName: string, trialDir: string, rewardPath: string): RunO
     t: Math.round((c.elapsedMs ?? 0) / 1000),
     sender: (c.sender ?? '').toLowerCase(),
     text: c.text ?? '',
+    ...(c.to ? { to: String(c.to).toLowerCase() } : {}),
   }));
 
   // ── Sales: exact trade records from trajectories; inventory-delta fallback ─
@@ -430,10 +437,14 @@ function extractRun(jobName: string, trialDir: string, rewardPath: string): RunO
   }
 
   // ── Videos (viewer lives in views/, jobs/ is a sibling) ────────
+  // Single-box runs record to verifier/; split runs pull each agent box's
+  // recording into agent/ — check both.
   const videos: Record<string, string> = {};
   for (const b of botNames) {
-    const mp4 = join(JOBS_DIR, jobName, trialDir, 'verifier', `recording-${b}.mp4`);
-    if (existsSync(mp4)) videos[b] = `../jobs/${jobName}/${trialDir}/verifier/recording-${b}.mp4`;
+    for (const sub of ['verifier', 'agent']) {
+      const mp4 = join(JOBS_DIR, jobName, trialDir, sub, `recording-${b}.mp4`);
+      if (existsSync(mp4)) { videos[b] = `../jobs/${jobName}/${trialDir}/${sub}/recording-${b}.mp4`; break; }
+    }
   }
 
   // ── Transcripts: one lazy-loadable .js per bot ─────────────────
@@ -453,6 +464,11 @@ function extractRun(jobName: string, trialDir: string, rewardPath: string): RunO
   }
 
   const m = jobName.match(/^market-(.+)-(\d{8}-\d{6})$/);
+  // Mixed-model runs (run-market.sh --mix): the adapter records which model
+  // drove which bot in agent/bot-models.json (bot names deliberately don't say).
+  const botModelsPath = join(trialPath, 'agent', 'bot-models.json');
+  const botModels: Record<string, string> = existsSync(botModelsPath)
+    ? JSON.parse(readFileSync(botModelsPath, 'utf8')) : {};
   return {
     meta: {
       job: jobName,
@@ -467,6 +483,7 @@ function extractRun(jobName: string, trialDir: string, rewardPath: string): RunO
       name: b,
       role: reward.perBot[b]?.role ?? 'unknown',
       finalGold: reward.perBot[b]?.finalGold ?? 0,
+      ...(botModels[b] ? { model: botModels[b] } : {}),
     })),
     samples,
     events,
@@ -483,6 +500,7 @@ function main() {
   for (const job of readdirSync(JOBS_DIR).sort().reverse()) {
     if (!job.startsWith('market-')) continue;
     const jobDir = join(JOBS_DIR, job);
+    if (!statSync(jobDir).isDirectory()) continue;  // stray launcher logs etc.
     for (const trial of readdirSync(jobDir)) {
       const rewardPath = join(jobDir, trial, 'verifier', 'reward.json');
       if (!existsSync(rewardPath)) continue;
@@ -499,6 +517,11 @@ function main() {
       }
     }
   }
+  // Newest first by launch timestamp (the trailing YYYYMMDD-HHMMSS in the job
+  // name) — a plain name sort put e.g. split-qwen3 ahead of split-gemini and
+  // made the viewer default to a stale run.
+  const stamp = (r: RunOut) => r.meta.launchedAt ?? '';
+  runs.sort((a, b) => stamp(b).localeCompare(stamp(a)));
   mkdirSync(OUT_DIR, { recursive: true });
   const out = join(OUT_DIR, '_data.js');
   writeFileSync(out, `window.MARKET_RUNS = ${JSON.stringify(runs)};\n`);

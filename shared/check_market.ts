@@ -1,5 +1,5 @@
 /**
- * Verification for the market benchmark (3 miners / 2 smiths / 1 alchemist).
+ * Verification for the market benchmark (2 miners / 2 smiths / 2 alchemists).
  *
  * Every player scores INDIVIDUALLY: its coins (inventory + bank + worn) at the
  * END of the run — final holdings, not a peak. The final save files are
@@ -78,11 +78,30 @@ function main() {
         }
 
         let invGold = 0, bankGold = 0, saveGold: number | null = null;
+        let assets: Record<string, Array<{ id: number; name: string; count: number }>> | null = null;
         if (save) {
             invGold = countItem(save.inventories.get(INV_TYPE), COINS_ID);
             bankGold = countItem(save.inventories.get(BANK_TYPE), COINS_ID)
                 + countItem(save.inventories.get(WORN_TYPE), COINS_ID);
             saveGold = invGold + bankGold;
+            // Final NON-COIN holdings ("assets at the buzzer") — names via the
+            // watcher's learned itemNames map when available.
+            const names: Record<number, string> = tracking?.itemNames ?? {};
+            const listItems = (type: number) => {
+                const agg = new Map<number, number>();
+                for (const it of save!.inventories.get(type) ?? []) {
+                    if (it.id === COINS_ID) continue;
+                    agg.set(it.id, (agg.get(it.id) ?? 0) + it.count);
+                }
+                return [...agg.entries()]
+                    .sort((a, b) => a[0] - b[0])
+                    .map(([id, count]) => ({ id, name: names[id] ?? `item:${id}`, count }));
+            };
+            assets = {
+                inventory: listItems(INV_TYPE),
+                bank: listItems(BANK_TYPE),
+                worn: listItems(WORN_TYPE),
+            };
         } else {
             console.log(`${bot}: no save file found — using watcher last sample`);
         }
@@ -96,6 +115,7 @@ function main() {
             inventoryGold: invGold,
             bankGold,
             lastObservedGold: observed ?? null,
+            assets,
             source: saveGold != null && finalGold === saveGold ? 'save' : (observed != null ? 'watcher' : 'default'),
         };
         console.log(`${bot} (${perBot[bot].role}): final gold ${finalGold} (save=${saveGold ?? 'n/a'}, watcher=${observed ?? 'n/a'})`);

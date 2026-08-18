@@ -127,6 +127,30 @@
   .replay { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 10px; }
   #vidWrap { flex: 0 1 560px; min-width: 380px; }
   #vid { width: 100%; aspect-ratio: 4 / 3; background: #000; border-radius: 8px; display: block; }
+  #vidStage { position: relative; }
+  /* gold HUD over the video: current balance + a floating delta pop on change */
+  #goldHud {
+    position: absolute; top: 10px; right: 10px; pointer-events: none;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  #goldHud .bal {
+    background: rgba(13, 17, 23, 0.82); color: #ffd866; border: 1px solid rgba(255,216,102,0.35);
+    border-radius: 6px; padding: 4px 9px; font-size: 15px; font-weight: 700; line-height: 1.2;
+  }
+  #goldHud .bal .split { display: block; font-size: 10.5px; font-weight: 500; color: #c9d1d9; opacity: 0.85; }
+  #goldHud .pop {
+    font-size: 18px; font-weight: 800; padding: 2px 8px; border-radius: 6px;
+    background: rgba(13, 17, 23, 0.85); animation: goldpop 2.2s ease-out forwards;
+  }
+  #goldHud .pop.up { color: #3fb950; }
+  #goldHud .pop.down { color: #ff7b72; }
+  @keyframes goldpop {
+    0% { opacity: 0; transform: translateY(6px) scale(0.9); }
+    12% { opacity: 1; transform: translateY(0) scale(1.08); }
+    70% { opacity: 1; transform: translateY(-4px) scale(1); }
+    100% { opacity: 0; transform: translateY(-16px) scale(1); }
+  }
   .vid-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
   .vid-tabs .vtab {
     font: inherit; font-size: 12px; padding: 3px 10px; cursor: pointer;
@@ -219,7 +243,10 @@
     <div class="replay">
       <div id="vidWrap">
         <div class="vid-tabs" id="vidTabs"></div>
-        <video id="vid" controls preload="metadata" playsinline></video>
+        <div id="vidStage">
+          <video id="vid" controls preload="metadata" playsinline></video>
+          <div id="goldHud" hidden><div class="bal"></div></div>
+        </div>
         <div class="vid-sync">
           <span>sync offset</span>
           <button class="nudge" data-d="-5">−5s</button>
@@ -299,7 +326,11 @@
   const root = getComputedStyle(document.body);
   const NS = 'http://www.w3.org/2000/svg';
   const W = 1160, ML = 64, MR = 24;
-  const seriesVar = (i) => `var(--series-${i + 1})`;
+  // Six themed CSS series colors for the classic 6-bot layout; larger markets
+  // (n12/n18) continue with a fixed palette of distinct hues.
+  const EXTRA_SERIES = ['#8e44ad', '#00a8b5', '#b5651d', '#7f8c00', '#c2185b', '#546e7a',
+                        '#5c6bc0', '#e91e63', '#43a047', '#f4511e', '#6d4c41', '#00897b'];
+  const seriesVar = (i) => i < 6 ? `var(--series-${i + 1})` : EXTRA_SERIES[(i - 6) % EXTRA_SERIES.length];
   const fmt = (n) => n.toLocaleString('en-US');
   const mmss = (t) => `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
   const el = (tag, attrs, parent) => {
@@ -338,8 +369,39 @@
   const offsetKey = (run) => `market-viz-offset:${run.meta.job}/${run.meta.trial}`;
   const getOffset = () => parseFloat(offsetInp.value) || 0;
 
+  // ── gold HUD: balance of the bot whose recording is playing, plus a
+  // floating ▲/▼ delta whenever the balance steps between samples.
+  const goldHud = document.getElementById('goldHud');
+  const goldBal = goldHud.querySelector('.bal');
+  let hudLastSi = -1, hudLastBot = null;
+  function updateGoldHud(t) {
+    const run = currentRun, bot = curVidBot;
+    if (!run || !bot || !run.samples?.length) { goldHud.hidden = true; return; }
+    const S = run.samples;
+    let si = -1;
+    for (let i = 0; i < S.length; i++) { if (S[i].t <= t) si = i; else break; }
+    const gold = si >= 0 ? (S[si].gold[bot] ?? 0) : 0;
+    const bank = si >= 0 ? (S[si].bank?.[bot] ?? 0) : 0;
+    goldHud.hidden = false;
+    goldBal.innerHTML = `${fmt(gold)}gp` +
+      (bank > 0 ? `<span class="split">inv ${fmt(gold - bank)} · bank ${fmt(bank)}</span>` : '');
+    if (bot === hudLastBot && si > hudLastSi && hudLastSi >= 0 && si - hudLastSi <= 3) {
+      // Playing forward across a sample boundary — pop the delta if it changed.
+      const d = gold - (S[hudLastSi].gold[bot] ?? 0);
+      if (d !== 0) {
+        const pop = document.createElement('div');
+        pop.className = 'pop ' + (d > 0 ? 'up' : 'down');
+        pop.textContent = `${d > 0 ? '▲ +' : '▼ −'}${fmt(Math.abs(d))}gp`;
+        goldHud.appendChild(pop);
+        setTimeout(() => pop.remove(), 2300);
+      }
+    }
+    hudLastSi = si; hudLastBot = bot;
+  }
+
   function setMarketTime(t, fromVideo) {
     curT = t;
+    updateGoldHud(t);
     for (const fn of PLAYHEADS) fn(t);
     let cur = -1;
     for (let i = 0; i < chatRows.length; i++) { if (chatRows[i].t <= t + 0.25) cur = i; else break; }
@@ -429,7 +491,7 @@
       const i = botIdx[c.sender];
       row.innerHTML = `<span class="ct">${mmss(c.t)}</span>` +
         `<span class="sw" style="background:${i != null ? seriesVar(i) : 'var(--text-muted)'}"></span>` +
-        `<span class="cs">${esc(c.sender)}</span> ${esc(c.text)}`;
+        `<span class="cs">${esc(c.sender)}${c.to ? ` → ${esc(c.to)} (pm)` : ''}</span> ${esc(c.text)}`;
       row.addEventListener('click', () => seekTo(c.t));
       log.appendChild(row);
       chatRows.push({ t: c.t, el: row });
@@ -614,7 +676,7 @@
 
     // ── legend (shared) ─────────────────────────────────────────
     document.getElementById('legend').innerHTML = bots.map((b, i) =>
-      `<span class="chip"><span class="swatch" style="background:${seriesVar(i)}"></span>${b.name} <span class="role">· ${b.role} · ${fmt(b.finalGold)}gp</span></span>`
+      `<span class="chip"><span class="swatch" style="background:${seriesVar(i)}"></span>${b.name} <span class="role">· ${b.role}${b.model ? ' · ' + esc(b.model.replace(/^[^/]+\//, '').replace(/^~/, '').replace(/^[^/]+\//, '')) : ''} · ${fmt(b.finalGold)}gp</span></span>`
     ).join('');
 
     renderReplay(run, botIdx);
@@ -830,7 +892,7 @@
       const hit = el('circle', { cx, cy, r: 8, fill: 'transparent' }, svg);
       hit.style.cursor = 'pointer';
       hit.addEventListener('mousemove', (ev) => showTip(
-        `<div class="t">${mmss(c.t)} · chat</div><b>${c.sender}</b>: ${c.text.replace(/</g, '&lt;')}`, ev.clientX, ev.clientY));
+        `<div class="t">${mmss(c.t)} · chat</div><b>${c.sender}${c.to ? ` → ${c.to} (pm)` : ''}</b>: ${c.text.replace(/</g, '&lt;')}`, ev.clientX, ev.clientY));
       hit.addEventListener('mouseleave', hideTip);
       hit.addEventListener('click', () => seekTo(c.t));
     }

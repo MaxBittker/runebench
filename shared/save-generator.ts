@@ -222,6 +222,48 @@ export const Locations = {
     SEERS_VILLAGE: { x: 2725, z: 3484 },  // Seers Village center
 };
 
+// Character-design kit ids from the engine's idk.pack, demon/disabled
+// variants excluded. body order: [hair, jaw, torso, arms, hands, legs, feet];
+// female kits live in the 45+ id range and use jaw -1 (none).
+const kitRange = (from: number, to: number): number[] =>
+    Array.from({ length: to - from + 1 }, (_, i) => from + i);
+const MALE_KITS: number[][] = [
+    kitRange(0, 8),    // hair
+    kitRange(10, 17),  // jaw
+    kitRange(18, 25),  // torso
+    kitRange(26, 31),  // arms
+    kitRange(33, 34),  // hands
+    kitRange(36, 40),  // legs
+    kitRange(42, 43),  // feet
+];
+const FEMALE_KITS: number[][] = [
+    kitRange(45, 54),  // hair
+    [-1],              // jaw (none)
+    kitRange(56, 60),  // torso
+    kitRange(61, 65),  // arms
+    kitRange(67, 68),  // hands
+    kitRange(70, 77),  // legs
+    kitRange(79, 80),  // feet
+];
+
+// Palette sizes from the engine's Player.DESIGN_BODY_COLORS:
+// [hair, torso, legs, feet, skin]
+export const DESIGN_COLOR_COUNTS = [12, 16, 16, 6, 8];
+
+/** Random valid character look (gender, body kits, palette colors). */
+export function randomAppearance(
+    rng: () => number = Math.random
+): { gender: number; body: number[]; colors: number[] } {
+    const pick = (arr: number[]): number => arr[Math.floor(rng() * arr.length)]!;
+    const gender = rng() < 0.5 ? 0 : 1;
+    const kits = gender === 0 ? MALE_KITS : FEMALE_KITS;
+    return {
+        gender,
+        body: kits.map(pick),
+        colors: DESIGN_COLOR_COUNTS.map(n => Math.floor(rng() * n)),
+    };
+}
+
 export interface SaveConfig {
     position?: { x: number; z: number; level?: number };
     skills?: Record<string, number>;  // Skill name -> level

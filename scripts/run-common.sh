@@ -37,11 +37,13 @@ qwen35-opencode|openrouter/qwen/qwen3.5-35b-a3b|qwen35
 qwen3max-opencode|openrouter/qwen/qwen3-max|qwen3max
 grok45-opencode|openrouter/x-ai/grok-4.5|grok45
 grok46-opencode|openrouter/x-ai/grok-4.6|grok46
+deepseekflash-opencode|openrouter/~deepseek/deepseek-v4-flash-latest|deepseekflash
+opencode|openrouter/google/gemini-3.7-flash|gemini37flash-or
 luna-xhigh-opencode|openai/gpt-5.6-luna|gpt56luna-xhigh
 muse12-opencode|meta/muse-spark-1.2-contributor|muse12
 "
 
-ALL_MODEL_LABELS="fable5 hotteok opus48 opus47 opus opus45 sonnet5 sonnet46 sonnet45 haiku codex53 gpt55 gpt54 gpt54mini gpt54nano gemini gemini31 geminiflash gemini35flash gemini37flash glm glm52 kimi qwen3 qwen35 qwen3max grok45 grok46 gpt56luna-xhigh muse12"
+ALL_MODEL_LABELS="fable5 hotteok opus48 opus47 opus opus45 sonnet5 sonnet46 sonnet45 haiku codex53 gpt55 gpt54 gpt54mini gpt54nano gemini gemini31 geminiflash gemini35flash gemini37flash glm glm52 kimi qwen3 qwen35 qwen3max grok45 grok46 deepseekflash gemini37flash-or gpt56luna-xhigh muse12"
 
 # ── sandbox_timeout_for_horizon: horizon → Modal sandbox backstop ──
 # Generous ceilings: a too-small value kills runs mid-flight (unfair zero
@@ -110,7 +112,11 @@ configure_model_env() {
   local model_name="$1"
   local agents_dir="$2"
 
-  ENV_PREFIX=""
+  # Always expose the adapters dir: the team/market scripts override
+  # AGENT_FLAG with --agent-import-path for EVERY *opencode* agent, including
+  # ones (e.g. qwen3-opencode) that have no case below and would otherwise
+  # leave PYTHONPATH unset. Harmless for -a style agents.
+  ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
   AGENT_FLAG="-a '$(echo "$3" | cut -d'|' -f1)'"
   AGENT_ENV_FLAGS=""
 
@@ -398,6 +404,43 @@ team_model_extra_args() {
       MODEL_EXTRA_ARGS="--ek sandbox_region=us-east"
       ;;
   esac
+}
+
+# ── team_model_options: per-model opencode options for MIXED runs ──
+# Mixed-model runs (run-market.sh --mix) go through the generic team/split
+# adapter, so a model whose own adapter subclass carries _model_options
+# (reasoning effort etc.) would silently lose them. This maps a model label
+# to the `<model_id>:k=v[,k=v]` spec the adapters take via
+# `--ak model_options=spec;spec` (mirror the subclass in agents/ when adding).
+team_model_options() {
+  MODEL_OPTIONS_SPEC=""
+  case "$1" in
+    gpt56luna-xhigh) MODEL_OPTIONS_SPEC="openai/gpt-5.6-luna:reasoningEffort=xhigh" ;;
+  esac
+}
+
+# ── apply_split_mode: 1-box-per-agent + 1-server-box topology ────
+# Shared by the team run scripts' --split flag. Reads $SPLIT (0/1) and sets:
+#   SPLIT_SUFFIX  task-dir suffix ("-split" → the server-only task variant)
+#   SPLIT_TAG     job-name marker
+#   SPLIT_FLAGS   harbor flags: server tunnels for the agent boxes to dial
+#                 back through (needs the tunnel_ports harbor patch —
+#                 patches/harbor-local.patch)
+# Arg 1: $SOLO — --solo drives all bots from one session in the trial sandbox,
+# which contradicts one-box-per-agent, so the combination is rejected.
+apply_split_mode() {
+  SPLIT_SUFFIX=""; SPLIT_TAG=""; SPLIT_FLAGS=""
+  if [ "${SPLIT:-0}" != "1" ]; then return 0; fi
+  if [ "${1:-0}" = "1" ]; then
+    echo "--split and --solo are mutually exclusive" >&2
+    exit 1
+  fi
+  SPLIT_SUFFIX="-split"
+  SPLIT_TAG="-split"
+  # 8888/7780 = engine/gateway for the agent boxes; 8790 = the live
+  # observation dashboard (shared/dashboard.ts) — the split adapter logs its
+  # public URL and writes it to the job's logs dir as dashboard-url.txt.
+  SPLIT_FLAGS="--ek tunnel_ports=8888,7780,8790"
 }
 
 # ── regenerate_tasks: run the task generator ─────────────────────
