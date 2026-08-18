@@ -10,7 +10,8 @@ const XP_NORMALIZATION_DIVISOR = 8 * 25;
 // releaseDate (YYYY-MM-DD) sourced from https://models.dev/. xhigh variants
 // inherit their base model's date.
 const MODEL_CONFIG = {
-  // Both fable rows are the 2026-07-20 runs on image v53. The June runs (image v40,
+  // Both fable rows are the 2026-07-20 runs on image v52 (they started ~3h before
+  // the v53 pin landed in 676038b). The June runs (image v40,
   // pre-÷200 task prompt) are archived under jobs/_archive-v40-fable.
   'fable-5':   { displayName: 'Claude Fable 5',   shortName: 'Fable 5',    color: '#c2703e', order: 0.1, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-06-09' },
   'fable-5-xhigh': { displayName: 'Claude Fable 5 xhigh', shortName: 'Fable 5 xh', color: '#9c5226', order: 0.12, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-06-09' },
@@ -35,6 +36,7 @@ const MODEL_CONFIG = {
   'gemini35flash': { displayName: 'Gemini 3.5 Flash', shortName: 'Gemini 3.5 Flash', color: '#5295e8', order: 6.6, icon: VIEWS_BASE + 'model-icons/gemini.webp', releaseDate: '2026-05-19' },
   'gemini35flash-high': { displayName: 'Gemini 3.5 Flash high', shortName: 'Gemini 3.5 Flash hi', color: '#1f6fd0', order: 6.65, icon: VIEWS_BASE + 'model-icons/gemini.webp', releaseDate: '2026-05-19' },
   'gemini36flash': { displayName: 'Gemini 3.6 Flash', shortName: 'Gemini 3.6 Flash', color: '#2d6bdf', order: 6.67, icon: VIEWS_BASE + 'model-icons/gemini.webp', releaseDate: '2026-07-21' },
+  'gemini37flash': { displayName: 'Gemini 3.7 Flash', shortName: 'Gemini 3.7 Flash', color: '#1a4fc0', order: 6.675, icon: VIEWS_BASE + 'model-icons/gemini.webp', releaseDate: '2026-08-13' },
   'gemini35flashlite': { displayName: 'Gemini 3.5 Flash-Lite', shortName: 'Gemini 3.5 F-Lite', color: '#9dc0f9', order: 6.68, icon: VIEWS_BASE + 'model-icons/gemini.webp', releaseDate: '2026-07-21' },
   'haiku':    { displayName: 'Claude Haiku 4.5',   shortName: 'Haiku 4.5',  color: '#e06090', order: 7, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2025-10-15' },
   'codex':    { displayName: 'Codex CLI 5.2',       shortName: 'Codex 5.2', color: '#10a37f', order: 8, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2025-12-11' },
@@ -64,13 +66,19 @@ const MODEL_CONFIG = {
   'kimi3':    { displayName: 'Kimi K3',           shortName: 'Kimi K3',     color: '#03045e', order: 12.7, icon: VIEWS_BASE + 'model-icons/kimi.png', releaseDate: '2026-07-16' },
   'deepseek': { displayName: 'DeepSeek V4 Pro',   shortName: 'DeepSeek V4', color: '#4d6bfe', order: 12.8, icon: VIEWS_BASE + 'model-icons/deepseek.png', releaseDate: '2026-04-24' },
   'deepseekflash': { displayName: 'DeepSeek V4 Flash', shortName: 'DS V4 Flash', color: '#8fa3ff', order: 12.85, icon: VIEWS_BASE + 'model-icons/deepseek.png', releaseDate: '2026-04-24' },
+  'deepseekflash0731': { displayName: 'DeepSeek V4 Flash 0731', shortName: 'DS Flash 0731', color: '#6b85f0', order: 12.86, icon: VIEWS_BASE + 'model-icons/deepseek.png', releaseDate: '2026-07-31' },
   'qwen35':   { displayName: 'Qwen3.5 35B',     shortName: 'Qwen3.5 35B', color: '#818cf8', order: 14, icon: VIEWS_BASE + 'model-icons/qwen.webp', releaseDate: '2026-02-16' },
   'qwen3max': { displayName: 'Qwen3 Max',       shortName: 'Qwen3 Max',   color: '#a5b4fc', order: 15, icon: VIEWS_BASE + 'model-icons/qwen.webp', releaseDate: '2025-09-23' },
   'qwen37max': { displayName: 'Qwen3.7 Max',    shortName: 'Qwen3.7 Max', color: '#4f46e5', order: 15.5, icon: VIEWS_BASE + 'model-icons/qwen.webp', releaseDate: '2026-05-21' },
+  'qwen38max': { displayName: 'Qwen3.8 Max',    shortName: 'Qwen3.8 Max', color: '#3730a3', order: 15.6, icon: VIEWS_BASE + 'model-icons/qwen.webp', releaseDate: '2026-08-03' },
+  'grok46':   { displayName: 'Grok 4.6',        shortName: 'Grok 4.6',    color: '#000000', order: 15.9, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-08-10' },
+  'grok46-medium': { displayName: 'Grok 4.6 medium', shortName: 'Grok 4.6 med', color: '#4a4a4a', order: 15.91, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-08-10' },
+  'grok46-xhigh': { displayName: 'Grok 4.6 xhigh', shortName: 'Grok 4.6 xhigh', color: '#2b2b2b', order: 15.92, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-08-10' },
   'grok45':   { displayName: 'Grok 4.5',        shortName: 'Grok 4.5',    color: '#1c1c1c', order: 16, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-07-08' },
   'grok45-medium': { displayName: 'Grok 4.5 medium', shortName: 'Grok 4.5 med', color: '#555555', order: 16.1, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-07-08' },
   'grok43':   { displayName: 'Grok 4.3',        shortName: 'Grok 4.3',    color: '#8a8a8a', order: 16.2, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-04-17' },
   'muse':     { displayName: 'Muse Spark 1.1',  shortName: 'Muse Spark',  color: '#0064e0', order: 18, icon: VIEWS_BASE + 'model-icons/meta.svg', releaseDate: '2026-07-09' },
+  'muse12':   { displayName: 'Muse Spark 1.2', shortName: 'Muse Spark 1.2', color: '#003f8c', order: 17.9, icon: VIEWS_BASE + 'model-icons/meta.svg', releaseDate: '2026-08-05' },
   'inkling':  { displayName: 'Inkling',         shortName: 'Inkling',     color: '#343a40', order: 17, icon: VIEWS_BASE + 'model-icons/thinkingmachines.png', releaseDate: '2026-07-15' },
   'laguna':   { displayName: 'Laguna S 2.1',    shortName: 'Laguna S',    color: '#0891b2', order: 19, icon: VIEWS_BASE + 'model-icons/poolside.png', releaseDate: '2026-07-20' },
 };

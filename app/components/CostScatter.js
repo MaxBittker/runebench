@@ -1,5 +1,4 @@
 import { html, useEffect, useRef, useMemo, useState } from '../html.js';
-import { navigate } from '../router.js';
 import { makeLabelPlugin } from './scatter-labels.js';
 
 // High-effort ("xh") variants are folded into their base model: we never plot
@@ -141,13 +140,24 @@ export function CostScatter({ data }) {
   const canvasRef = useRef(null);
   const chartInstance = useRef(null);
   const [frontierOnly, setFrontierOnly] = useState(false);
+  // Session-local set of models hidden by clicking their point — not
+  // persisted anywhere, a reload brings everything back.
+  const [hidden, setHidden] = useState(() => new Set());
 
-  const rows = useMemo(() => buildRows(data), [data]);
+  const allRows = useMemo(() => buildRows(data), [data]);
+  const rows = useMemo(() => allRows.filter((r) => !hidden.has(r.key)), [allRows, hidden]);
   const frontier = useMemo(() => paretoKeys(rows), [rows]);
 
   useEffect(() => {
-    if (!canvasRef.current || rows.length === 0) return;
-    if (!window.Chart) return;
+    if (!canvasRef.current || !window.Chart) return;
+    if (rows.length === 0) {
+      // Everything hidden — tear down the stale chart; the restore link stays.
+      if (chartInstance.current) {
+        chartInstance.current.destroy();
+        chartInstance.current = null;
+      }
+      return;
+    }
 
     const repaint = () => chartInstance.current && chartInstance.current.update();
 
@@ -175,6 +185,16 @@ export function CostScatter({ data }) {
       };
     });
 
+    // With the frontier toggle on, fit the cost axis to the frontier points
+    // only — dominated points past that just clip off the chart. The y axis
+    // keeps its full range.
+    let xMax;
+    if (frontierOnly) {
+      const f = rows.filter((r) => frontier.has(r.key));
+      // Whole dollars so the edge tick stays clean ("$6", not "$5.62…").
+      xMax = Math.ceil(Math.max(...f.map((r) => r.avgCost)) * 1.05);
+    }
+
     if (chartInstance.current) {
       chartInstance.current.destroy();
       chartInstance.current = null;
@@ -187,6 +207,9 @@ export function CostScatter({ data }) {
       data: {
         datasets: [{
           data: points,
+          // Let edge icons overflow a little, but clip points pushed outside
+          // the chart area when the frontier-fit bounds exclude them.
+          clip: 14,
           pointStyle: points.map((p) => p.img),
           pointRadius: 11,
           pointHoverRadius: 13,
@@ -203,19 +226,12 @@ export function CostScatter({ data }) {
         // label plugin's layout cache and re-solves placements ~60 times for
         // one toggle. The entry animation isn't worth that.
         animation: false,
-        onClick: (evt, els) => {
-          if (!els.length) return;
-          const p = points[els[0].index];
-          if (p) navigate('trajectory/' + p.key + '/' + SKILL_ORDER[0]);
-        },
-        onHover: (evt, els) => {
-          evt.native.target.style.cursor = els.length ? 'pointer' : 'default';
-        },
         scales: {
           x: {
             type: 'linear',
             beginAtZero: true,
             reverse: true,
+            max: xMax,
             title: { display: true, text: 'Avg API Cost / Run (USD)' },
             ticks: {
               callback: (v) => '$' + v,
@@ -263,31 +279,48 @@ export function CostScatter({ data }) {
       hoverIdx = idx;
       if (changed) chart.update('none');
     };
-    const onMove = (e) => {
+    // Point index under the cursor — the dot itself or its placed label.
+    const idxAt = (e) => {
       const chart = chartInstance.current;
-      if (!chart) return;
+      if (!chart) return -1;
       const els = chart.getElementsAtEventForMode(e, 'nearest', { intersect: true }, true);
-      let idx = els.length ? els[0].index : -1;
-      if (idx === -1) {
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        for (const L of labelPlugin.getLabels() || []) {
-          if (x >= L.left - 2 && x <= L.left + L.w + 2 && Math.abs(y - L.y) <= L.h / 2 + 2) {
-            idx = L.idx;
-            break;
-          }
+      if (els.length) return els[0].index;
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      for (const L of labelPlugin.getLabels() || []) {
+        if (x >= L.left - 2 && x <= L.left + L.w + 2 && Math.abs(y - L.y) <= L.h / 2 + 2) {
+          return L.idx;
         }
       }
+      return -1;
+    };
+    const onMove = (e) => {
+      const idx = idxAt(e);
+      canvas.style.cursor = idx >= 0 ? 'pointer' : 'default';
       applyHover(idx);
     };
     const onLeave = () => applyHover(-1);
+    // Clicking a model (dot or label) hides it for this session; the chart
+    // rebuilds and the axes re-fit to the models that remain.
+    const onClick = (e) => {
+      const idx = idxAt(e);
+      const p = idx >= 0 ? points[idx] : null;
+      if (!p) return;
+      setHidden((prev) => {
+        const next = new Set(prev);
+        next.add(p.key);
+        return next;
+      });
+    };
     canvas.addEventListener('mousemove', onMove);
     canvas.addEventListener('mouseleave', onLeave);
+    canvas.addEventListener('click', onClick);
 
     return () => {
       canvas.removeEventListener('mousemove', onMove);
       canvas.removeEventListener('mouseleave', onLeave);
+      canvas.removeEventListener('click', onClick);
       if (chartInstance.current) {
         chartInstance.current.destroy();
         chartInstance.current = null;
@@ -295,7 +328,7 @@ export function CostScatter({ data }) {
     };
   }, [rows, frontier, frontierOnly]);
 
-  if (!data || rows.length === 0) return null;
+  if (!data || allRows.length === 0) return null;
 
   return html`
     <div>
@@ -303,6 +336,23 @@ export function CostScatter({ data }) {
         <h2 className="title is-3 has-text-centered" style=${{ marginBottom: 0 }}>
           Cost vs. Performance
         </h2>
+        ${hidden.size > 0 && html`
+          <a
+            onClick=${() => setHidden(new Set())}
+            style=${{
+              position: 'absolute',
+              left: 0,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              fontSize: '0.8rem',
+              color: '#666',
+              textDecoration: 'underline',
+              cursor: 'pointer',
+            }}
+          >
+            restore ${hidden.size} hidden
+          </a>
+        `}
         <label
           className="checkbox"
           style=${{

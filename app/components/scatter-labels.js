@@ -128,6 +128,10 @@ function solve(ctx, chartArea, meta, points) {
   meta.data.forEach((el, i) => {
     const p = points[i];
     if (!p) return;
+    // Points pushed outside the chart area (frontier-fit axes clip dominated
+    // points) get no label — a tag tethered to an offscreen dot is noise.
+    if (el.x < chartArea.left || el.x > chartArea.right ||
+        el.y < chartArea.top || el.y > chartArea.bottom) return;
     ctx.font = fontFor(p);
     const w = ctx.measureText(p.label).width;
     const h = p.big ? BIG_LABEL_H : LABEL_H;
