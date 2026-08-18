@@ -242,7 +242,12 @@ per-model leaderboard, role×model matrix, gold-over-time, trade flows, per-bot
 table, PM-aware chat transcript, embedded grid video). `--notes <dir>` merges
 per-bot analyst notes (`<bot>.json`: summary/timeline/failure_modes/dm_usage —
 written by subagents from the trajectories) and `<dir>/FINDINGS.md` as a
-"Key findings" section. Everything under `results/market/` is gitignored.
+"Key findings" section. `scripts/build-market-audit-report.ts <job> --audit
+<dir>` renders the companion `<job>-audit.html` (problems/bugs by kind+model,
+infra health, per-bot strategy table, communication anecdotes) from
+`audit-<bot>.json` + `audit-infra.json` + `SYNTHESIS.md`. Everything under
+`results/market/` is gitignored; the 2026-08-18 n24 run's notes/audit JSON +
+synthesis live in `results/market/notes/<job>/` (kept locally).
 
 ## Adding a new task
 
