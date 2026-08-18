@@ -229,6 +229,21 @@ trajectory/samples — loaded up-front by the website), per-model `<model>.json`
 lazy-fetched by `app/model-data.js` when a trajectory is viewed — commit these alongside
 `_data.js` for skills-30m), and `_combined.json` (full, gitignored, for local viewers).
 
+## Market run report
+
+```bash
+bun scripts/extract-market-viz.ts                       # refresh results/market/_data.js
+bun scripts/make-market-grid.ts <job>                   # results/market/<job>-grid.mp4
+bun scripts/build-market-report.ts <job> [--notes <dir>]  # results/market/<job>-report.html
+```
+
+`build-market-report.ts` renders a self-contained HTML report (hero numbers,
+per-model leaderboard, role×model matrix, gold-over-time, trade flows, per-bot
+table, PM-aware chat transcript, embedded grid video). `--notes <dir>` merges
+per-bot analyst notes (`<bot>.json`: summary/timeline/failure_modes/dm_usage —
+written by subagents from the trajectories) and `<dir>/FINDINGS.md` as a
+"Key findings" section. Everything under `results/market/` is gitignored.
+
 ## Adding a new task
 
 1. Add a new entry to the `SKILLS` array or modify `generateSkillXpVariants()` in `generate-tasks.ts`
