@@ -16,6 +16,18 @@
 #                                 # RANDOM order over the role's bots (bot
 #                                 # names reveal nothing; the mapping lands in
 #                                 # the job's logs as bot-models.json)
+#   run-market.sh --rank          # -rank task variant: agents get a
+#                                 # market-status CLI (time left + live wealth
+#                                 # rank from the watcher's RANK_PORT endpoint)
+#   run-market.sh --collective --mix m1,m2 [--leader-model opus5]
+#                                 # collective-market task variant: one smith
+#                                 # (the middle one; identity NOT in the public
+#                                 # brief) is a GUILD LEADER scored on the
+#                                 # smiths' COMBINED final coins, not its own.
+#                                 # The leader runs --leader-model (default
+#                                 # opus5); the rest are dealt from --mix.
+#                                 # Requires --mix (use --mix <one model> for a
+#                                 # homogeneous field).
 #   run-market.sh --dry-run       # print harbor commands without launching
 set -e
 
@@ -25,18 +37,25 @@ source "$SCRIPT_DIR/run-common.sh"
 
 HORIZON="20m"
 
-# The market task is a fixed "k of every role" layout with single-letter bot
-# names dealt role by role (k=2: a-b miners, c-d smiths, e-f alchemists; k=4:
-# a-d / e-h / i-l; k=6: a-f / g-l / m-r; k=8: a-h / i-p / q-x) — must match MARKET_BOT_POOL / marketBotRoles in
-# generate-tasks.ts. bot_names overrides the adapter's derived agenta..N.
+# The market task is a fixed "k of every role" layout. Bots are named
+# <first>_<role> (anna_miner, cara_smith, ella_alch): first names (one per
+# letter a..z) are dealt role by role alphabetically (k=2: anna/ben miners,
+# cara/dan smiths, ella/finn alchemists; k=4: a-d / e-h / i-l; k=6: a-f / g-l /
+# m-r; k=8: a-h / i-p / q-x) — must match MARKET_BOT_POOL / MARKET_ROLE_SUFFIX /
+# marketBotRoles in generate-tasks.ts. bot_names overrides the adapter's
+# derived agenta..N.
 PER_ROLE=2
-MARKET_BOT_POOL="a b c d e f g h i j k l m n o p q r s t u v w x y z"
+MARKET_BOT_POOL="anna ben cara dan ella finn gus hana ivy jack kim leo mia ned otto pam quinn ray sam tess uma vic wes xena yara zed"
+MARKET_ROLE_SUFFIX="miner smith alch"
 
 # ── Defaults ──────────────────────────────────────────────────────
 SELECTED_MODELS=""
 MIX_MODELS=""
 K_TRIALS=1
 SPLIT=0
+RANK=0
+COLLECTIVE=0
+LEADER_MODEL="opus5"
 DRY_RUN=0
 EXTRA_ARGS=""
 
@@ -49,9 +68,12 @@ while [[ $# -gt 0 ]]; do
     -H|--horizon)   HORIZON="$2"; shift 2 ;;
     -n|--per-role)  PER_ROLE="$2"; shift 2 ;;
     --split)       SPLIT=1; shift ;;
+    --rank)        RANK=1; shift ;;
+    --collective)  COLLECTIVE=1; shift ;;
+    --leader-model) LEADER_MODEL="$2"; shift 2 ;;
     --dry-run)     DRY_RUN=1; shift ;;
     -h|--help)
-      echo "Usage: run-market.sh [-m model] [--mix m1,m2] [-k trials] [-H horizon] [-n per_role] [--split] [--dry-run]"
+      echo "Usage: run-market.sh [-m model] [--mix m1,m2] [-k trials] [-H horizon] [-n per_role] [--split] [--rank] [--dry-run]"
       echo ""
       echo "Models: $ALL_MODEL_LABELS (default: all)"
       echo ""
@@ -61,6 +83,11 @@ while [[ $# -gt 0 ]]; do
       echo "--mix m1,m2[,...] runs ONE trial with the listed models dealt"
       echo "evenly + randomly within every role (k must be a multiple of the"
       echo "model count)."
+      echo "--rank picks the -rank task variant: agents get a market-status"
+      echo "CLI showing time left + their live wealth rank."
+      echo "--collective picks the collective-market variant: one smith is a"
+      echo "guild leader (model: --leader-model, default opus5) scored on the"
+      echo "smiths' combined final coins. Requires --mix."
       exit 0
       ;;
     *)
@@ -69,11 +96,19 @@ while [[ $# -gt 0 ]]; do
 done
 
 TEAM_SIZE=$((PER_ROLE * 3))
-MARKET_BOTS=$(echo $MARKET_BOT_POOL | tr ' ' '\n' | head -n "$TEAM_SIZE" | paste -sd, -)
-if [ "$(echo "$MARKET_BOTS" | tr ',' '\n' | wc -l | tr -d ' ')" -ne "$TEAM_SIZE" ]; then
+if [ "$(echo $MARKET_BOT_POOL | wc -w | tr -d ' ')" -lt "$TEAM_SIZE" ]; then
   echo "-n $PER_ROLE needs $TEAM_SIZE bots but MARKET_BOT_POOL only has $(echo $MARKET_BOT_POOL | wc -w | tr -d ' ')" >&2
   exit 1
 fi
+MARKET_BOTS=$(
+  i=0
+  for suffix in $MARKET_ROLE_SUFFIX; do
+    for first in $(echo $MARKET_BOT_POOL | tr ' ' '\n' | tail -n +$((i + 1)) | head -n "$PER_ROLE"); do
+      echo "${first}_${suffix}"
+    done
+    i=$((i + PER_ROLE))
+  done | paste -sd, -
+)
 SIZE_SUFFIX=""
 [ "$PER_ROLE" != "2" ] && SIZE_SUFFIX="-n${TEAM_SIZE}"
 
@@ -85,9 +120,33 @@ if [ -z "$MIX_MODELS" ] && [ -z "$SELECTED_MODELS" ]; then
   SELECTED_MODELS="$ALL_MODEL_LABELS"
 fi
 
+# --rank: the -rank task variant ships the market-status CLI (time left +
+# live wealth rank served by the watcher's RANK_PORT endpoint).
+RANK_SUFFIX=""
+[ "$RANK" = "1" ] && RANK_SUFFIX="-rank"
+
+# --collective: the collective-market variant — the MIDDLE smith (must match
+# marketGuildLeader in generate-tasks.ts: smiths[floor(perRole/2)]) is a guild
+# leader scored on the smiths' combined final coins. The leader's session gets
+# its private goal via --ak guild_leader; its model is pinned to LEADER_MODEL
+# on top of the --mix deal.
+COLLECTIVE_PREFIX=""
+COLLECTIVE_FLAGS=""
+LEADER_BOT=""
+if [ "$COLLECTIVE" = "1" ]; then
+  if [ -z "$MIX_MODELS" ]; then
+    echo "--collective requires --mix (use --mix <one model> for a homogeneous field)" >&2
+    exit 1
+  fi
+  COLLECTIVE_PREFIX="collective-"
+  LEADER_FIRST=$(echo $MARKET_BOT_POOL | tr ' ' '\n' | sed -n "$((PER_ROLE + PER_ROLE / 2 + 1))p")
+  LEADER_BOT="${LEADER_FIRST}_smith"
+  COLLECTIVE_FLAGS="--ak guild_leader=$LEADER_BOT"
+fi
+
 # --split: 1 Modal sandbox per agent + 1 server-only sandbox (opencode_split_adapter).
 apply_split_mode 0
-TASK="market-${HORIZON}${SIZE_SUFFIX}${SPLIT_SUFFIX}"
+TASK="${COLLECTIVE_PREFIX}market-${HORIZON}${SIZE_SUFFIX}${RANK_SUFFIX}${SPLIT_SUFFIX}"
 SANDBOX_TIMEOUT=$(sandbox_timeout_for_horizon "$HORIZON")
 RUN_TIMEOUT=$(run_timeout_for_horizon "$HORIZON")
 
@@ -178,6 +237,36 @@ build_mix() {
     }
     console.log(out.join(","));
   ' "$MARKET_BOTS" "$MIX_MODEL_IDS" "$PER_ROLE")
+
+  # --collective: pin the guild leader's session to LEADER_MODEL on top of the
+  # deal (creds/options/regions merged like any mix member; the leader model is
+  # NOT part of the per-role deck, so the other smiths keep the mix).
+  if [ "$COLLECTIVE" = "1" ]; then
+    entry=$(lookup_model "$LEADER_MODEL" "$ALL_MODELS")
+    if [ -z "$entry" ]; then
+      echo "Unknown leader model: $LEADER_MODEL (available: $ALL_MODEL_LABELS)"; exit 1
+    fi
+    IFS='|' read -r agent model label <<< "$entry"
+    if ! configure_model_env "$LEADER_MODEL" "$REPO_ROOT/agents" "$entry"; then
+      echo "Missing credentials for leader model $LEADER_MODEL — aborting" >&2; exit 1
+    fi
+    if ! market_agent_flag "$agent"; then
+      echo "$LEADER_MODEL is not an opencode-family model — the leader runs through the generic team/split adapter" >&2; exit 1
+    fi
+    case "$AGENT_ENV_FLAGS" in
+      "") ;;
+      *) case " $MIX_ENV_FLAGS " in *" $AGENT_ENV_FLAGS "*) ;; *) MIX_ENV_FLAGS="$MIX_ENV_FLAGS $AGENT_ENV_FLAGS" ;; esac ;;
+    esac
+    team_model_extra_args "$LEADER_MODEL"
+    case "$MODEL_EXTRA_ARGS" in
+      "") ;;
+      *) case " $MIX_EXTRA_ARGS " in *" $MODEL_EXTRA_ARGS "*) ;; *) MIX_EXTRA_ARGS="$MIX_EXTRA_ARGS $MODEL_EXTRA_ARGS" ;; esac ;;
+    esac
+    team_model_options "$LEADER_MODEL"
+    [ -n "$MODEL_OPTIONS_SPEC" ] && MIX_MODEL_OPTIONS="${MIX_MODEL_OPTIONS:+$MIX_MODEL_OPTIONS;}$MODEL_OPTIONS_SPEC"
+    MIX_BOT_MODELS=$(echo "$MIX_BOT_MODELS" | sed "s|${LEADER_BOT}=[^,]*|${LEADER_BOT}=${model}|")
+    MIX_LABEL="${MIX_LABEL}+ldr-${label}"
+  fi
 }
 
 # ── Launch all models in parallel (one sandbox each, like run.sh) ──
@@ -223,7 +312,7 @@ for model_name in $RUNS; do
     BOT_MODELS_FLAG=""
   fi
 
-  JOB_NAME="market${SPLIT_TAG}${SIZE_SUFFIX}-${label}-${TIMESTAMP}"
+  JOB_NAME="${COLLECTIVE_PREFIX}market${SPLIT_TAG}${SIZE_SUFFIX}${RANK_SUFFIX}-${label}-${TIMESTAMP}"
   LOG_FILE="/tmp/harbor-${JOB_NAME}.log"
 
   CMD="$ENV_PREFIX harbor run \
@@ -237,6 +326,7 @@ for model_name in $RUNS; do
     --ak team_size=$TEAM_SIZE \
     --ak bot_names=$MARKET_BOTS \
     $BOT_MODELS_FLAG \
+    $COLLECTIVE_FLAGS \
     $SPLIT_FLAGS \
     $AGENT_ENV_FLAGS \
     -n 4 \
@@ -246,6 +336,7 @@ for model_name in $RUNS; do
   if [ "$DRY_RUN" = "1" ]; then
     echo "── $model_name ──"
     [ -n "$BOT_MODELS_FLAG" ] && echo "bot → model: $MIX_BOT_MODELS"
+    [ "$COLLECTIVE" = "1" ] && echo "guild leader: $LEADER_BOT ($LEADER_MODEL)"
     echo "$CMD"
     echo ""
     continue
@@ -253,6 +344,7 @@ for model_name in $RUNS; do
 
   echo "  Launching $model_name (market × $K_TRIALS trial(s)) → $LOG_FILE"
   [ -n "$BOT_MODELS_FLAG" ] && echo "  bot → model: $MIX_BOT_MODELS"
+  [ "$COLLECTIVE" = "1" ] && echo "  guild leader: $LEADER_BOT ($LEADER_MODEL)"
   eval "$CMD" > "$LOG_FILE" 2>&1 &
   PIDS="$PIDS $!"
   LAUNCHED="$LAUNCHED $model_name"

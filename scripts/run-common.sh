@@ -11,6 +11,7 @@
 ALL_MODELS="
 opencode|anthropic/claude-fable-5|fable5
 hotteok-claude|anthropic/claude-hotteok-eap|hotteok
+opencode|anthropic/claude-opus-5|opus5
 opencode|anthropic/claude-opus-4-8|opus48
 opencode|anthropic/claude-opus-4-7|opus47
 opencode|anthropic/claude-opus-4-6|opus
@@ -40,10 +41,11 @@ grok46-opencode|openrouter/x-ai/grok-4.6|grok46
 deepseekflash-opencode|openrouter/~deepseek/deepseek-v4-flash-latest|deepseekflash
 opencode|openrouter/google/gemini-3.7-flash|gemini37flash-or
 luna-xhigh-opencode|openai/gpt-5.6-luna|gpt56luna-xhigh
+opencode|openai/gpt-5.6-terra|gpt56terra
 muse12-opencode|meta/muse-spark-1.2-contributor|muse12
 "
 
-ALL_MODEL_LABELS="fable5 hotteok opus48 opus47 opus opus45 sonnet5 sonnet46 sonnet45 haiku codex53 gpt55 gpt54 gpt54mini gpt54nano gemini gemini31 geminiflash gemini35flash gemini37flash glm glm52 kimi qwen3 qwen35 qwen3max grok45 grok46 deepseekflash gemini37flash-or gpt56luna-xhigh muse12"
+ALL_MODEL_LABELS="fable5 hotteok opus5 opus48 opus47 opus opus45 sonnet5 sonnet46 sonnet45 haiku codex53 gpt55 gpt54 gpt54mini gpt54nano gemini gemini31 geminiflash gemini35flash gemini37flash glm glm52 kimi qwen3 qwen35 qwen3max grok45 grok46 deepseekflash gemini37flash-or gpt56luna-xhigh gpt56terra muse12"
 
 # ── sandbox_timeout_for_horizon: horizon → Modal sandbox backstop ──
 # Generous ceilings: a too-small value kills runs mid-flight (unfair zero
@@ -56,6 +58,7 @@ sandbox_timeout_for_horizon() {
     30m)  echo 7200 ;;
     45m)  echo 7200 ;;
     60m)  echo 10800 ;;
+    90m)  echo 14400 ;;
     *)    echo 3600 ;;
   esac
 }
@@ -72,6 +75,7 @@ run_timeout_for_horizon() {
     30m)  echo 1800 ;;
     45m)  echo 2700 ;;
     60m)  echo 3600 ;;
+    90m)  echo 5400 ;;
     *)    echo 900 ;;
   esac
 }
@@ -489,8 +493,11 @@ apply_split_mode() {
   SPLIT_TAG="-split"
   # 8888/7780 = engine/gateway for the agent boxes; 8790 = the live
   # observation dashboard (shared/dashboard.ts) — the split adapter logs its
-  # public URL and writes it to the job's logs dir as dashboard-url.txt.
-  SPLIT_FLAGS="--ek tunnel_ports=8888,7780,8790"
+  # public URL and writes it to the job's logs dir as dashboard-url.txt;
+  # 8791 = the market watcher's wealth-rank endpoint (-rank task variants —
+  # the split adapter hands agent boxes the URL via /tmp/rank-url; the tunnel
+  # is harmless on tasks where nothing listens).
+  SPLIT_FLAGS="--ek tunnel_ports=8888,7780,8790,8791"
 }
 
 # ── regenerate_tasks: run the task generator ─────────────────────

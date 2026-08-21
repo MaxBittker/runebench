@@ -69,6 +69,9 @@ export const Items = {
     WOODEN_SHIELD: 1171,
     SHORTBOW: 841,
     BRONZE_ARROW: 882,
+    // "Dragonfire shield" in-game — the anti-dragonfire shield (engine
+    // debugname antidragonbreathshield); caps KBD fiery breath at 15.
+    ANTI_DRAGON_SHIELD: 1540,
 
     // Resources
     LOGS: 1511,
@@ -220,6 +223,7 @@ export const Locations = {
     FALADOR_CENTER: { x: 2964, z: 3378 },  // Falador town center
     CATHERBY_BEACH: { x: 2836, z: 3432 },  // Catherby fishing spots (on shore)
     SEERS_VILLAGE: { x: 2725, z: 3484 },  // Seers Village center
+    EDGEVILLE_BANK: { x: 3094, z: 3491 },  // Edgeville bank (Wilderness staging)
 };
 
 // Character-design kit ids from the engine's idk.pack, demon/disabled

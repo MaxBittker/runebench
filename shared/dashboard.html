@@ -82,6 +82,12 @@
   .msg .ts { color: var(--text-muted); font-variant-numeric: tabular-nums; margin-right: 6px; }
   .msg .sender { color: var(--text-primary); font-weight: 600; }
   .msg .dot { display: inline-block; margin-right: 4px; position: relative; top: 0.5px; }
+  /* collective-market: messages sent by the (hidden-in-game) guild leader */
+  .msg.leader {
+    background: rgba(201,133,0,0.13); border-left: 2px solid var(--series-4);
+    margin-left: -8px; padding: 1px 4px 1px 6px; border-radius: 3px;
+  }
+  .crown { color: var(--series-4); }
   #waiting { padding: 40px; text-align: center; color: var(--text-muted); }
 </style>
 </head>
@@ -96,6 +102,10 @@
 
 <div class="layout" id="layout" style="display:none">
   <div>
+    <div class="card" id="role-card" style="display:none; margin-bottom: 14px">
+      <h2>Total wealth held by each role</h2>
+      <svg id="role-chart" width="100%" height="240"></svg>
+    </div>
     <div class="card">
       <h2 id="chart-title">Gold over time</h2>
       <div id="legend"></div>
@@ -186,6 +196,58 @@ function renderChart() {
   svg.innerHTML = s;
 }
 
+// ── role wealth chart (the "economy inverted" figure: one line per role,
+//    end-of-line labels with the role's current total) ──────────────
+const ROLE_COLORS = { miner: '#3987e5', smith: '#d95926', alchemist: '#199e70' };
+const ROLE_LABELS = { miner: 'Miners', smith: 'Smiths', alchemist: 'Alchemists' };
+function renderRoleChart() {
+  const card = $('role-card');
+  const pts = data.roleSeries?.points ?? {};
+  const roles = ['miner', 'smith', 'alchemist'].filter(r => (pts[r]?.length ?? 0) >= 2);
+  if (!roles.length) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  const svg = $('role-chart');
+  const W = svg.clientWidth || 700, H = 240, m = { t: 10, r: 150, b: 22, l: 46 };
+  const all = roles.flatMap(r => pts[r]);
+  const xMax = Math.max(...all.map(p => p[0]));
+  const yTop = Math.max(1, ...all.map(p => p[1]));
+  const rawStep = yTop / 4;
+  const pow = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const step = [1,2,5,10].map(f => f*pow).find(sv => yTop / sv <= 5) ?? rawStep;
+  const yMax = Math.ceil(yTop / step) * step;
+  const x = (v) => m.l + (v / xMax) * (W - m.l - m.r);
+  const y = (v) => H - m.b - (v / yMax) * (H - m.t - m.b);
+
+  let s = '';
+  for (let v = 0; v <= yMax; v += step) {
+    const yy = y(v);
+    s += `<line x1="${m.l}" y1="${yy}" x2="${W-m.r}" y2="${yy}" stroke="var(--gridline)" stroke-width="1"/>`;
+    s += `<text x="${m.l-6}" y="${yy+3.5}" text-anchor="end">${fmt(v)}</text>`;
+  }
+  const everyMin = xMax > 30*60000 ? 15 : 5;
+  for (let t = 0; t <= xMax; t += everyMin*60000) {
+    s += `<text x="${x(t)}" y="${H-6}" text-anchor="middle">${Math.round(t/60000)}m</text>`;
+  }
+  s += `<line x1="${m.l}" y1="${y(0)}" x2="${W-m.r}" y2="${y(0)}" stroke="var(--baseline)" stroke-width="1"/>`;
+  // End-of-line labels, nudged apart so close finishes stay readable.
+  const labels = roles.map(r => {
+    const last = pts[r][pts[r].length - 1];
+    return { r, ly: y(last[1]) + 3.5, text: `${ROLE_LABELS[r]} ${last[1].toLocaleString()}` };
+  }).sort((a, b) => a.ly - b.ly);
+  for (let i = 1; i < labels.length; i++) {
+    if (labels[i].ly - labels[i-1].ly < 14) labels[i].ly = labels[i-1].ly + 14;
+  }
+  for (const r of roles) {
+    const d = pts[r].map((p, i) => (i ? 'L' : 'M') + x(p[0]).toFixed(1) + ' ' + y(p[1]).toFixed(1)).join('');
+    s += `<path d="${d}" fill="none" stroke="${ROLE_COLORS[r]}" stroke-width="2" stroke-linejoin="round"/>`;
+  }
+  for (const l of labels) {
+    s += `<text x="${W-m.r+8}" y="${l.ly}" style="fill:${ROLE_COLORS[l.r]};font-weight:600">${l.text}</text>`;
+  }
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = s;
+}
+
 $('chart-wrap').addEventListener('mousemove', (e) => {
   if (!chartGeom || !data) return;
   const rect = $('chart').getBoundingClientRect();
@@ -243,7 +305,7 @@ function renderBots() {
     return `<div class="card">
       <div class="bot-head">
         <span class="dot" style="background:${botColor(b)}"></span>
-        <span class="name">${esc(b)}</span>
+        <span class="name">${esc(b)}${b === data.guildLeader ? ' <span class="crown" title="guild leader">♛</span>' : ''}</span>
         <span class="gold">${fmt(gold)} <small>gp</small></span>
       </div>
       <div class="bot-sub">${sub.join(' · ') || 'no data yet'}</div>
@@ -265,8 +327,10 @@ function renderChat() {
   const el = $('chat');
   const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
   el.innerHTML = data.chat.length
-    ? data.chat.slice(-500).map(c =>
-        `<div class="msg"><span class="ts">${mmss(c.elapsedMs)}</span><span class="dot" style="background:${botColor(c.sender)}"></span><span class="sender">${esc(c.sender)}${c.to ? ` &rarr; ${esc(c.to)} <span class="ts">(pm)</span>` : ''}</span> ${esc(c.text)}</div>`).join('')
+    ? data.chat.slice(-500).map(c => {
+        const isLeader = data.guildLeader && c.sender === data.guildLeader;
+        return `<div class="msg${isLeader ? ' leader' : ''}"><span class="ts">${mmss(c.elapsedMs)}</span><span class="dot" style="background:${botColor(c.sender)}"></span><span class="sender">${esc(c.sender)}${isLeader ? ' <span class="crown" title="guild leader">♛</span>' : ''}${c.to ? ` &rarr; ${esc(c.to)} <span class="ts">(pm)</span>` : ''}</span> ${esc(c.text)}</div>`;
+      }).join('')
     : '<div class="empty">No messages yet.</div>';
   if (atBottom) el.scrollTop = el.scrollHeight;
 }
@@ -281,7 +345,7 @@ async function tick() {
     if (data.botNames.length && data.sampleCount > 0) {
       $('waiting').style.display = 'none';
       $('layout').style.display = '';
-      renderMeta(); renderChart(); renderBots(); renderChat();
+      renderMeta(); renderRoleChart(); renderChart(); renderBots(); renderChat();
     }
   } catch (e) { /* stale marker below covers it */ }
   const age = Math.round((Date.now() - lastFetch) / 1000);
@@ -291,7 +355,7 @@ async function tick() {
 }
 tick();
 setInterval(tick, 5000);
-window.addEventListener('resize', () => { if (data) renderChart(); });
+window.addEventListener('resize', () => { if (data) { renderRoleChart(); renderChart(); } });
 </script>
 </body>
 </html>

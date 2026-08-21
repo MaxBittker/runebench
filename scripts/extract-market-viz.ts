@@ -13,13 +13,15 @@
  *   chat     [{ t, sender, text }]
  *   videos   { bot: relative mp4 path } — per-bot screen recordings, referenced
  *            in place under jobs/ (paths are relative to views/)
- *   sales    the actual trades, mined from the per-bot trajectories: every
- *            completed trade-tool call logs `partner` + `gave` + `received`
- *            item lists, so each sale gets exact goods, quantity and unit
- *            price (gp per ore/bar/platebody; bundles priced per bundle).
- *            Barters and one-sided gifts are kept with unit = null.
- *            Fallback when a run has no trade records: pair the watcher's gp
- *            transfers with `## Inventory` snapshot deltas.
+ *   sales    the actual trades. Primary source: the engine's trade ledger,
+ *            folded into the watcher tracking as `trades` (authoritative —
+ *            written by the engine at the moment of each exchange, with both
+ *            usernames + both item lists). Each sale gets exact goods,
+ *            quantity and unit price (gp per ore/bar/platebody; bundles
+ *            priced per bundle); barters and one-sided gifts keep unit = null.
+ *            Fallback for pre-ledger runs: trade records regex-mined from the
+ *            per-bot trajectories (`partner`/`gave`/`received`), then gp-delta
+ *            pairing with `## Inventory` snapshot deltas as a last resort.
  *
  * Usage: bun scripts/extract-market-viz.ts
  */
@@ -42,6 +44,8 @@ interface RunOut {
   };
   bots: Array<{ name: string; role: string; finalGold: number; model?: string }>;
   samples: Array<{ t: number; gold: Record<string, number>; bank?: Record<string, number> }>;
+  /** total item quantities across all bots (inv+bank), aligned to samples: qty[i][j] = names[j] at samples[i] */
+  itemSeries?: { names: string[]; qty: number[][] };
   events: Array<{
     t: number; type: 'transfer' | 'gain' | 'loss';
     bot?: string; from?: string; to?: string; amount: number;
@@ -74,7 +78,7 @@ const basketSig = (b: Record<string, number>) =>
 const fmtBasket = (b: Record<string, number>) =>
   Object.keys(b).length ? Object.keys(b).sort().map(n => `${b[n]}× ${n}`).join(' + ') : 'nothing';
 
-function tradesFromTrajectory(trialPath: string, bot: string, t0Ms: number): TradeRec[] {
+function tradesFromTrajectory(trialPath: string, bot: string, t0Ms: number, botNames: string[]): TradeRec[] {
   const trajPath = join(trialPath, 'agent', `trajectory-${bot}.json`);
   if (!existsSync(trajPath)) return [];
   let traj: any;
@@ -87,13 +91,15 @@ function tradesFromTrajectory(trialPath: string, bot: string, t0Ms: number): Tra
     let obs = typeof step.observation === 'string' ? step.observation : JSON.stringify(step.observation ?? '');
     // observations nest JSON to varying depth — collapse escapes before matching
     obs = obs.replace(/\\+n/g, '\n').replace(/\\+"/g, '"');
-    const re = /"partner":\s*"(\w+)",\s*"gave":\s*(\[[^\]]*\]),\s*"received":\s*(\[[^\]]*\])/g;
+    // partner is the DISPLAY name ("Ivy Smith") — spaces and capitals, not the bot key
+    const re = /"partner":\s*"([^"]+)",\s*"gave":\s*(\[[^\]]*\]),\s*"received":\s*(\[[^\]]*\])/g;
     let m: RegExpExecArray | null;
     while ((m = re.exec(obs))) {
       let gave: any[], recv: any[];
       try { gave = JSON.parse(m[2]); recv = JSON.parse(m[3]); } catch { continue; }
       if (!gave.length && !recv.length) continue;   // timed-out / cancelled trade
-      const partner = m[1].toLowerCase();
+      const partner = m[1].toLowerCase().replace(/\s+/g, '_');
+      if (!botNames.includes(partner)) continue;    // doc snippets / non-bot matches
       const key = `${partner}|${step.timestamp}|${m[2]}|${m[3]}`;
       if (seen.has(key)) continue;
       seen.add(key);
@@ -106,6 +112,44 @@ function tradesFromTrajectory(trialPath: string, bot: string, t0Ms: number): Tra
       });
     }
   }
+  return out;
+}
+
+/**
+ * Authoritative trades from the engine's ledger (market_watcher folds
+ * TRADE_LEDGER_FILE into tracking.trades). Usernames are already the bot keys
+ * — no display-name mapping, no mirror records, no truncation exposure. Item
+ * names arrive as engine debugnames ("bronze_bar"); prefer the display names
+ * the watcher learned live, and prettify the debugname otherwise.
+ */
+function tradesFromLedger(tracking: any, botNames: string[]): TradeRec[] {
+  const itemName = (it: any): string => {
+    if (it?.id === 995) return 'Coins';
+    const learned = tracking.itemNames?.[it?.id];
+    if (learned) return learned;
+    const raw = String(it?.name ?? it?.id ?? '?').replace(/_/g, ' ');
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
+  };
+  const agg = (items: any[]): Record<string, number> => {
+    const r: Record<string, number> = {};
+    for (const it of items ?? []) { const n = itemName(it); r[n] = (r[n] ?? 0) + (it.count ?? 0); }
+    return r;
+  };
+  const out: TradeRec[] = [];
+  for (const tr of tracking.trades ?? []) {
+    const from = String(tr.from ?? '').toLowerCase();
+    const to = String(tr.to ?? '').toLowerCase();
+    if (!botNames.includes(from) || !botNames.includes(to)) continue;
+    if (!tr.fromItems?.length && !tr.toItems?.length) continue;
+    const t = Math.max(0, Math.round((tr.elapsedMs ?? 0) / 1000));
+    const [a, b] = [from, to].sort();
+    out.push({
+      t, a, b,
+      itemsA: a === from ? agg(tr.fromItems) : agg(tr.toItems),
+      itemsB: a === from ? agg(tr.toItems) : agg(tr.fromItems),
+    });
+  }
+  out.sort((x, y) => x.t - y.t);
   return out;
 }
 
@@ -306,6 +350,7 @@ function deriveSales(
     if (e.type !== 'transfer' || !e.from || !e.to) continue;
     const sale: RunOut['sales'][number] = {
       t: e.t, from: e.from, to: e.to, gp: e.amount, item: null, qty: null, unit: null,
+      note: 'inferred from gp deltas — partner/goods are guesses',
     };
     sales.push(sale);
 
@@ -328,7 +373,7 @@ function deriveSales(
     for (const k in lost) if (gained[k]) basket[k] = Math.min(lost[k], gained[k]);
     if (!Object.keys(basket).length) basket = Object.keys(gained).length ? gained : lost;
     const names = Object.keys(basket);
-    if (!names.length) { sale.note = 'no inventory movement observed'; continue; }
+    if (!names.length) { sale.note = `no inventory movement observed; ${sale.note}`; continue; }
 
     if (names.length === 1) {
       sale.item = names[0];
@@ -336,7 +381,7 @@ function deriveSales(
       sale.unit = Math.round((sale.gp / sale.qty) * 100) / 100;
     } else {
       sale.item = names.map(n => `${basket[n]}× ${n}`).join(' + ');
-      sale.note = 'mixed basket — no per-item price';
+      sale.note = `mixed basket — no per-item price; ${sale.note}`;
     }
   }
   return sales;
@@ -357,8 +402,10 @@ function extractRun(jobName: string, trialDir: string, rewardPath: string): RunO
   // ── Forward-filled gold series ─────────────────────────────────
   const last: Record<string, number> = {};
   const lastBank: Record<string, number> = {};
+  const lastItems: Record<string, Record<string, number>> = {};   // bot → itemId → qty (inv+bank)
   for (const b of botNames) { last[b] = 0; lastBank[b] = 0; }
   const samples: RunOut['samples'] = [];
+  const itemTotals: Array<Record<string, number>> = [];           // per sample: itemId → total qty
   for (const s of tracking.samples) {
     const t = Math.round((s.elapsedMs ?? 0) / 1000);
     const gold: Record<string, number> = {};
@@ -370,9 +417,29 @@ function extractRun(jobName: string, trialDir: string, rewardPath: string): RunO
       const bk = s.bots?.[b]?.bankCoins;
       if (typeof bk === 'number') lastBank[b] = bk;
       bank[b] = lastBank[b];
+      const bd = s.bots?.[b];
+      if (bd?.invItems || bd?.bankItems) {
+        const m: Record<string, number> = {};
+        for (const [id, q] of [...(bd.invItems ?? []), ...(bd.bankItems ?? [])])
+          m[id] = (m[id] ?? 0) + q;
+        lastItems[b] = m;
+      }
     }
+    const tot: Record<string, number> = {};
+    for (const b of botNames)
+      for (const [id, q] of Object.entries(lastItems[b] ?? {})) tot[id] = (tot[id] ?? 0) + q;
     samples.push({ t, gold, bank });
+    itemTotals.push(tot);
   }
+  // Compact item series: names ordered by peak total, quantities aligned to samples.
+  const itemNames: Record<string, string> = tracking.itemNames ?? {};
+  const itemPeak: Record<string, number> = {};
+  for (const tot of itemTotals)
+    for (const [id, q] of Object.entries(tot)) itemPeak[id] = Math.max(itemPeak[id] ?? 0, q);
+  const itemIds = Object.keys(itemPeak).sort((a, b) => itemPeak[b] - itemPeak[a]);
+  const itemSeries: RunOut['itemSeries'] = itemIds.length
+    ? { names: itemIds.map(id => itemNames[id] ?? `#${id}`), qty: itemTotals.map(tot => itemIds.map(id => tot[id] ?? 0)) }
+    : undefined;
 
   // ── Ledger: deltas → paired transfers ──────────────────────────
   interface Delta { si: number; t: number; bot: string; amount: number; before: number; after: number; matched: boolean; }
@@ -425,12 +492,19 @@ function extractRun(jobName: string, trialDir: string, rewardPath: string): RunO
     ...(c.to ? { to: String(c.to).toLowerCase() } : {}),
   }));
 
-  // ── Sales: exact trade records from trajectories; inventory-delta fallback ─
+  // ── Sales: engine ledger → trajectory trade records → inventory-delta fallback ─
   const t0Ms = Date.parse(tracking.startTime ?? '') || 0;
   const trialPath = join(JOBS_DIR, jobName, trialDir);
-  const trades = mergeTrades(botNames.flatMap(b => tradesFromTrajectory(trialPath, b, t0Ms)));
+  const ledgerTrades = tradesFromLedger(tracking, botNames);
+  const trades = ledgerTrades.length
+    ? ledgerTrades
+    : mergeTrades(botNames.flatMap(b => tradesFromTrajectory(trialPath, b, t0Ms, botNames)));
+  if (!ledgerTrades.length && trades.length) {
+    console.warn(`  ⚠ ${jobName}/${trialDir}: no engine trade ledger (pre-ledger image?) — using trajectory-mined trade records`);
+  }
   let sales = salesFromTrades(trades);
   if (!sales.length) {
+    console.warn(`  ⚠ ${jobName}/${trialDir}: NO trade records parsed from trajectories — falling back to gp-delta inference (partners/goods are GUESSES)`);
     const invSnaps: Record<string, InvSnap[]> = {};
     for (const b of botNames) invSnaps[b] = invSnapsFromTrajectory(trialPath, b, t0Ms);
     sales = deriveSales(events, invSnaps);
@@ -463,7 +537,7 @@ function extractRun(jobName: string, trialDir: string, rewardPath: string): RunO
     transcripts[b] = `../results/market/transcripts/${fname}`;
   }
 
-  const m = jobName.match(/^market-(.+)-(\d{8}-\d{6})$/);
+  const m = jobName.match(/^(?:collective-)?market-(.+)-(\d{8}-\d{6})$/);
   // Mixed-model runs (run-market.sh --mix): the adapter records which model
   // drove which bot in agent/bot-models.json (bot names deliberately don't say).
   const botModelsPath = join(trialPath, 'agent', 'bot-models.json');
@@ -486,6 +560,7 @@ function extractRun(jobName: string, trialDir: string, rewardPath: string): RunO
       ...(botModels[b] ? { model: botModels[b] } : {}),
     })),
     samples,
+    ...(itemSeries ? { itemSeries } : {}),
     events,
     chat,
     videos,
@@ -498,7 +573,7 @@ function main() {
   const runs: RunOut[] = [];
   if (!existsSync(JOBS_DIR)) { console.error('no jobs/ dir'); process.exit(1); }
   for (const job of readdirSync(JOBS_DIR).sort().reverse()) {
-    if (!job.startsWith('market-')) continue;
+    if (!job.startsWith('market-') && !job.startsWith('collective-market-')) continue;
     const jobDir = join(JOBS_DIR, job);
     if (!statSync(jobDir).isDirectory()) continue;  // stray launcher logs etc.
     for (const trial of readdirSync(jobDir)) {

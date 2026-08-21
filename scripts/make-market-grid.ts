@@ -8,15 +8,18 @@
  *   │ agenta │ agentb │ agentc │   3×2 grid of cropped, sped-up bot feeds
  *   ├────────┼────────┼────────┤   (badge = bot · role)
  *   │ agentd │ agente │ agentf │
- *   ├────────┬────────┬────────┤
- *   │  GOLD  │  CHAT  │ TRADES │   bottom strip, synced to the sped-up clock
- *   └────────┴────────┴────────┘
+ *   ├──────┬──────┬──────┬──────┤
+ *   │ GOLD │ CAP  │PRICES│ CHAT │   bottom strip, synced to the sped-up clock
+ *   └──────┴──────┴──────┴──────┘
  *
  *   GOLD    animated per-bot gold-over-time line graph (matplotlib frames,
- *           one per watcher sample, revealed progressively)
+ *           one per watcher sample, revealed progressively), colored by ROLE
+ *   CAP     animated item market-cap graph: qty held across all bots' inv+bank
+ *           × rolling-average trade price (top goods; flat starting stock like
+ *           nature runes is filtered out so mined/smithed goods stay readable)
+ *   PRICES  best-effort rolling-average unit price per traded item (log y,
+ *           qty-weighted mean of the last 5 single-item sales, outliers trimmed)
  *   CHAT    rolling window of in-game chat (same renderer as the team grid)
- *   TRADES  rolling trade ledger from extract-market-viz's mined sales
- *           (payer → payee, gp, goods)
  *
  * Data comes from results/market/_data.js — run the extractor first (this
  * script re-runs it automatically if the job is missing from _data.js):
@@ -28,8 +31,9 @@
  *   (no arg → the local run with the highest total gold that has all feeds)
  *
  * Larger markets (market-*-n12/-n18) get a 6-column grid of smaller panes.
- * Mixed-model runs (bots[].model from agent/bot-models.json) color feeds and
- * graph lines BY MODEL and add the model to each badge.
+ * Feeds, graph lines, and chat are colored BY ROLE (miner/smith/alchemist);
+ * mixed-model runs (bots[].model from agent/bot-models.json) add the model
+ * name to each badge.
  *
  * Env overrides:
  *   COLS         feed columns             (default 3 for ≤6 bots, else 6)
@@ -50,6 +54,12 @@ const CROP = process.env.CROP || 'crop=724:478:38:68'; // game client only (excl
 const FPS = 24;
 
 const COLOR_POOL = ['0x58a6ff', '0x3fb950', '0xf778ba', '0xd29922', '0xa371f7', '0xff7b72'];
+// Everything is colored by role: miners blue, smiths orange, alchemists green
+// (they turn goods into gp — matches the total-gold green).
+const ROLE_COLORS: Record<string, string> = { miner: '0x58a6ff', smith: '0xd29922', alchemist: '0x3fb950', alch: '0x3fb950' };
+// Item-volume graph lines (up to ITEM_MAX distinct goods).
+const ITEM_COLORS = ['0x58a6ff', '0xf778ba', '0x3fb950', '0xd29922', '0xa371f7', '0xff7b72', '0x39d2c0', '0xe3b341'];
+const ITEM_MAX = ITEM_COLORS.length;
 
 const ff = (args: string[]) => execFileSync('ffmpeg', ['-v', 'error', '-y', ...args], { stdio: 'inherit' });
 const fmtClock = (s: number) =>
@@ -67,7 +77,12 @@ function loadRuns(): any[] {
   };
   let runs = read();
   const jobArg = process.argv[2];
-  if (!runs || (jobArg && !runs.some((r: any) => r.meta.job === jobArg))) {
+  const stale = (rs: any[] | null) =>
+    !rs ||
+    (jobArg && !rs.some((r: any) => r.meta.job === jobArg)) ||
+    // itemSeries was added for the ITEMS pane — old _data.js lacks it
+    rs.every((r: any) => !r.itemSeries);
+  if (stale(runs)) {
     console.log('[data] regenerating results/market/_data.js …');
     execFileSync('bun', [join(REPO, 'scripts', 'extract-market-viz.ts')], { stdio: 'inherit' });
     runs = read();
@@ -87,16 +102,14 @@ if (!run) { console.error(`run not found: ${process.argv[2] ?? '(no local run wi
 
 const jobName: string = run.meta.job;
 const bots: Array<{ name: string; role: string; finalGold: number; model?: string }> = run.bots;
-// Mixed-model run → one color per model (18 per-bot colors aren't readable);
-// single-model run → one color per bot as before.
+// Color everything by ROLE — the market story is miners → smiths → alchemist,
+// and role colors stay readable at any team size (models are in the badges).
 const shortModel = (id: string) => id.replace(/^[^/]+\//, '').replace(/^~/, '').replace(/^[^/]+\//, '');
 const mixed = bots.some(b => b.model) && new Set(bots.map(b => b.model)).size > 1;
 const modelList = mixed ? [...new Set(bots.map(b => b.model!))] : [];
 const botColor: Record<string, string> = {};
 bots.forEach((b, i) => {
-  botColor[b.name] = mixed
-    ? COLOR_POOL[modelList.indexOf(b.model!) % COLOR_POOL.length]
-    : COLOR_POOL[i % COLOR_POOL.length];
+  botColor[b.name] = ROLE_COLORS[b.role] ?? COLOR_POOL[i % COLOR_POOL.length];
 });
 const modelOf = (b: { model?: string }) => (b.model ? shortModel(b.model) : '');
 const roleOf: Record<string, string> = {};
@@ -110,7 +123,7 @@ const feeds = bots.map(b => {
 if (!feeds.some(f => f.file)) { console.error(`no recordings on disk for ${jobName}`); process.exit(1); }
 const probeFile = feeds.find(f => f.file)!.file!;
 
-// ── Geometry: 3×2 feed grid + a 3-pane bottom strip (graph | chat | trades) ──
+// ── Geometry: feed grid + a 4-pane bottom strip (gold | market cap | prices | chat) ──
 const COLS = Number(process.env.COLS || (feeds.length > 6 ? 6 : 3));
 const ROWS = Math.ceil(feeds.length / COLS);
 const PW = Number(process.env.PANE_PW || (COLS > 3 ? 400 : 620));
@@ -118,7 +131,7 @@ const PH = Math.round(PW / 1.5146 / 2) * 2;   // cropped client ≈ 1.51:1
 const W = PW * COLS;
 const BH = Math.max(PH, 400);                  // bottom strip height (readable text at small panes)
 const H = PH * ROWS + BH;
-const PANE_W = Math.floor(W / 3 / 2) * 2;      // graph / chat / trades panes
+const PANE_W = Math.floor(W / 4 / 2) * 2;      // gold / market cap / prices / chat panes
 
 // ── Timing ──
 const duration = Number(execFileSync('ffprobe',
@@ -156,7 +169,7 @@ const titleFilter = titleLines.map((l, i) => {
 ff(['-f', 'lavfi', '-i', `color=c=0x0d1117:s=${W}x${H}:d=2.6`, '-vf', titleFilter,
     '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-r', String(FPS), '-an', join(TMP, 'title.mp4')]);
 
-// ── Rolling-text panes (chat + trades) ──────────────────────────────
+// ── Rolling-text pane (chat) ─────────────────────────────────────────
 // Same technique as make-team-grid: pre-render one PNG per visible window
 // state, concat into a video track timed to the sped-up clock.
 const TEXT_FONT = 19;
@@ -242,25 +255,45 @@ const chatItems = (run.chat as Array<{ t: number; sender: string; text: string }
 console.log(`[chat] ${chatItems.length} messages`);
 const chatMp4 = buildRollingPane('chat', 'CHAT', chatItems, 8);
 
-// Trades: one entry per sale — payer line + goods line, colored by the payee
-// (the bot that earned the gp).
-const tradeItems = (run.sales as Array<{ t: number; from: string; to: string; gp: number; item: string | null; qty: number | null; unit: number | null; note?: string }>)
-  .map(s => {
-    const goods = s.item
-      ? (s.qty && s.qty > 1 && !/bundle|barter/.test(s.note ?? '') ? `${s.qty}× ${s.item}` : s.item)
-      : /gift|advance/.test(s.note ?? '') ? 'gift / advance'
-      : 'goods unknown';
-    const gp = s.gp > 0 ? `${fmtGp(s.gp)}gp` : 'barter';
-    return {
-      t: s.t,
-      lines: [{ color: botColor[s.to] ?? 'white', text: `[${fmtClock(s.t)}] ${s.from} paid ${s.to} ${gp} — ${goods}` }],
-    };
-  });
-console.log(`[trades] ${tradeItems.length} sales`);
-const tradesMp4 = buildRollingPane('trades', 'TRADE LOG', tradeItems, 8);
+// ── Rolling price estimates from the mined sales ─────────────────────
+// Best-effort unit price per item at each watcher sample: qty-weighted mean
+// of the last PRICE_WINDOW single-item sales, after dropping entries more
+// than 3× away from the window median (agents mislabel baskets now and then —
+// a "1540gp nature rune" would otherwise dominate the market cap).
+const samples = run.samples as Array<{ t: number; gold: Record<string, number> }>;
+const PRICE_WINDOW = 5;
+type Sale = { t: number; from: string; to: string; gp: number; item: string | null; qty: number | null; unit: number | null; note?: string };
+const pricedSales = (run.sales as Sale[])
+  .filter(s => s.item && s.qty && s.unit != null && s.unit > 0 && !/bundle|barter|mixed/.test(s.note ?? ''))
+  .sort((a, b) => a.t - b.t);
+const salesByItem: Record<string, Sale[]> = {};
+for (const s of pricedSales) (salesByItem[s.item!] ??= []).push(s);
+function estimate(window: Sale[]): number {
+  let w = window;
+  if (w.length >= 3) {
+    const med = [...w].map(s => s.unit!).sort((a, b) => a - b)[Math.floor(w.length / 2)];
+    const kept = w.filter(s => s.unit! <= med * 3 && s.unit! >= med / 3);
+    if (kept.length) w = kept;
+  }
+  const q = w.reduce((n, s) => n + s.qty!, 0);
+  return w.reduce((n, s) => n + s.unit! * s.qty!, 0) / q;
+}
+/** price[i] = estimate as of samples[i].t (null before the item's first sale); fill = backfilled with the first estimate */
+function priceSeries(item: string): { price: Array<number | null>; fill: number[] } {
+  const sales = salesByItem[item] ?? [];
+  const price: Array<number | null> = []; let k = 0; let cur: number | null = null;
+  for (const s of samples) {
+    while (k < sales.length && sales[k].t <= s.t) { k++; cur = estimate(sales.slice(Math.max(0, k - PRICE_WINDOW), k)); }
+    price.push(cur);
+  }
+  const first = price.find(p => p != null) ?? 0;
+  return { price, fill: price.map(p => p ?? first) };
+}
+const priceByItem: Record<string, ReturnType<typeof priceSeries>> = {};
+for (const item of Object.keys(salesByItem)) priceByItem[item] = priceSeries(item);
+console.log(`[prices] ${pricedSales.length} priced sales across ${Object.keys(salesByItem).length} items`);
 
 // ── Gold-over-time line graph (matplotlib frames, one per sample) ──
-const samples = run.samples as Array<{ t: number; gold: Record<string, number> }>;
 const graphDir = join(TMP, 'graph');
 mkdirSync(graphDir, { recursive: true });
 const pyCfg = {
@@ -299,14 +332,21 @@ fig.text(0.02, 0.945, 'GOLD', color=FG, fontsize=13, fontweight='bold', family='
 
 lines, dots = {}, {}
 for b in bots:
-    (ln,) = ax.plot([], [], color=b['color'], linewidth=1.8 if len(bots) <= 6 else 1.2,
-                    label=('%s %s %s' % (b['name'], b['role'], b['model'])).strip())
+    (ln,) = ax.plot([], [], color=b['color'], linewidth=1.8 if len(bots) <= 6 else 1.2)
     lines[b['name']] = ln
     (dot,) = ax.plot([], [], 'o', color=b['color'], markersize=3.5)
     dots[b['name']] = dot
-leg = ax.legend(loc='upper left', fontsize=8 if len(bots) <= 6 else 6.5, ncol=2 if len(bots) <= 6 else 3, frameon=False,
-                labelcolor=[b['color'] for b in bots], handlelength=1.2,
-                columnspacing=1.0, borderaxespad=0.2)
+# Lines are colored by role, so the legend is one entry per role, not per bot.
+from matplotlib.lines import Line2D
+roles = []
+for b in bots:
+    if not any(r[0] == b['role'] for r in roles): roles.append((b['role'], b['color']))
+leg = ax.legend([Line2D([0], [0], color=c, lw=2.2) for _, c in roles],
+                ['%ss' % r if not r.endswith('s') else r for r, _ in roles],
+                loc='upper left', fontsize=10, ncol=len(roles), frameon=False,
+                labelcolor=[c for _, c in roles], handlelength=1.2,
+                columnspacing=1.2, borderaxespad=0.2)
+for t in leg.get_texts(): t.set_fontweight('bold')
 total_txt = fig.text(0.975, 0.945, '', color='#7fc88a', fontsize=12,
                      fontweight='bold', ha='right', family='Arial')
 
@@ -324,21 +364,129 @@ console.log(`[graph] rendering ${samples.length} frames …`);
 execFileSync('python3', [join(TMP, 'graph.py'), join(TMP, 'graph.json')], { stdio: 'inherit' });
 
 // Frame i holds from samples[i].t to samples[i+1].t (output clock).
-const gSegs: string[] = ['ffconcat version 1.0'];
-if (samples.length && samples[0].t > 0)
-  gSegs.push(`file '${graphDir}/frame_0000.png'`, `duration ${(samples[0].t / SPEED).toFixed(3)}`);
-samples.forEach((s, i) => {
-  const t1 = i + 1 < samples.length ? samples[i + 1].t : Math.max(s.t, OUTDUR * SPEED);
-  gSegs.push(`file '${graphDir}/frame_${String(i).padStart(4, '0')}.png'`,
-             `duration ${Math.max(0.03, (t1 - s.t) / SPEED + (i === samples.length - 1 ? 3 : 0)).toFixed(3)}`);
+function framesToMp4(dir: string, name: string): string {
+  const segs: string[] = ['ffconcat version 1.0'];
+  if (samples.length && samples[0].t > 0)
+    segs.push(`file '${dir}/frame_0000.png'`, `duration ${(samples[0].t / SPEED).toFixed(3)}`);
+  samples.forEach((s, i) => {
+    const t1 = i + 1 < samples.length ? samples[i + 1].t : Math.max(s.t, OUTDUR * SPEED);
+    segs.push(`file '${dir}/frame_${String(i).padStart(4, '0')}.png'`,
+              `duration ${Math.max(0.03, (t1 - s.t) / SPEED + (i === samples.length - 1 ? 3 : 0)).toFixed(3)}`);
+  });
+  segs.push(`file '${dir}/frame_${String(samples.length - 1).padStart(4, '0')}.png'`);
+  const list = join(TMP, `${name}list.txt`);
+  writeFileSync(list, segs.join('\n') + '\n');
+  const mp4 = join(TMP, `${name}.mp4`);
+  // matplotlib's px sizing can come out one row short of BH — scale pins it.
+  ff(['-f', 'concat', '-safe', '0', '-i', list, '-vf', `fps=${FPS},scale=${PANE_W}:${BH},format=yuv420p`,
+      '-c:v', 'libx264', '-t', String(OUTDUR), '-an', mp4]);
+  return mp4;
+}
+const graphMp4 = framesToMp4(graphDir, 'graph');
+
+// ── Multi-series line graph renderer (MARKET CAP + PRICES panes) ──
+// Same frame timing as GOLD; `step` draws hold-last-value lines (prices only
+// move at sales), `log` puts y on a log axis (ore vs platebody spans 100×).
+const multiPy = `
+import json, sys, math
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from matplotlib.ticker import FuncFormatter, LogLocator, NullFormatter
+
+cfg = json.load(open(sys.argv[1]))
+BG = '#0d1117'; FG = '#8b949e'
+series = cfg['series']; ts = cfg['ts']
+vals_all = [v for s in series for v in s['vals'] if v is not None]
+ymax = max(1, max(vals_all) if vals_all else 1) * 1.08
+xmax = max(cfg['capSecs'], ts[-1] if ts else 1)
+fmt = lambda v, _: ('%.1fk' % (v / 1000)).replace('.0k', 'k') if v >= 1000 else ('%d' % v if v >= 10 else '%g' % v)
+
+fig, ax = plt.subplots(figsize=(cfg['w'] / 100, cfg['h'] / 100), dpi=100)
+fig.patch.set_facecolor(BG); ax.set_facecolor(BG)
+fig.subplots_adjust(left=0.105, right=0.975, top=0.86, bottom=0.11)
+for sp in ax.spines.values(): sp.set_color('#30363d')
+ax.tick_params(colors=FG, labelsize=8.5)
+ax.set_xlim(0, xmax)
+if cfg.get('log'):
+    ymin = max(1, min(vals_all) if vals_all else 1) / 1.5
+    ax.set_yscale('log'); ax.set_ylim(ymin, ymax * 1.3)
+    ax.yaxis.set_major_locator(LogLocator(base=10, subs=(1.0, 2.0, 5.0)))
+    ax.yaxis.set_minor_formatter(NullFormatter())
+else:
+    ax.set_ylim(0, ymax)
+ax.grid(color='#30363d', alpha=0.35, linewidth=0.6)
+ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: '%d:%02d' % (v // 60, v % 60)))
+ax.yaxis.set_major_formatter(FuncFormatter(fmt))
+fig.text(0.02, 0.945, cfg['title'], color=FG, fontsize=13, fontweight='bold', family='Arial')
+fig.text(0.975, 0.945, cfg['subtitle'], color=FG, fontsize=9, ha='right', family='Arial')
+
+lines, dots = [], []
+for s in series:
+    (ln,) = ax.plot([], [], color=s['color'], linewidth=1.6, label=s['name'],
+                    drawstyle='steps-post' if cfg.get('step') else 'default')
+    lines.append(ln)
+    (dot,) = ax.plot([], [], 'o', color=s['color'], markersize=3.5)
+    dots.append(dot)
+leg = ax.legend(loc='upper left', fontsize=8.5, ncol=2, frameon=False,
+                labelcolor=[s['color'] for s in series], handlelength=1.2,
+                columnspacing=1.0, borderaxespad=0.2)
+nan = float('nan')
+for i in range(len(ts)):
+    for k, s in enumerate(series):
+        ys = [nan if v is None else v for v in s['vals'][:i + 1]]
+        lines[k].set_data(ts[:i + 1], ys)
+        dots[k].set_data([ts[i]], [ys[-1]])
+    fig.savefig('%s/frame_%04d.png' % (cfg['out'], i), facecolor=BG)
+print('rendered %d frames' % len(ts))
+`;
+function renderMultiSeries(name: string, cfg: { title: string; subtitle: string; log?: boolean; step?: boolean;
+                           series: Array<{ name: string; vals: Array<number | null>; color: string }> }): string {
+  const dir = join(TMP, name);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(TMP, `${name}.json`), JSON.stringify({ out: dir, w: PANE_W, h: BH, capSecs: run.meta.capSecs, ts: samples.map(s => s.t), ...cfg }));
+  writeFileSync(join(TMP, `${name}.py`), multiPy);
+  console.log(`[${name}] rendering ${samples.length} frames …`);
+  execFileSync('python3', [join(TMP, `${name}.py`), join(TMP, `${name}.json`)], { stdio: 'inherit' });
+  return framesToMp4(dir, name);
+}
+
+// ── Item market-cap graph: qty held (all bots' inv+bank) × rolling price ──
+const itemSeries = run.itemSeries as { names: string[]; qty: number[][] } | undefined;
+if (!itemSeries) { console.error('no itemSeries in _data.js — re-run scripts/extract-market-viz.ts'); process.exit(1); }
+const capCand = itemSeries.names.flatMap((name, j) => {
+  const pr = priceByItem[name];
+  if (!pr) return [];                                    // never traded for gp → no price → no cap
+  const qty = itemSeries.qty.map(row => row[j] ?? 0);
+  const vals = qty.map((q, i) => Math.round(q * pr.fill[i]));
+  let peak = 0; for (const v of vals) peak = Math.max(peak, v);
+  let qtyPeak = 0; for (const q of qty) qtyPeak = Math.max(qtyPeak, q);
+  return [{ name, vals, peak, grown: qty[0] < 0.8 * qtyPeak }];
 });
-gSegs.push(`file '${graphDir}/frame_${String(samples.length - 1).padStart(4, '0')}.png'`);
-const graphList = join(TMP, 'graphlist.txt');
-writeFileSync(graphList, gSegs.join('\n') + '\n');
-const graphMp4 = join(TMP, 'graph.mp4');
-// matplotlib's px sizing can come out one row short of BH — scale pins it.
-ff(['-f', 'concat', '-safe', '0', '-i', graphList, '-vf', `fps=${FPS},scale=${PANE_W}:${BH},format=yuv420p`,
-    '-c:v', 'libx264', '-t', String(OUTDUR), '-an', graphMp4]);
+// Flat starting stock (nature runes, hammers) would dwarf the goods actually
+// mined/smithed during the run — drop items whose QUANTITY is already at ≥80%
+// of its peak at t=0 (price moves alone don't count), then keep the biggest caps.
+const grown = capCand.filter(c => c.peak >= 1 && c.grown);
+const pickedCaps = (grown.length >= 2 ? grown : capCand)
+  .sort((a, b) => b.peak - a.peak).slice(0, ITEM_MAX);
+console.log(`[items] ${pickedCaps.map(c => `${c.name} (peak ${fmtGp(c.peak)}gp)`).join(', ')}`);
+const itemsMp4 = renderMultiSeries('items', {
+  title: 'ITEM MARKET CAP', subtitle: 'qty held × rolling avg trade price',
+  series: pickedCaps.map((c, i) => ({ name: c.name, vals: c.vals, color: '#' + ITEM_COLORS[i].slice(2) })),
+});
+
+// ── Price graph: rolling-average unit price per traded item (log y) ──
+const pickedPrices = Object.keys(salesByItem)
+  .sort((a, b) => salesByItem[b].length - salesByItem[a].length || a.localeCompare(b))
+  .slice(0, ITEM_MAX);
+console.log(`[prices] ${pickedPrices.map(n => `${n} (${salesByItem[n].length} sales)`).join(', ')}`);
+const pricesMp4 = renderMultiSeries('prices', {
+  title: 'PRICES', subtitle: `gp/unit · rolling avg of last ${PRICE_WINDOW} sales`, log: true, step: true,
+  series: pickedPrices.map((n, i) => ({
+    name: n, color: '#' + ITEM_COLORS[i].slice(2),
+    vals: priceByItem[n].price.map(p => (p == null ? null : Math.round(p * 100) / 100)),
+  })),
+});
 
 // ── Per-pane gold HUD (burned-in ASS subtitles) ────────────────────
 // Each feed pane gets a top-right balance readout ("14,151gp", with the
@@ -409,13 +557,13 @@ const hudAss: Record<string, string> = {};
 feeds.forEach(f => { if (f.file) hudAss[f.bot] = writeGoldHudAss(f.bot); });
 console.log(`[hud] gold overlays for ${Object.keys(hudAss).length} panes`);
 
-// ── One-pass grid: 6 feed panes + graph/chat/trades strip ──
+// ── One-pass grid: feed panes + gold/market-cap/prices/chat strip ──
 const inputs: string[] = [];
 feeds.forEach(f => {
   if (f.file) inputs.push('-i', f.file);
   else inputs.push('-f', 'lavfi', '-i', `color=c=0x161b22:s=${PW}x${PH}:r=${FPS}:d=${OUTDUR}`);
 });
-inputs.push('-i', graphMp4, '-i', chatMp4, '-i', tradesMp4);
+inputs.push('-i', graphMp4, '-i', itemsMp4, '-i', pricesMp4, '-i', chatMp4);
 
 const paneFilters = feeds.map((f, idx) => {
   const lf = join(TMP, `label${idx}.txt`);
@@ -434,16 +582,16 @@ const paneFilters = feeds.map((f, idx) => {
          `x=(w-text_w)/2:y=(h-text_h)/2,format=yuv420p,setsar=1[p${idx}]`;
 });
 const nb = feeds.length;
-const stripFilters = [0, 1, 2].map(i =>
+const stripFilters = [0, 1, 2, 3].map(i =>
   `[${nb + i}:v]tpad=stop_mode=clone:stop_duration=5,scale=${PANE_W}:${BH},format=yuv420p,setsar=1[p${nb + i}]`);
-// Bottom strip panes sit at absolute offsets under the feed grid; if 3×PANE_W
-// falls short of W (rounding), the trades pane is right-aligned and xstack's
+// Bottom strip panes sit at absolute offsets under the feed grid; if 4×PANE_W
+// falls short of W (rounding), the chat pane is right-aligned and xstack's
 // fill color covers the 0–2px seam.
 const layout = [
   ...feeds.map((_, i) => `${(i % COLS) * PW}_${Math.floor(i / COLS) * PH}`),
-  `0_${ROWS * PH}`, `${PANE_W}_${ROWS * PH}`, `${W - PANE_W}_${ROWS * PH}`,
+  `0_${ROWS * PH}`, `${PANE_W}_${ROWS * PH}`, `${2 * PANE_W}_${ROWS * PH}`, `${W - PANE_W}_${ROWS * PH}`,
 ].join('|');
-const SLOTS = nb + 3;
+const SLOTS = nb + 4;
 const stack = Array.from({ length: SLOTS }, (_, i) => `[p${i}]`).join('') +
   `xstack=inputs=${SLOTS}:layout=${layout}:fill=0x0d1117[grid]`;
 const filterComplex = [...paneFilters, ...stripFilters, stack].join(';');

@@ -139,6 +139,40 @@ function buildSeries(tracking: any, botNames: string[]) {
   return { metric, points };
 }
 
+// ── Market roles (from the <first>_<role> bot-name convention) ───
+const ROLE_BY_SUFFIX: Record<string, string> = { miner: 'miner', smith: 'smith', alch: 'alchemist' };
+const botRole = (bot: string): string | null =>
+  ROLE_BY_SUFFIX[bot.split('_').pop() ?? ''] ?? null;
+
+/**
+ * Total wealth held by each ROLE over the run (the "economy inverted" chart):
+ * per-sample sum of every role member's gold, with per-bot carry-forward so a
+ * bot missing one sample (observer hiccup / save mid-write) doesn't notch the
+ * role's line. Null when the bots don't follow the market naming convention.
+ */
+function buildRoleSeries(tracking: any, botNames: string[]) {
+  const roles = new Map(botNames.map(b => [b, botRole(b)] as const));
+  if (![...roles.values()].some(Boolean)) return null;
+  const samples: any[] = tracking?.samples ?? [];
+  const stride = Math.max(1, Math.ceil(samples.length / MAX_SERIES_POINTS));
+  const last: Record<string, number> = {};
+  const points: Record<string, Array<[number, number]>> = {};
+  samples.forEach((s, i) => {
+    for (const b of botNames) {
+      const g = s.bots?.[b]?.gold;
+      if (typeof g === 'number') last[b] = g;
+    }
+    if (i % stride !== 0 && i !== samples.length - 1) return;
+    const sums: Record<string, number> = {};
+    for (const b of botNames) {
+      const r = roles.get(b);
+      if (r) sums[r] = (sums[r] ?? 0) + (last[b] ?? 0);
+    }
+    for (const [r, v] of Object.entries(sums)) (points[r] ??= []).push([s.elapsedMs, v]);
+  });
+  return { points };
+}
+
 function buildData() {
   const tracking = readTracking();
   const botNames: string[] = (process.env.BOT_NAMES || '').split(/\s+/).filter(Boolean).length > 0
@@ -173,6 +207,10 @@ function buildData() {
     bots,
     chat: tracking?.chat ?? [],
     series: buildSeries(tracking, botNames),
+    roleSeries: buildRoleSeries(tracking, botNames),
+    roles: Object.fromEntries(botNames.map(b => [b, botRole(b)])),
+    // collective-market: highlight this bot's messages as the guild leader
+    guildLeader: process.env.GUILD_LEADER || null,
     peak: tracking?.peak ?? null,
     best: tracking?.best ?? null,
     itemNames: names,

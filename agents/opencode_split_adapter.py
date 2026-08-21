@@ -42,7 +42,7 @@ from modal import Sandbox, Secret
 from harbor.environments.base import BaseEnvironment
 from harbor.models.agent.context import AgentContext
 
-from opencode_team_adapter import OpenCodeTeamAdapter, _role_addendum
+from opencode_team_adapter import OpenCodeTeamAdapter
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +51,10 @@ GATEWAY_PORT = 7780
 # Live observation dashboard served by the server box (shared/dashboard.ts).
 # Optional: only present when launched with tunnel_ports=8888,7780,8790.
 DASHBOARD_PORT = 8790
+# Wealth-rank endpoint served by the market watcher on the server box (-rank
+# task variants set RANK_PORT=8791). Optional: when the tunnel exists, each
+# agent box gets the URL in /tmp/rank-url for the market-status CLI.
+RANK_PORT = 8791
 
 _AGENT_BOX_SCRIPT = Path(__file__).parent.parent / "shared" / "agent-box.sh"
 
@@ -90,6 +94,7 @@ class OpenCodeSplitTeamAdapter(OpenCodeTeamAdapter):
         self._agent_box_cpus = int(agent_box_cpus)
         self._agent_box_memory_mb = int(agent_box_memory_mb)
         self._agent_sandboxes: dict[str, Sandbox] = {}
+        self._rank_url: str | None = None
 
     @staticmethod
     def name() -> str:
@@ -138,6 +143,7 @@ class OpenCodeSplitTeamAdapter(OpenCodeTeamAdapter):
                 f"--ek tunnel_ports={ENGINE_PORT},{GATEWAY_PORT} (needs the local "
                 "harbor patch, see patches/harbor-local.patch)"
             )
+        self._rank_url = tunnels[RANK_PORT].url if RANK_PORT in tunnels else None
         web_url = tunnels[ENGINE_PORT].url
         gw_host, gw_port = tunnels[GATEWAY_PORT].tls_socket
         gateway_url = f"wss://{gw_host}:{gw_port}"
@@ -209,10 +215,13 @@ class OpenCodeSplitTeamAdapter(OpenCodeTeamAdapter):
             "SERVER_WEB_URL": web_url,
             "GATEWAY_URL": gateway_url,
             "LOGIN_STAGGER_SEC": str(index * _LOGIN_STAGGER_SEC),
+            # market-status CLI (-rank market variants) reads /tmp/rank-url
+            "RANK_URL": self._rank_url or "",
         }
         code, _, stderr = await self._box_exec(
             sb,
             "mkdir -p /logs/agent /logs/verifier && chmod 777 /logs/agent /logs/verifier && "
+            '[ -n "$RANK_URL" ] && echo "$RANK_URL" > /tmp/rank-url; '
             "chmod +x /tmp/agent-box.sh && "
             "(setsid nohup /tmp/agent-box.sh >> /logs/agent/agent-box.log 2>&1 &) && sleep 1",
             env=box_env,
@@ -280,7 +289,7 @@ class OpenCodeSplitTeamAdapter(OpenCodeTeamAdapter):
 
             async def run_session(index: int, bot: str) -> None:
                 sb = self._agent_sandboxes[bot]
-                addendum = _role_addendum(bot, index, len(self._bots))
+                addendum = self._bot_addendum(bot, index, instruction)
                 role_instruction = f"{instruction}\n\n{addendum}"
                 instr_file = f"/tmp/opencode-instruction-{bot}.txt"
                 code, _, stderr = await self._box_exec(

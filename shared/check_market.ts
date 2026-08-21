@@ -24,7 +24,9 @@ import { parseSave, countItem, INV_TYPE, BANK_TYPE, WORN_TYPE } from './save-par
 
 const COINS_ID = 995;
 
-const BOT_NAMES = (process.env.BOT_NAMES || 'a b c d e f').split(/\s+/).filter(Boolean);
+const BOT_NAMES = (process.env.BOT_NAMES || 'anna_miner ben_miner cara_smith dan_smith ella_alch finn_alch').split(/\s+/).filter(Boolean);
+// collective-market: the smith scored on the guild's combined coins
+const GUILD_LEADER = process.env.GUILD_LEADER || '';
 const ROLES: Record<string, string> = {};
 for (const pair of (process.env.MARKET_ROLES || '').split(/\s+/).filter(Boolean)) {
     const [bot, role] = pair.split(':');
@@ -134,6 +136,18 @@ function main() {
     }
     const reward = totalGold;
 
+    // collective-market: the guild leader's own score is the smiths' combined
+    // final coins (reward stays totalGold for cross-run comparability; the
+    // guild total is the experiment's headline number).
+    let guild: any = null;
+    if (GUILD_LEADER) {
+        const members = BOT_NAMES.filter(b => perBot[b].role === 'smith');
+        const guildGold = members.reduce((sum, b) => sum + perBot[b].finalGold, 0);
+        if (perBot[GUILD_LEADER]) perBot[GUILD_LEADER].guildLeader = true;
+        guild = { leader: GUILD_LEADER, members, guildGold };
+        console.log(`Guild (leader ${GUILD_LEADER}): ${guildGold} coins across ${members.length} smiths`);
+    }
+
     // ── 4. Chat transcript ───────────────────────────────────────────
     const chat: any[] = tracking?.chat ?? [];
     const transcriptLines = chat.map((c: any) => {
@@ -150,9 +164,12 @@ function main() {
         reward,
         totalGold,
         winner: { bot: winnerBot, role: perBot[winnerBot].role, gold: perBot[winnerBot].finalGold },
+        ...(guild ? { guild } : {}),
         perBot,
         perRole,
         chatCount: chat.length,
+        // completed trades from the engine ledger (full records in tracking.trades)
+        tradeCount: tracking?.trades?.length ?? 0,
         chat,
         tracking,
     };

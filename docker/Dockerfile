@@ -31,6 +31,14 @@ ENV PROFANITY_FILTER=false
 ENV EASY_STARTUP=true
 ENV FRIEND_SERVER=true
 
+# Engine appends one JSONL line per completed player↔player trade (rs-sdk
+# TradeLedger.ts) — the authoritative trade record; the market watcher folds
+# it into its tracking data, replacing regex-mining of trajectories.
+ENV TRADE_LEDGER_FILE=/logs/tracking/trade_ledger.jsonl
+# NPC kill ledger (rs-sdk KillLedger.ts, hooked at npc_del with heroPoints
+# attribution) — authoritative boss-kill records for the dragon-team task.
+ENV KILL_LEDGER_FILE=/logs/tracking/kill_ledger.jsonl
+
 # rs-sdk source: cloned from GitHub by default, OR baked from a local working
 # tree when build.sh populated rs-sdk-local/ (RS_SDK_LOCAL=/path builds — used
 # for testing uncommitted SDK changes). The COPY layer is content-hashed, so
