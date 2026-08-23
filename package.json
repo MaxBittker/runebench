@@ -7,6 +7,10 @@
     "prerender": "bun scripts/prerender.ts",
     "extract:skills": "bun extractors/extract-skill-results.ts",
     "extract:skills:30m": "bun extractors/extract-skill-results.ts --horizon 30m",
-    "extract:gold": "bun extractors/extract-gold-results.ts"
+    "extract:gold": "bun extractors/extract-gold-results.ts",
+    "typecheck": "tsc --noEmit --strict --skipLibCheck --target esnext --module preserve --moduleResolution bundler bots/agent/_lib/*.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.0"
   }
 }
