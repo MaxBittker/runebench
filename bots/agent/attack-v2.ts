@@ -62,7 +62,7 @@ await runScript(async ({ bot, sdk }) => {
         [/(sword|scimitar|longsword|axe)$/i, 1],
     ];
 
-    const attackXp = () => sdk.getSkillXp('Attack');
+    const attackXp = () => sdk.getSkillXp('Attack') ?? 0;
     const coins = () => sdk.countInventoryItems(COIN_RE);
     const log = (...a: unknown[]) => console.log('[atk-v2]', ...a);
     const stats = { attacks: 0, kills: 0, reclicks: 0, eats: 0, walks: 0, picks: 0 };
