@@ -37,7 +37,7 @@ await runScript(async ({ bot, sdk }) => {
         { min: 70, label: 'adamant', re: /adamant/i, anchor: MINE_ANCHOR },
         { min: 55, label: 'mithril', re: /mithril/i, anchor: MINE_ANCHOR },
         { min: 30, label: 'coal', re: /coal/i, anchor: MINE_ANCHOR },
-        { min: 15, label: 'iron', re: /^iron( rocks?)?$/i, anchor: MINE_ANCHOR },
+        { min: 15, label: 'iron', re: /\biron\b/i, anchor: MINE_ANCHOR },
         { min: 1, label: 'copper-tin', re: /(copper|tin|clay)/i, anchor: MINE_ANCHOR },
     ];
 
