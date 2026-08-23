@@ -1,0 +1,12 @@
+{
+  "model": "fixture-b",
+  "skills": {
+    "magic": {
+      "jobName": "skills-30m-fixture-b-20260202-030405",
+      "samples": [
+        { "elapsedMs": 0, "skills": { "Magic": { "level": 1, "xp": 0 } } },
+        { "elapsedMs": 30000, "skills": { "Magic": { "level": 6, "xp": 500 } } }
+      ]
+    }
+  }
+}

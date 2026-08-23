@@ -1,0 +1,24 @@
+{
+  "model": "fixture-a",
+  "skills": {
+    "woodcutting": {
+      "jobName": "skills-30m-fixture-a-20260101-120000",
+      "peakXpRate": 64,
+      "finalXp": 49000,
+      "finalLevel": 55,
+      "durationSeconds": 1785,
+      "sampleCount": 3,
+      "samples": [
+        { "elapsedMs": 0, "skills": { "Woodcutting": { "level": 1, "xp": 0 } } },
+        { "elapsedMs": 60000, "skills": { "Woodcutting": { "level": 20, "xp": 4000 } } },
+        { "elapsedMs": 120000, "skills": { "Woodcutting": { "level": 40, "xp": 10000 } } }
+      ]
+    },
+    "mining": {
+      "jobName": "skills-30m-fixture-a-20260101-120000",
+      "peakXpRate": 12,
+      "finalXp": 800,
+      "finalLevel": 9
+    }
+  }
+}
