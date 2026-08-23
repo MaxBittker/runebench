@@ -34,13 +34,16 @@ describe('fletching-v2', () => {
         expect(src).not.toMatch(/Bun\.sleep\(6000\)/); // -best's batch wait
         // ... drops only unstrung bows (shafts stack), never mid-burst.
         expect(src).toContain('dropBows()');
-        expect(src).toMatch(/unstrung\|\\bbow\\b/);
+        expect(src).toContain('unstrung|long\\s*bow');
     });
 
     test('product ladder never picks shortbow (50xp < shafts 75xp at lvl 5-9)', () => {
         const ladder = src.match(/function productFor[\s\S]*?\n}/)![0];
         expect(ladder).toContain('>= 10'); // longbow(u) 100 xp/log
-        expect(ladder).toContain('arrow\\s shafts?'); // shafts 75 xp/log
+        // Dialog labels are single-spaced ("15 Arrow Shafts") — the regex must
+        // use \s*; a literal "\s " demands two spaces and never matches.
+        expect(ladder).toContain('arrow\\s*shafts?');
+        expect(ladder).toContain('long\\s*bow');
         expect(ladder).not.toContain('shortbow');
     });
 

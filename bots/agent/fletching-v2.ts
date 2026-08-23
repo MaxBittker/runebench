@@ -63,7 +63,10 @@ await runScript(async ({ bot, sdk }) => {
     const CHOP_RE = /chop|down/i;
     const KNIFE_RE = /knife/i;
     const AXE_RE = /\baxe\b/i;
-    const LOGS_RE = /^logs$/i;
+    // Matches every log tier: "Logs", "Oak logs", "Willow logs", ...
+    // A bare /^logs$/ made the whole tier ladder invisible — the bot chopped
+    // oak logs and then froze with a full bag it refused to fletch.
+    const LOGS_RE = /^(?:[a-z]+ )?logs$/i;
     const COIN_RE = /coin/i;
 
     const flXp = () => sdk.getSkill('Fletching')?.experience ?? 0;
@@ -80,8 +83,11 @@ await runScript(async ({ bot, sdk }) => {
     // Best cut product for the current Fletching level (XP/log ÷ 2 ticks):
     // longbow(u) from 10+, arrow shafts below.
     function productFor(level: number): { re: RegExp; label: string } {
-        if (level >= 10) return { re: /long\s bow|longbow/i, label: 'longbow' };
-        return { re: /arrow\s shafts?/i, label: 'arrow shafts' };
+        // Dialog labels are single-spaced ("…15 Arrow Shafts", "Long Bow") —
+        // \s+ not "\s " (the latter demands two spaces and never matched,
+        // which silently voided every fletch batch).
+        if (level >= 10) return { re: /long\s*bow/i, label: 'longbow' };
+        return { re: /arrow\s*shafts?/i, label: 'arrow shafts' };
     }
 
     function tierFor(): LogTier {
@@ -119,16 +125,37 @@ await runScript(async ({ bot, sdk }) => {
     }
 
     // ── chop phase: fill the inventory, respawn-aware chaining ──────────────
+    // Blacklist persists across phases: a tree the server silently refuses
+    // (unreachable behind fences/river) must not be retried every phase.
+    const failedTrees = new Set<string>();
     async function chopPhase(tier: LogTier, maxMs: number): Promise<'full' | 'no-trees'> {
         const deadline = Date.now() + maxMs;
         let lastClickAt = 0;
         let clickedTree: { x: number; z: number } | null = null;
+        let logsAtStart = countInv(LOGS_RE);
+        let lastProgressAt = Date.now();
         while (Date.now() < deadline) {
             await bot.dismissBlockingUI().catch(() => {});
             if (invUsed() >= 28) return 'full';
-            const trees = await treesInTier(tier);
-            if (!trees.length) return 'no-trees';
             const now = Date.now();
+            // Progress guard: clicking but no new logs for 8s ⇒ the target is
+            // likely unreachable (the server rejects silently). Blacklist it,
+            // clear the cache and move to the next-nearest tree.
+            if (countInv(LOGS_RE) > logsAtStart) {
+                logsAtStart = countInv(LOGS_RE);
+                lastProgressAt = now;
+                failedTrees.clear();
+            } else if (clickedTree && now - lastProgressAt > 8000) {
+                failedTrees.add(`${clickedTree.x},${clickedTree.z}`);
+                clickedTree = null;
+                cachedTrees = [];
+                lastProgressAt = now;
+            }
+            const trees = (await treesInTier(tier)).filter((t) => !failedTrees.has(`${t.x},${t.z}`));
+            if (!trees.length) {
+                await sdk.waitForTicks(1).catch(() => {});
+                continue;
+            }
             const target = trees[0]!;
             const movedAway = clickedTree !== null && (target.x !== clickedTree.x || target.z !== clickedTree.z);
             // Click instantly when the current tree depletes (Chop option gone
@@ -169,16 +196,26 @@ await runScript(async ({ bot, sdk }) => {
         }
         if (!opened) return { ok: false, xp: 0 };
 
-        const opt = sdk.getState()?.dialog?.options?.find((o) => product.re.test(o.text));
-        if (!opt) {
+        // Dialog layout per product: [Make X, Make 10, Make 5, <label>] — the
+        // quantity buttons PRECEDE the product-name label. Match the label by
+        // text, then click ITS Make X button so the whole batch runs
+        // server-side without further interactions. Clicking the label itself
+        // starts at most a single cut (verified live: zero-XP bench run).
+        const opts = sdk.getState()?.dialog?.options ?? [];
+        const labelIdx = opts.find((o) => product.re.test(o.text))?.index;
+        const makeX =
+            labelIdx != null
+                ? opts.find((o) => o.index === labelIdx - 3 && /make\s?x/i.test(o.text))
+                : undefined;
+        const target = makeX ?? opts.find((o) => product.re.test(o.text));
+        if (!target) {
             await bot.dismissBlockingUI().catch(() => {});
             return { ok: false, xp: 0 };
         }
-        await sdk.sendClickDialog(opt.index);
+        await sdk.sendClickDialog(target.index);
         await Bun.sleep(300);
 
-        // Make-X the exact number of logs in the bag so the whole batch runs
-        // server-side without further interactions.
+        // Make-X the exact log count.
         const amount = Math.max(1, Math.min(26, countInv(LOGS_RE)));
         await sdk.sendCountDialog(amount);
 
@@ -191,7 +228,17 @@ await runScript(async ({ bot, sdk }) => {
         while (Date.now() < deadline) {
             await sdk.waitForTicks(1).catch(() => {});
             if (countInv(LOGS_RE) === 0) break;
-            if (sdk.getState()?.dialog?.isOpen) continue; // mid-batch modal
+            const dlg = sdk.getState()?.dialog;
+            if (dlg?.isOpen) {
+                // A level-up dialog (single "Click here to continue" option)
+                // blocks the production queue — dismiss it. The make/count
+                // dialog itself has many options and must stay untouched.
+                const dOpts = dlg.options ?? [];
+                if (dOpts.length <= 2 && dOpts.every((o) => /continue/i.test(o.text))) {
+                    await bot.dismissBlockingUI().catch(() => {});
+                }
+                continue;
+            }
             await bot.dismissBlockingUI().catch(() => {});
             const xpNow = flXp();
             if (xpNow > lastXp) {
@@ -208,9 +255,16 @@ await runScript(async ({ bot, sdk }) => {
     function dropBows(): void {
         // Arrow shafts stack — zero churn. Unstrung bows fill the bag again,
         // so clear them outside the XP burst before chopping resumes.
-        for (const item of sdk.getState()?.inventory ?? []) {
-            if (/unstrung|\bbow\b/i.test(item.name)) sdk.sendDropItem(item.slot).catch(() => {});
-        }
+        // "Longbow" has no word boundary before "bow", so \bbow\b alone never
+        // matched it — bags jammed with longbows and the run flatlined.
+        // Drops are paced: bursting 8 packets in 1ms coincided with the
+        // gateway dropping our SDK socket mid-bench.
+        const inv = sdk.getState()?.inventory ?? [];
+        inv.forEach((item, idx) => {
+            if (/unstrung|long\s*bow|\bbow\b/i.test(item.name)) {
+                setTimeout(() => sdk.sendDropItem(item.slot).catch(() => {}), idx * 120);
+            }
+        });
     }
 
     // ── bootstrap: coins → bronze axe (verified), with retries ──────────────
@@ -308,11 +362,21 @@ await runScript(async ({ bot, sdk }) => {
     // ── main loop ───────────────────────────────────────────────────────────
     const stats = { batches: 0, logsFletched: 0, inventoriesDropped: 0, relocates: 0, axeRecoveries: 0 };
     let tierLabel = '';
+    let tierOverride: LogTier | null = null; // demotion target when a tier's clusters are all dead
+    let lastFailLabel = '';
+    let failStreak = 0;
     let nextLogAt = Date.now() + 30000;
     let axeFailures = 0;
     while (true) {
         if (DURATION_MS && Date.now() - startedAt > DURATION_MS) break;
         try {
+            // Connection health: acting on stale state sends clicks into the
+            // void. If frames stop arriving, wait for autoReconnect to catch
+            // up instead of grinding a frozen snapshot.
+            if (sdk.getStateAge() > 5000) {
+                await Bun.sleep(250);
+                continue;
+            }
             // Axe guard: losing the axe (drop bug, death, ...) must never turn
             // into a silent zero-XP grind like the first v2 bench run did.
             if (!hasAxe()) {
@@ -327,7 +391,8 @@ await runScript(async ({ bot, sdk }) => {
                     continue;
                 }
             }
-            const tier = tierFor();
+            const ladderTier = tierFor();
+            const tier = tierOverride ?? ladderTier;
             const product = productFor(flLevel());
             if (tier.label !== tierLabel) {
                 console.log(`[fl-v2] wc=${wcLevel()} fl=${flLevel()} → ${tier.label} logs, cutting ${product.label}`);
@@ -343,10 +408,26 @@ await runScript(async ({ bot, sdk }) => {
             }
             if (invUsed() < 26) {
                 const r = await chopPhase(tier, 45000);
-                if (r === 'no-trees' && invUsed() < 2) {
-                    tierLabel = ''; // force relocation attempt next loop
+                if (r === 'no-trees') {
+                    // No reachable trees in this cluster. After two dead
+                    // clusters on the same tier, demote to normal logs —
+                    // a locked ladder beats a stalled bot.
+                    if (tier.label === lastFailLabel) failStreak++;
+                    else {
+                        lastFailLabel = tier.label;
+                        failStreak = 1;
+                    }
+                    if (failStreak >= 2 && tier.label !== TIERS[TIERS.length - 1]!.label) {
+                        tierOverride = TIERS[TIERS.length - 1]!;
+                        console.log(`[fl-v2] ${tier.label} cluster unreachable — falling back to ${tierOverride.label}`);
+                        lastFailLabel = '';
+                        failStreak = 0;
+                    }
+                    tierLabel = '';
                     await Bun.sleep(1000);
                     continue;
+                } else {
+                    failStreak = 0;
                 }
             }
             const logsBefore = countInv(LOGS_RE);
