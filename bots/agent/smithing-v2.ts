@@ -1,38 +1,52 @@
 import { runScript } from '../../sdk/runner';
 
-// smithing-v2 — bank↔furnace smelt loop with bank-aware bar-tier ladder.
+// smithing-v2 — continuous mine↔furnace smelt loop with a bar-tier ladder.
 //
 // Method (vs smithing-best.ts, which hand-mines exactly 13+13 copper/tin and
 // smelts ONE inventory of bronze bars once, then exits):
-//   1. Continuous loop: withdraw a full load of the best ore the bank holds,
-//      smelt it at the Lumbridge furnace, walk back, deposit the bars, repeat.
-//   2. Bar-tier ladder by Smithing level AND actual bank stock — always smelt
+//   1. Continuous loop: gather ore, smelt a full load at the Lumbridge
+//      furnace, shed bars, repeat until SMITHING_DURATION_MS.
+//   2. Bar-tier ladder by Smithing level AND actual stock — always smelt
 //      the highest-XP-per-bar tier the current level allows whose ore is
-//      present (iron @15 → 12.5 xp/bar; bronze @1 → 6.2 xp/bar). Since smelt
-//      time is per-bar, higher XP/bar == higher XP/tick.
-//   3. Self-bootstrapping ore supply: a fresh character's bank is empty, so
-//      while banked ore is below target the bot powermines copper+tin at the
-//      Lumbridge swamp seam and banks it — mining happens in bulk trips, never
-//      interleaved with a half-smelted inventory.
+//      carried/banked (iron @15 → 12.5 xp/bar; bronze @1 → 6.2 xp/bar).
+//   3. Self-bootstrapping ore supply: powermine copper+tin at the
+//      SE Varrock seam and haul loads to the furnace — mining happens in
+//      bulk trips, never interleaved with a half-smelted inventory.
 //   4. The smelt dialog is resolved dynamically from dialog.allComponents
 //      (matched against the bar name) instead of smithing-best's hardcoded
 //      component ids, so every tier works with the same code path.
 //
+// Banking note: this engine has NO bank near the Lumbridge furnace (the
+// Lumbridge castle booth does not exist here), so the default loop drops
+// smelted bars at the furnace instead of banking them. Set SMITHING_BANK=1
+// to restore the withdraw→smelt→deposit bank loop.
+//
 // Optional env: SMITHING_DURATION_MS   (stop cleanly after this long),
 //               SMITHING_ORE_TARGET    (banked copper+tin pairs to accumulate
-//                                       before pure smelting; default 100),
-//               SMITHING_MINING        ('0' disables the bootstrap mining).
+//                                       before pure smelting; default 100,
+//                                       bank mode only),
+//               SMITHING_MINING        ('0' disables the bootstrap mining),
+//               SMITHING_BANK          ('1' enables the bank loop),
+//               SMITHING_MINE_X/Z      (mining anchor, default SE Varrock).
 
 await runScript(async ({ bot, sdk }) => {
     const DURATION_MS = Number(process.env.SMITHING_DURATION_MS || 0);
     const ORE_TARGET = Number(process.env.SMITHING_ORE_TARGET || 100);
     const MINING_ENABLED = process.env.SMITHING_MINING !== '0';
+    // Banking is opt-in: this engine has no bank anywhere near the Lumbridge
+    // furnace (the castle booth the original anchors pointed at does not
+    // exist), so by default the loop drops smelted bars instead of banking.
+    const BANKING_ENABLED = process.env.SMITHING_BANK === '1';
     const startedAt = Date.now();
 
-    // Lumbridge landmarks (verified by probe-smith.ts scans).
-    const BANK_ANCHOR: [number, number] = [3208, 3222]; // Lumbridge castle bank
-    const FURNACE_ANCHOR: [number, number] = [3227, 3254]; // Lumbridge furnace
-    const MINE_ANCHOR: [number, number] = [3230, 3283]; // swamp seam: copper + tin
+    // Lumbridge/Varrock landmarks (verified by probe-smith.ts scans AND live
+    // probes on the local bench world 2026-08-23).
+    const BANK_ANCHOR: [number, number] = [3208, 3222]; // Lumbridge castle — NOTE: no banker/booth exists here in this engine (bankers are only in Al Kharid/Varrock/Draynor/etc.), so banking is opt-in via SMITHING_BANK=1 and the loop drops bars by default.
+    const FURNACE_ANCHOR: [number, number] = [3225, 3256]; // Lumbridge furnace (id 2781 has Smelt; 2785 is an inert decoy)
+    const MINE_ANCHOR: [number, number] = [
+        Number(process.env.SMITHING_MINE_X || 3285),
+        Number(process.env.SMITHING_MINE_Z || 3365),
+    ]; // SE Varrock mine: copper + tin (the Lumbridge Swamp seam does not exist in this engine and its rocks ignore mine interactions)
 
     type OreSpec = { re: RegExp; perLoad: number };
     type BarTier = {
@@ -51,23 +65,24 @@ await runScript(async ({ bot, sdk }) => {
         {
             minLevel: 15,
             label: 'iron',
-            barRe: /^iron bar$/i,
+            barRe: /iron/i,
             xpPerBar: 12.5,
             ores: [{ re: /^iron ore$/i, perLoad: 28 }],
-            // Smelt-dialog component for the iron-bar row (bronze verified in
-            // -best; iron observed on the same dialog layout).
-            fallbackComponents: [2807, 3986],
+            // Live smelt-dialog rows carry only the metal name in their text
+            // (e.g. "\n\n\n\nBronze"), so match on the metal, not "bar".
+            fallbackComponents: [],
         },
         {
             minLevel: 1,
             label: 'bronze',
-            barRe: /bronze bar/i,
+            barRe: /bronze/i,
             xpPerBar: 6.2,
             ores: [
                 { re: /^copper ore$/i, perLoad: 14 },
                 { re: /^tin ore$/i, perLoad: 14 },
             ],
-            fallbackComponents: [2807, 3986],
+            // Verified live on the bench world: the bronze row is component 3987.
+            fallbackComponents: [3987],
         },
     ];
 
@@ -245,11 +260,28 @@ await runScript(async ({ bot, sdk }) => {
         const needCopper = () => invCount(/^copper ore$/i) < 14;
         const needTin = () => invCount(/^tin ore$/i) < 14;
         let guard = 0;
-        while ((needCopper() || needTin()) && sdk.getInventory().length < 28 && guard < 60) {
+        while ((needCopper() || needTin()) && sdk.getInventory().length < 28 && guard < 150) {
             if (DURATION_MS && Date.now() - startedAt > DURATION_MS) return false;
             await bot.dismissBlockingUI();
+            // Rebalance a jammed inventory: if every slot is ore but the
+            // copper/tin mix is lopsided, drop the surplus of the majority
+            // type so mining the missing half can resume.
+            const cop = invCount(/^copper ore$/i);
+            const tin = invCount(/^tin ore$/i);
+            if (sdk.getInventory().length >= 28 && cop !== tin && (needCopper() || needTin())) {
+                const surplusRe = cop > tin ? /^copper ore$/i : /^tin ore$/i;
+                const keep = Math.min(cop, tin);
+                for (const it of sdk.getInventory()) {
+                    if (!surplusRe.test(it.name)) continue;
+                    if (invCount(surplusRe) <= keep) break;
+                    await sdk.sendDropItem(it.slot).catch(() => {});
+                    await sleep(120);
+                }
+                continue;
+            }
             const wantCopper = needCopper() && invCount(/^copper ore$/i) <= invCount(/^tin ore$/i);
-            const re = wantCopper || (!needTin() && needCopper()) ? /^copper/i : /^tin/i;
+            // Loc names are e.g. "Rocks copper ore" — never anchor to ^.
+            const re = wantCopper || (!needTin() && needCopper()) ? /copper/i : /tin/i;
             const st = sdk.getState();
             const p = st?.player;
             if (p && Math.hypot(p.worldX - MINE_ANCHOR[0], p.worldZ - MINE_ANCHOR[1]) > 20) {
@@ -293,34 +325,89 @@ await runScript(async ({ bot, sdk }) => {
 
     const stats = { trips: 0, bars: 0, mineTrips: 0, bankedOre: 0 };
     let lastTierLabel = '';
+
+    // Highest tier the level allows that the CURRENT INVENTORY can supply
+    // (used by the default drop-mode loop, where nothing is ever banked).
+    function pickInvTier(lvl: number): BarTier | null {
+        for (const t of TIERS) {
+            if (lvl < t.minLevel) continue;
+            if (t.ores.every((o) => invCount(o.re) >= 1)) return t;
+        }
+        return null;
+    }
+
+    async function dropBars(): Promise<number> {
+        let dropped = 0;
+        for (const it of sdk.getInventory()) {
+            if (!BAR_RE.test(it.name)) continue;
+            await sdk.sendDropItem(it.slot).catch(() => {});
+            dropped += it.count;
+            await sleep(120);
+        }
+        return dropped;
+    }
+
+    // One-shot: clear tutorial-junk so powermined ore can use all 28 slots.
+    // Keep the pickaxe (mining), coins, and anything edible.
+    let junkDropped = false;
+    async function dropJunkOnce(): Promise<void> {
+        if (junkDropped) return;
+        junkDropped = true;
+        for (const it of sdk.getInventory()) {
+            if (/pickaxe|coin|ore|bar/i.test(it.name)) continue;
+            await sdk.sendDropItem(it.slot).catch(() => {});
+            await sleep(120);
+        }
+    }
+
     while (true) {
         if (DURATION_MS && Date.now() - startedAt > DURATION_MS) break;
         try {
             await bot.dismissBlockingUI();
-            if (!(await openBankNearAnchor())) {
-                await sdk.waitForTicks(2).catch(() => {});
-                continue;
+
+            if (BANKING_ENABLED) {
+                if (!(await openBankNearAnchor())) {
+                    await sdk.waitForTicks(2).catch(() => {});
+                    continue;
+                }
             }
 
             const lvl = level();
-            let tier = pickTier(lvl);
+            let tier = BANKING_ENABLED ? pickTier(lvl) : pickInvTier(lvl);
 
-            // Bank can't supply the best tier — bootstrap ore while below target.
+            // No smeltable ore available — bootstrap it with powermining.
             if (!tier && MINING_ENABLED) {
-                const pairs = Math.min(bankCount(/^copper ore$/i), bankCount(/^tin ore$/i));
-                if (pairs < ORE_TARGET) {
-                    await bot.depositItem(ORE_RE, -1).catch(() => {}); // park partials
-                    stats.bankedOre = pairs;
-                    const got = await mineTrip();
-                    if (got) {
-                        stats.mineTrips++;
-                        // Bank the fresh ore, then loop back around to smelt it.
-                        await openBankNearAnchor();
-                        await bot.depositItem(ORE_RE, -1).catch(() => {});
+                if (BANKING_ENABLED) {
+                    const pairs = Math.min(bankCount(/^copper ore$/i), bankCount(/^tin ore$/i));
+                    if (pairs < ORE_TARGET) {
+                        await bot.depositItem(ORE_RE, -1).catch(() => {}); // park partials
+                        stats.bankedOre = pairs;
+                        const got = await mineTrip();
+                        if (got) {
+                            stats.mineTrips++;
+                            // Bank the fresh ore, then loop back around to smelt it.
+                            await openBankNearAnchor();
+                            await bot.depositItem(ORE_RE, -1).catch(() => {});
+                        }
+                        continue;
                     }
+                    await sdk.waitForTicks(2).catch(() => {});
                     continue;
                 }
-                await sdk.waitForTicks(2).catch(() => {});
+                // Drop mode: fill the inventory with a balanced copper/tin load.
+                await dropJunkOnce();
+                const got = await mineTrip();
+                if (got) stats.mineTrips++;
+                continue;
+            }
+            // Drop mode must only walk to the furnace with a COMPLETE load:
+            // the mine↔furnace haul is ~2min each way, so smelting a partial
+            // load (2 bars) wastes the entire round trip. Keep mining instead.
+            if (!BANKING_ENABLED && MINING_ENABLED &&
+                (!tier || !tier.ores.every((o) => invCount(o.re) >= o.perLoad))) {
+                await dropJunkOnce();
+                const got = await mineTrip();
+                if (got) stats.mineTrips++;
                 continue;
             }
             if (!tier) {
@@ -333,9 +420,11 @@ await runScript(async ({ bot, sdk }) => {
                 lastTierLabel = tier.label;
             }
 
-            if (!(await withdrawLoad(tier))) {
-                await sdk.waitForTicks(1).catch(() => {});
-                continue;
+            if (BANKING_ENABLED) {
+                if (!(await withdrawLoad(tier))) {
+                    await sdk.waitForTicks(1).catch(() => {});
+                    continue;
+                }
             }
 
             // Walk to the furnace (walking auto-closes the bank interface).
@@ -346,12 +435,21 @@ await runScript(async ({ bot, sdk }) => {
             stats.trips++;
             stats.bars += r.smelted;
 
-            // Back to the bank, deposit the bars.
-            await openBankNearAnchor();
-            const banked = await depositBars();
-            if (banked === 0 && r.smelted > 0) {
-                console.log('[smithing-v2] warning: bars not deposited, retrying');
-                await bot.depositItem(BAR_RE, -1).catch(() => {});
+            if (BANKING_ENABLED) {
+                // Back to the bank, deposit the bars.
+                await openBankNearAnchor();
+                const banked = await depositBars();
+                if (banked === 0 && r.smelted > 0) {
+                    console.log('[smithing-v2] warning: bars not deposited, retrying');
+                    await bot.depositItem(BAR_RE, -1).catch(() => {});
+                }
+            } else {
+                // Drop mode: shed the bars at the furnace and head straight
+                // back to the mine on the next iteration.
+                const dropped = await dropBars();
+                if (r.smelted > 0 && dropped === 0) {
+                    console.log('[smithing-v2] warning: failed to drop smelted bars');
+                }
             }
 
             if (stats.trips % 3 === 0) {
