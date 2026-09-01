@@ -1,0 +1,890 @@
+{
+  "model": "codex",
+  "skills": {
+    "mining": {
+      "jobName": "skills-30m-codex-20260310-160121",
+      "peakXpRate": 0,
+      "finalXp": 0,
+      "finalLevel": 1,
+      "durationSeconds": 26.607,
+      "sampleCount": 3,
+      "samples": [
+        {
+          "elapsedMs": 0,
+          "skills": {
+            "Mining": {
+              "level": 1,
+              "xp": 0
+            }
+          }
+        },
+        {
+          "elapsedMs": 15003,
+          "skills": {
+            "Mining": {
+              "level": 1,
+              "xp": 0
+            }
+          }
+        },
+        {
+          "elapsedMs": 26607,
+          "skills": {
+            "Mining": {
+              "level": 1,
+              "xp": 0
+            }
+          }
+        }
+      ],
+      "tokenUsage": {
+        "inputTokens": 17885,
+        "cacheTokens": 17280,
+        "outputTokens": 173
+      },
+      "trajectory": [
+        {
+          "source": "tool",
+          "text": "list_mcp_resources",
+          "ts": 3
+        },
+        {
+          "source": "agent",
+          "text": "I don’t have access to the `rs-agent` MCP server or the `execute_code` tool in this environment (no MCP resources are available), so I can’t control the bot.\n\nIf you can connect the MCP server or share the Bot/SDK API resources here, I’ll start immediately with the required `await bot.skipTutorial();` action and proceed from there.",
+          "ts": 6
+        }
+      ],
+      "firstStepAt": "2026-03-10T20:09:18.795Z",
+      "trialDir": "jobs/skills-30m-codex-20260310-160121/mining-xp-30m__PUked7V",
+      "videoAvailable": true,
+      "videoDuration": 25,
+      "videoUrl": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/codex/mining.mp4?v=1773169497",
+      "containerStartedAt": "2026-03-10T20:08:54.699603Z",
+      "containerFinishedAt": "2026-03-10T20:09:59.771124Z",
+      "agentStartedAt": "2026-03-10T20:09:16.714873Z"
+    },
+    "thieving": {
+      "jobName": "skills-30m-codex-20260310-160121",
+      "peakXpRate": 0,
+      "finalXp": 0,
+      "finalLevel": 1,
+      "durationSeconds": 15.033,
+      "sampleCount": 2,
+      "samples": [
+        {
+          "elapsedMs": 0,
+          "skills": {
+            "Thieving": {
+              "level": 1,
+              "xp": 0
+            }
+          }
+        },
+        {
+          "elapsedMs": 15033,
+          "skills": {
+            "Thieving": {
+              "level": 1,
+              "xp": 0
+            }
+          }
+        }
+      ],
+      "tokenUsage": {
+        "inputTokens": 26989,
+        "cacheTokens": 25600,
+        "outputTokens": 612
+      },
+      "trajectory": [
+        {
+          "source": "tool",
+          "text": "list_mcp_resources",
+          "ts": 3
+        },
+        {
+          "source": "tool",
+          "text": "list_mcp_resource_templates",
+          "ts": 5
+        },
+        {
+          "source": "agent",
+          "text": "I can’t proceed yet: the `rs-agent` MCP server (and the `execute_code` tool) isn’t available in this session. `list_mcp_resources` and `list_mcp_resource_templates` returned nothing, so I can’t access the Bot/SDK APIs.\n\nPlease enable the `rs-agent` MCP server (with `execute_code`) and the “Bot API” / “SDK API” resources. Once it’s available, I’ll start immediately with:\n\n```\nawait bot.skipTutorial();\n```\n\nThen I’ll run the `bot.chopTree()` baseline and iterate toward a higher Thieving XP/hr peak.",
+          "ts": 12
+        }
+      ],
+      "firstStepAt": "2026-03-10T20:09:39.945Z",
+      "trialDir": "jobs/skills-30m-codex-20260310-160121/thieving-xp-30m__fG3zZvJ",
+      "videoAvailable": true,
+      "videoDuration": 26,
+      "videoUrl": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/codex/thieving.mp4?v=1773169497",
+      "containerStartedAt": "2026-03-10T20:08:54.697052Z",
+      "containerFinishedAt": "2026-03-10T20:10:02.911408Z",
+      "agentStartedAt": "2026-03-10T20:09:35.505475Z"
+    },
+    "prayer": {
+      "jobName": "skills-30m-codex-20260310-160121",
+      "peakXpRate": 0,
+      "finalXp": 0,
+      "finalLevel": 1,
+      "durationSeconds": 15.001,
+      "sampleCount": 2,
+      "samples": [
+        {
+          "elapsedMs": 0,
+          "skills": {
+            "Prayer": {
+              "level": 1,
+              "xp": 0
+            }
+          }
+        },
+        {
+          "elapsedMs": 15001,
+          "skills": {
+            "Prayer": {
+              "level": 1,
+              "xp": 0
+            }
+          }
+        }
+      ],
+      "tokenUsage": {
+        "inputTokens": 27775,
+        "cacheTokens": 25472,
+        "outputTokens": 675
+      },
+      "trajectory": [
+        {
+          "source": "tool",
+          "text": "list_mcp_resources",
+          "ts": 6
+        },
+        {
+          "source": "tool",
+          "text": "list_mcp_resources",
+          "ts": 9
+        },
+        {
+          "source": "agent",
+          "text": "I can’t access the `rs-agent` MCP server from this environment—`list_mcp_resources` returns no servers, and `server:\"rs-agent\"` fails to start. Without that MCP tool I can’t run `execute_code` or control the bot.\n\nPlease enable or attach the `rs-agent` MCP server, or tell me how to connect to it here. Once it’s available, I’ll start exactly as instructed with a single:\n\n```ts\nawait bot.skipTutorial();\n```",
+          "ts": 12
+        }
+      ],
+      "firstStepAt": "2026-03-10T20:09:15.690Z",
+      "trialDir": "jobs/skills-30m-codex-20260310-160121/prayer-xp-30m__Nk2JXvo",
+      "videoAvailable": true,
+      "videoDuration": 17,
+      "videoUrl": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/codex/prayer.mp4?v=1773169497",
+      "containerStartedAt": "2026-03-10T20:08:54.695378Z",
+      "containerFinishedAt": "2026-03-10T20:09:50.415749Z",
+      "agentStartedAt": "2026-03-10T20:09:12.981308Z"
+    },
+    "crafting": {
+      "jobName": "skills-30m-codex-20260310-160121",
+      "peakXpRate": 0,
+      "finalXp": 0,
+      "finalLevel": 1,
+      "durationSeconds": 1.68,
+      "sampleCount": 2,
+      "samples": [
+        {
+          "elapsedMs": 1,
+          "skills": {
+            "Crafting": {
+              "level": 1,
+              "xp": 0
+            }
+          }
+        },
+        {
+          "elapsedMs": 1680,
+          "skills": {
+            "Crafting": {
+              "level": 1,
+              "xp": 0
+            }
+          }
+        }
+      ],
+      "tokenUsage": {
+        "inputTokens": 26930,
+        "cacheTokens": 26240,
+        "outputTokens": 231
+      },
+      "trajectory": [
+        {
+          "source": "tool",
+          "text": "list_mcp_resources",
+          "ts": 2
+        },
+        {
+          "source": "tool",
+          "text": "list_mcp_resource_templates",
+          "ts": 4
+        },
+        {
+          "source": "agent",
+          "text": "I can’t access the `rs-agent` MCP server or its resources in this session (no MCP resources/templates are available), so I don’t have the `execute_code` tool or the Bot/SDK API.\n\nPlease enable or attach the `rs-agent` MCP server, then I’ll start with:\n\n```ts\nawait bot.skipTutorial();\n```\n\nand proceed from there.",
+          "ts": 6
+        }
+      ],
+      "firstStepAt": "2026-03-10T20:09:41.842Z",
+      "trialDir": "jobs/skills-30m-codex-20260310-160121/crafting-xp-30m__pHcRCw7",
+      "videoAvailable": true,
+      "videoDuration": 15,
+      "videoUrl": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/codex/crafting.mp4?v=1773169497",
+      "containerStartedAt": "2026-03-10T20:08:54.688800Z",
+      "containerFinishedAt": "2026-03-10T20:09:59.978902Z",
+      "agentStartedAt": "2026-03-10T20:09:37.258425Z"
+    },
+    "fletching": {
+      "jobName": "skills-30m-codex-20260310-160121",
+      "peakXpRate": 0,
+      "finalXp": 0,
+      "finalLevel": 1,
+      "durationSeconds": 16.631,
+      "sampleCount": 3,
+      "samples": [
+        {
+          "elapsedMs": 0,
+          "skills": {
+            "Fletching": {
+              "level": 1,
+              "xp": 0
+            }
+          }
+        },
+        {
+          "elapsedMs": 15003,
+          "skills": {
+            "Fletching": {
+              "level": 1,
+              "xp": 0
+            }
+          }
+        },
+        {
+          "elapsedMs": 16631,
+          "skills": {
+            "Fletching": {
+              "level": 1,
+              "xp": 0
+            }
+          }
+        }
+      ],
+      "tokenUsage": {
+        "inputTokens": 26936,
+        "cacheTokens": 25472,
+        "outputTokens": 250
+      },
+      "trajectory": [
+        {
+          "source": "tool",
+          "text": "list_mcp_resources",
+          "ts": 2
+        },
+        {
+          "source": "tool",
+          "text": "list_mcp_resource_templates",
+          "ts": 7
+        },
+        {
+          "source": "agent",
+          "text": "I don’t have access to the `rs-agent` MCP server or its `execute_code` tool in this session (no MCP resources or templates are available), so I can’t run the required `await bot.skipTutorial();` action.\n\nPlease enable the `rs-agent` MCP server and the `execute_code` tool for this session, then I’ll start immediately.",
+          "ts": 9
+        }
+      ],
+      "firstStepAt": "2026-03-10T20:09:21.619Z",
+      "trialDir": "jobs/skills-30m-codex-20260310-160121/fletching-xp-30m__CYRwep2",
+      "videoAvailable": true,
+      "videoDuration": 16,
+      "videoUrl": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/codex/fletching.mp4?v=1773169497",
+      "containerStartedAt": "2026-03-10T20:08:54.696230Z",
+      "containerFinishedAt": "2026-03-10T20:09:50.560625Z",
+      "agentStartedAt": "2026-03-10T20:09:13.673329Z"
+    },
+    "woodcutting": {
+      "jobName": "skills-30m-codex-20260310-160121",
+      "peakXpRate": 0,
+      "finalXp": 0,
+      "finalLevel": 1,
+      "durationSeconds": 0.001,
+      "sampleCount": 1,
+      "samples": [
+        {
+          "elapsedMs": 1,
+          "skills": {
+            "Woodcutting": {
+              "level": 1,
+              "xp": 0
+            }
+          }
+        }
+      ],
+      "tokenUsage": {
+        "inputTokens": 26865,
+        "cacheTokens": 25472,
+        "outputTokens": 243
+      },
+      "trajectory": [
+        {
+          "source": "tool",
+          "text": "list_mcp_resources",
+          "ts": 1
+        },
+        {
+          "source": "tool",
+          "text": "list_mcp_resource_templates",
+          "ts": 2
+        },
+        {
+          "source": "agent",
+          "text": "I can’t access the `rs-agent` MCP server or the `execute_code` tool in this environment (no MCP resources or tool entry is available). Please enable the `rs-agent` MCP server/tool so I can run:\n\n```\nawait bot.skipTutorial();\n```\n\nOnce enabled, I’ll start immediately and iterate on training.",
+          "ts": 5
+        }
+      ],
+      "firstStepAt": "2026-03-10T20:09:11.854Z",
+      "trialDir": "jobs/skills-30m-codex-20260310-160121/woodcutting-xp-30m__TRF8DT7",
+      "videoAvailable": false,
+      "videoUrl": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/codex/woodcutting.mp4?v=1773169497",
+      "containerStartedAt": "2026-03-10T20:08:54.697773Z",
+      "containerFinishedAt": "2026-03-10T20:09:25.663503Z",
+      "agentStartedAt": "2026-03-10T20:09:10.384432Z"
+    },
+    "magic": {
+      "jobName": "skills-30m-codex-20260310-160121",
+      "peakXpRate": 0,
+      "finalXp": 0,
+      "finalLevel": 1,
+      "durationSeconds": 0,
+      "sampleCount": 0,
+      "samples": [],
+      "tokenUsage": {
+        "inputTokens": 26841,
+        "cacheTokens": 26112,
+        "outputTokens": 207
+      },
+      "trajectory": [
+        {
+          "source": "tool",
+          "text": "list_mcp_resources",
+          "ts": 1
+        },
+        {
+          "source": "tool",
+          "text": "list_mcp_resource_templates",
+          "ts": 3
+        },
+        {
+          "source": "agent",
+          "text": "I can’t access the `rs-agent` MCP server or the `execute_code` tool from this environment — no MCP resources or templates are available, and the tool isn’t listed. Please connect/configure the `rs-agent` MCP server (so I can call `execute_code` with `bot_name: \"agent\"`), then I can start immediately with `await bot.skipTutorial();`.",
+          "ts": 4
+        }
+      ],
+      "firstStepAt": "2026-03-10T20:09:12.848Z",
+      "trialDir": "jobs/skills-30m-codex-20260310-160121/magic-xp-30m__Y4hHvWG",
+      "videoAvailable": false,
+      "videoUrl": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/codex/magic.mp4?v=1773169497",
+      "containerStartedAt": "2026-03-10T20:08:54.693343Z",
+      "containerFinishedAt": "2026-03-10T20:09:41.087645Z",
+      "agentStartedAt": "2026-03-10T20:09:11.333010Z"
+    },
+    "ranged": {
+      "jobName": "skills-30m-codex-20260310-160121",
+      "peakXpRate": 0,
+      "finalXp": 0,
+      "finalLevel": 1,
+      "durationSeconds": 12.258,
+      "sampleCount": 3,
+      "samples": [
+        {
+          "elapsedMs": 0,
+          "skills": {
+            "Ranged": {
+              "level": 1,
+              "xp": 0
+            }
+          }
+        },
+        {
+          "elapsedMs": 11624,
+          "skills": {
+            "Ranged": {
+              "level": 1,
+              "xp": 0
+            }
+          }
+        },
+        {
+          "elapsedMs": 12258,
+          "skills": {
+            "Ranged": {
+              "level": 1,
+              "xp": 0
+            }
+          }
+        }
+      ],
+      "tokenUsage": {
+        "inputTokens": 36054,
+        "cacheTokens": 26880,
+        "outputTokens": 311
+      },
+      "trajectory": [
+        {
+          "source": "tool",
+          "text": "list_mcp_resources",
+          "ts": 2
+        },
+        {
+          "source": "tool",
+          "text": "list_mcp_resource_templates",
+          "ts": 4
+        },
+        {
+          "source": "tool",
+          "text": "list_mcp_resources",
+          "ts": 7
+        },
+        {
+          "source": "agent",
+          "text": "I can’t access the `rs-agent` MCP server or the `execute_code` tool in this environment. Listing MCP resources shows none, and `rs-agent` isn’t configured (startup failed). Please enable/configure the `rs-agent` MCP server (and the `execute_code` tool) for this session, then I’ll start immediately with:\n\n```ts\nawait bot.skipTutorial();\n```",
+          "ts": 9
+        }
+      ],
+      "firstStepAt": "2026-03-10T20:09:13.874Z",
+      "trialDir": "jobs/skills-30m-codex-20260310-160121/ranged-xp-30m__DJgv2yD",
+      "videoAvailable": true,
+      "videoDuration": 10,
+      "videoUrl": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/codex/ranged.mp4?v=1773169497",
+      "containerStartedAt": "2026-03-10T20:08:54.700410Z",
+      "containerFinishedAt": "2026-03-10T20:09:43.775816Z",
+      "agentStartedAt": "2026-03-10T20:09:11.824212Z"
+    },
+    "strength": {
+      "jobName": "skills-30m-codex-20260310-160121",
+      "peakXpRate": 0,
+      "finalXp": 980,
+      "finalLevel": 10,
+      "durationSeconds": 0,
+      "sampleCount": 1,
+      "samples": [
+        {
+          "elapsedMs": 0,
+          "skills": {
+            "Strength": {
+              "level": 10,
+              "xp": 980
+            }
+          }
+        }
+      ],
+      "tokenUsage": {
+        "inputTokens": 26876,
+        "cacheTokens": 17408,
+        "outputTokens": 300
+      },
+      "trajectory": [
+        {
+          "source": "tool",
+          "text": "list_mcp_resources",
+          "ts": 2
+        },
+        {
+          "source": "tool",
+          "text": "list_mcp_resource_templates",
+          "ts": 4
+        },
+        {
+          "source": "agent",
+          "text": "I can’t access the `rs-agent` MCP server or the `execute_code` tool in this environment (the MCP resource list is empty), so I can’t control the bot yet. Please enable the `rs-agent` server/tools for this session or tell me how to access them, and I’ll start immediately with:\n\n```ts\nawait bot.skipTutorial();\n```",
+          "ts": 7
+        }
+      ],
+      "firstStepAt": "2026-03-10T20:09:13.369Z",
+      "trialDir": "jobs/skills-30m-codex-20260310-160121/strength-xp-30m__zqGm9eT",
+      "videoAvailable": true,
+      "videoUrl": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/codex/strength.mp4?v=1773169497",
+      "containerStartedAt": "2026-03-10T20:08:54.690490Z",
+      "containerFinishedAt": "2026-03-10T20:09:29.035871Z",
+      "agentStartedAt": "2026-03-10T20:09:11.680243Z"
+    },
+    "attack": {
+      "jobName": "skills-30m-codex-20260310-160121",
+      "peakXpRate": 0,
+      "finalXp": 980,
+      "finalLevel": 10,
+      "durationSeconds": 0,
+      "sampleCount": 1,
+      "samples": [
+        {
+          "elapsedMs": 0,
+          "skills": {
+            "Attack": {
+              "level": 10,
+              "xp": 980
+            }
+          }
+        }
+      ],
+      "tokenUsage": {
+        "inputTokens": 27244,
+        "cacheTokens": 26240,
+        "outputTokens": 444
+      },
+      "trajectory": [
+        {
+          "source": "tool",
+          "text": "list_mcp_resources",
+          "ts": 4
+        },
+        {
+          "source": "tool",
+          "text": "list_mcp_resource_templates",
+          "ts": 7
+        },
+        {
+          "source": "agent",
+          "text": "I don’t have access to the `rs-agent` MCP server or the `execute_code` tool in this session (the MCP resource list is empty). Please enable the `rs-agent` MCP tools or provide the tool so I can run:\n\n```ts\nawait bot.skipTutorial();\n```\n\nOnce it’s available, I’ll start immediately and iterate toward the best 15‑second XP/hr window.",
+          "ts": 9
+        }
+      ],
+      "firstStepAt": "2026-03-10T20:09:13.443Z",
+      "trialDir": "jobs/skills-30m-codex-20260310-160121/attack-xp-30m__J49cymt",
+      "videoAvailable": true,
+      "videoUrl": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/codex/attack.mp4?v=1773169497",
+      "containerStartedAt": "2026-03-10T20:08:54.701132Z",
+      "containerFinishedAt": "2026-03-10T20:09:31.431259Z",
+      "agentStartedAt": "2026-03-10T20:09:11.969602Z"
+    },
+    "firemaking": {
+      "jobName": "skills-30m-codex-20260310-160121",
+      "peakXpRate": 0,
+      "finalXp": 0,
+      "finalLevel": 1,
+      "durationSeconds": 0,
+      "sampleCount": 1,
+      "samples": [
+        {
+          "elapsedMs": 0,
+          "skills": {
+            "Firemaking": {
+              "level": 1,
+              "xp": 0
+            }
+          }
+        }
+      ],
+      "tokenUsage": {
+        "inputTokens": 26897,
+        "cacheTokens": 26240,
+        "outputTokens": 241
+      },
+      "trajectory": [
+        {
+          "source": "tool",
+          "text": "list_mcp_resources",
+          "ts": 1
+        },
+        {
+          "source": "tool",
+          "text": "list_mcp_resource_templates",
+          "ts": 4
+        },
+        {
+          "source": "agent",
+          "text": "I can’t access the `rs-agent` MCP server or the `execute_code` tool in this session — `list_mcp_resources` and `list_mcp_resource_templates` returned empty, and the tool isn’t available on my side.  \n\nPlease enable the `rs-agent` MCP server (and `execute_code` tool) for this workspace, then I’ll immediately run:\n\n```ts\nawait bot.skipTutorial();\n```\n\nand start training/optimizing.",
+          "ts": 6
+        }
+      ],
+      "firstStepAt": "2026-03-10T20:09:18.352Z",
+      "trialDir": "jobs/skills-30m-codex-20260310-160121/firemaking-xp-30m__qXTRnKu",
+      "videoAvailable": true,
+      "videoDuration": 4,
+      "videoUrl": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/codex/firemaking.mp4?v=1773169497",
+      "containerStartedAt": "2026-03-10T20:08:54.698645Z",
+      "containerFinishedAt": "2026-03-10T20:09:34.306348Z",
+      "agentStartedAt": "2026-03-10T20:09:16.662928Z"
+    },
+    "fishing": {
+      "jobName": "skills-30m-codex-20260310-160121",
+      "peakXpRate": 0,
+      "finalXp": 0,
+      "finalLevel": 1,
+      "durationSeconds": 6.617,
+      "sampleCount": 2,
+      "samples": [
+        {
+          "elapsedMs": 0,
+          "skills": {
+            "Fishing": {
+              "level": 1,
+              "xp": 0
+            }
+          }
+        },
+        {
+          "elapsedMs": 6617,
+          "skills": {
+            "Fishing": {
+              "level": 1,
+              "xp": 0
+            }
+          }
+        }
+      ],
+      "tokenUsage": {
+        "inputTokens": 26907,
+        "cacheTokens": 24960,
+        "outputTokens": 347
+      },
+      "trajectory": [
+        {
+          "source": "tool",
+          "text": "list_mcp_resources",
+          "ts": 2
+        },
+        {
+          "source": "tool",
+          "text": "list_mcp_resource_templates",
+          "ts": 4
+        },
+        {
+          "source": "agent",
+          "text": "I don’t have access to the `rs-agent` MCP tools in this session — `list_mcp_resources` and `list_mcp_resource_templates` returned nothing, so there’s no `execute_code` tool available.  \n\nIf you enable the `rs-agent` MCP server/tools, I can start immediately with the required first action (`await bot.skipTutorial();`) and proceed to fishing optimization.\n\n**Next steps**\n1. Enable the `rs-agent` MCP server/tools for this session.\n2. Tell me once it’s available and I’ll start with the one-action `execute_code` call.",
+          "ts": 7
+        }
+      ],
+      "firstStepAt": "2026-03-10T20:09:14.489Z",
+      "trialDir": "jobs/skills-30m-codex-20260310-160121/fishing-xp-30m__x54GaKW",
+      "videoAvailable": true,
+      "videoDuration": 5,
+      "videoUrl": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/codex/fishing.mp4?v=1773169497",
+      "containerStartedAt": "2026-03-10T20:08:54.686885Z",
+      "containerFinishedAt": "2026-03-10T20:09:38.222871Z",
+      "agentStartedAt": "2026-03-10T20:09:12.470443Z"
+    },
+    "defence": {
+      "jobName": "skills-30m-codex-20260310-160121",
+      "peakXpRate": 0,
+      "finalXp": 1860,
+      "finalLevel": 15,
+      "durationSeconds": 0,
+      "sampleCount": 1,
+      "samples": [
+        {
+          "elapsedMs": 0,
+          "skills": {
+            "Defence": {
+              "level": 15,
+              "xp": 1860
+            }
+          }
+        }
+      ],
+      "tokenUsage": {
+        "inputTokens": 27039,
+        "cacheTokens": 25856,
+        "outputTokens": 309
+      },
+      "trajectory": [
+        {
+          "source": "tool",
+          "text": "list_mcp_resources",
+          "ts": 3
+        },
+        {
+          "source": "tool",
+          "text": "list_mcp_resource_templates",
+          "ts": 5
+        },
+        {
+          "source": "agent",
+          "text": "I can’t access the `rs-agent` MCP server from here — `list_mcp_resources` returned no resources, so there’s no `execute_code` tool or Bot/SDK API available.\n\nPlease connect the `rs-agent` MCP server (or share how to invoke `execute_code` in this environment), and I’ll start immediately with the required first call:\n```ts\nawait bot.skipTutorial();\n```\nOnce the tool is available, I’ll begin baseline testing and iterate quickly.",
+          "ts": 8
+        }
+      ],
+      "firstStepAt": "2026-03-10T20:09:14.274Z",
+      "trialDir": "jobs/skills-30m-codex-20260310-160121/defence-xp-30m__Wto8RHC",
+      "videoAvailable": true,
+      "videoUrl": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/codex/defence.mp4?v=1773169497",
+      "containerStartedAt": "2026-03-10T20:08:54.694173Z",
+      "containerFinishedAt": "2026-03-10T20:09:31.099032Z",
+      "agentStartedAt": "2026-03-10T20:09:12.628683Z"
+    },
+    "cooking": {
+      "jobName": "skills-30m-codex-20260310-160121",
+      "peakXpRate": 0,
+      "finalXp": 0,
+      "finalLevel": 1,
+      "durationSeconds": 11.627,
+      "sampleCount": 2,
+      "samples": [
+        {
+          "elapsedMs": 0,
+          "skills": {
+            "Cooking": {
+              "level": 1,
+              "xp": 0
+            }
+          }
+        },
+        {
+          "elapsedMs": 11627,
+          "skills": {
+            "Cooking": {
+              "level": 1,
+              "xp": 0
+            }
+          }
+        }
+      ],
+      "tokenUsage": {
+        "inputTokens": 36129,
+        "cacheTokens": 26880,
+        "outputTokens": 372
+      },
+      "trajectory": [
+        {
+          "source": "tool",
+          "text": "list_mcp_resources",
+          "ts": 2
+        },
+        {
+          "source": "tool",
+          "text": "list_mcp_resource_templates",
+          "ts": 5
+        },
+        {
+          "source": "tool",
+          "text": "list_mcp_resources",
+          "ts": 8
+        },
+        {
+          "source": "agent",
+          "text": "I can’t access the `rs-agent` MCP server here (it isn’t available in this environment), so I’m unable to call `execute_code` or control the bot. Please start/attach the MCP server or provide the correct server config, and I’ll begin immediately with `await bot.skipTutorial();` as instructed.",
+          "ts": 11
+        }
+      ],
+      "firstStepAt": "2026-03-10T20:09:11.091Z",
+      "trialDir": "jobs/skills-30m-codex-20260310-160121/cooking-xp-30m__MoHKQwK",
+      "videoAvailable": true,
+      "videoDuration": 11,
+      "videoUrl": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/codex/cooking.mp4?v=1773169497",
+      "containerStartedAt": "2026-03-10T20:08:54.689760Z",
+      "containerFinishedAt": "2026-03-10T20:09:39.292290Z",
+      "agentStartedAt": "2026-03-10T20:09:09.606495Z"
+    },
+    "smithing": {
+      "jobName": "skills-30m-codex-20260310-160121",
+      "peakXpRate": 0,
+      "finalXp": 0,
+      "finalLevel": 1,
+      "durationSeconds": 15.003,
+      "sampleCount": 2,
+      "samples": [
+        {
+          "elapsedMs": 0,
+          "skills": {
+            "Smithing": {
+              "level": 1,
+              "xp": 0
+            }
+          }
+        },
+        {
+          "elapsedMs": 15003,
+          "skills": {
+            "Smithing": {
+              "level": 1,
+              "xp": 0
+            }
+          }
+        }
+      ],
+      "tokenUsage": {
+        "inputTokens": 26852,
+        "cacheTokens": 26112,
+        "outputTokens": 237
+      },
+      "trajectory": [
+        {
+          "source": "tool",
+          "text": "list_mcp_resources",
+          "ts": 1
+        },
+        {
+          "source": "tool",
+          "text": "list_mcp_resource_templates",
+          "ts": 4
+        },
+        {
+          "source": "agent",
+          "text": "I can’t access the `rs-agent` MCP server or the `execute_code` tool in this environment — the MCP resources list is empty, so I have no API to control the bot.\n\nPlease enable the `rs-agent` MCP server (and the `execute_code` tool) for this session, then I’ll immediately run:\n\n```ts\nawait bot.skipTutorial();\n```\n\nand proceed with the Smithing optimization loop.",
+          "ts": 7
+        }
+      ],
+      "firstStepAt": "2026-03-10T20:09:15.146Z",
+      "trialDir": "jobs/skills-30m-codex-20260310-160121/smithing-xp-30m__mki6tbT",
+      "videoAvailable": true,
+      "videoDuration": 24,
+      "containerStartedAt": "2026-03-10T20:08:54.692445Z",
+      "containerFinishedAt": "2026-03-10T20:09:57.627078Z",
+      "agentStartedAt": "2026-03-10T20:09:13.164009Z"
+    },
+    "hitpoints": {
+      "jobName": "skills-30m-codex-20260310-160121",
+      "peakXpRate": 0,
+      "finalXp": 3105,
+      "finalLevel": 20,
+      "durationSeconds": 11.605,
+      "sampleCount": 2,
+      "samples": [
+        {
+          "elapsedMs": 0,
+          "skills": {
+            "Hitpoints": {
+              "level": 20,
+              "xp": 3105
+            }
+          }
+        },
+        {
+          "elapsedMs": 11605,
+          "skills": {
+            "Hitpoints": {
+              "level": 20,
+              "xp": 3105
+            }
+          }
+        }
+      ],
+      "tokenUsage": {
+        "inputTokens": 17892,
+        "cacheTokens": 8960,
+        "outputTokens": 257
+      },
+      "trajectory": [
+        {
+          "source": "tool",
+          "text": "list_mcp_resources",
+          "ts": 4
+        },
+        {
+          "source": "agent",
+          "text": "I can’t access the `rs-agent` MCP server or the `execute_code` tool in this environment (no MCP resources are available). Please enable the `rs-agent` MCP server and expose the `execute_code` tool, then I’ll start with:\n\n```ts\nawait bot.skipTutorial();\n```\n\nOnce it’s available, I’ll proceed immediately.",
+          "ts": 7
+        }
+      ],
+      "firstStepAt": "2026-03-10T20:09:26.291Z",
+      "trialDir": "jobs/skills-30m-codex-20260310-160121/hitpoints-xp-30m__HYMYMUF",
+      "videoAvailable": true,
+      "videoDuration": 11,
+      "videoUrl": "https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/30m/codex/hitpoints.mp4?v=1773169497",
+      "containerStartedAt": "2026-03-10T20:08:54.691189Z",
+      "containerFinishedAt": "2026-03-10T20:09:44.612222Z",
+      "agentStartedAt": "2026-03-10T20:09:22.730812Z"
+    }
+  }
+}

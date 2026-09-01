@@ -34,6 +34,8 @@ results/skills-30m/_combined.json
 results/skills-30m-v1/
 results/gold/*
 !results/gold/_data.js
+results/arrav/*
+!results/arrav/_data.js
 
 # Game save state
 # shared/agent.sav
@@ -41,7 +43,14 @@ results/gold/*
 # Build artifacts copied by docker/build.sh
 docker/skill_tracker.ts
 docker/check_xp_rate.ts
+docker/save-parser.ts
 docker/agents.md
 analysis/
 
 export/
+docker/rs-sdk-local/
+videos/
+results/*.mp4
+results/team/
+results/market/
+results/dragon/

@@ -2,6 +2,84 @@
 # Shared shell functions for run scripts.
 # Source this file: source "$(dirname "$0")/run-common.sh"
 
+# ── Shared model roster ──────────────────────────────────────────
+# Central default consumed by the multi-bot launch scripts
+# (run-arrav.sh, run-smith-team.sh), which run every model through the
+# unified OpenCode duo/team adapter. The per-skill and gold scripts
+# define their own ALL_MODELS locally after sourcing, which overrides
+# this — so this list only feeds the multi-bot path.
+ALL_MODELS="
+opencode|anthropic/claude-fable-5|fable5
+hotteok-claude|anthropic/claude-hotteok-eap|hotteok
+opencode|anthropic/claude-opus-5|opus5
+opencode|anthropic/claude-opus-4-8|opus48
+opencode|anthropic/claude-opus-4-7|opus47
+opencode|anthropic/claude-opus-4-6|opus
+opencode|anthropic/claude-opus-4-5|opus45
+opencode|anthropic/claude-sonnet-5|sonnet5
+opencode|anthropic/claude-sonnet-4-6|sonnet46
+opencode|anthropic/claude-sonnet-4-5|sonnet45
+opencode|anthropic/claude-haiku-4-5|haiku
+opencode|openai/gpt-5.3-codex|codex53
+opencode|openai/gpt-5.4|gpt54
+opencode|openai/gpt-5.4-mini|gpt54mini
+opencode|openai/gpt-5.4-nano|gpt54nano
+opencode|openai/gpt-5.5|gpt55
+opencode|gemini/gemini-3-pro-preview|gemini
+opencode|gemini/gemini-3.1-pro-preview|gemini31
+opencode|gemini/gemini-3-flash-preview|geminiflash
+opencode|gemini/gemini-3.5-flash|gemini35flash
+opencode|gemini/gemini-3.7-flash|gemini37flash
+glm-opencode|openrouter/z-ai/glm-5|glm
+glm52-opencode|openrouter/z-ai/glm-5.2|glm52
+kimi-opencode|openrouter/moonshotai/kimi-k2.5|kimi
+qwen3-opencode|openrouter/qwen/qwen3-coder-next|qwen3
+qwen35-opencode|openrouter/qwen/qwen3.5-35b-a3b|qwen35
+qwen3max-opencode|openrouter/qwen/qwen3-max|qwen3max
+grok45-opencode|openrouter/x-ai/grok-4.5|grok45
+grok46-opencode|openrouter/x-ai/grok-4.6|grok46
+deepseekflash-opencode|openrouter/~deepseek/deepseek-v4-flash-latest|deepseekflash
+opencode|openrouter/google/gemini-3.7-flash|gemini37flash-or
+luna-xhigh-opencode|openai/gpt-5.6-luna|gpt56luna-xhigh
+opencode|openai/gpt-5.6-terra|gpt56terra
+muse12-opencode|meta/muse-spark-1.2-contributor|muse12
+"
+
+ALL_MODEL_LABELS="fable5 hotteok opus5 opus48 opus47 opus opus45 sonnet5 sonnet46 sonnet45 haiku codex53 gpt55 gpt54 gpt54mini gpt54nano gemini gemini31 geminiflash gemini35flash gemini37flash glm glm52 kimi qwen3 qwen35 qwen3max grok45 grok46 deepseekflash gemini37flash-or gpt56luna-xhigh gpt56terra muse12"
+
+# ── sandbox_timeout_for_horizon: horizon → Modal sandbox backstop ──
+# Generous ceilings: a too-small value kills runs mid-flight (unfair zero
+# scores); a large one only matters if the sandbox hangs.
+sandbox_timeout_for_horizon() {
+  case "$1" in
+    5m)   echo 3600 ;;
+    15m)  echo 3600 ;;
+    20m)  echo 5400 ;;
+    30m)  echo 7200 ;;
+    45m)  echo 7200 ;;
+    60m)  echo 10800 ;;
+    90m)  echo 14400 ;;
+    *)    echo 3600 ;;
+  esac
+}
+
+# ── run_timeout_for_horizon: horizon → opencode bash-loop budget ──
+# Must be < task.toml agent timeout (horizon + 120s) so the opencode loop
+# exits cleanly before harbor fires AgentTimeoutError, leaving the verifier
+# time to read the save file.
+run_timeout_for_horizon() {
+  case "$1" in
+    5m)   echo 300 ;;
+    15m)  echo 900 ;;
+    20m)  echo 1200 ;;
+    30m)  echo 1800 ;;
+    45m)  echo 2700 ;;
+    60m)  echo 3600 ;;
+    90m)  echo 5400 ;;
+    *)    echo 900 ;;
+  esac
+}
+
 # ── load_env: source .env file and export all variables ──────────
 load_env() {
   local env_file="$1"
@@ -27,15 +105,24 @@ lookup_model() {
 
 # ── configure_model_env: set ENV_PREFIX/AGENT_FLAG for a model ───
 # Sets these variables in the caller's scope:
-#   ENV_PREFIX  — env vars to prepend to the harbor command
-#   AGENT_FLAG  — agent flag for harbor (e.g. -a 'claude-code')
+#   ENV_PREFIX      — env vars to prepend to the harbor command
+#   AGENT_FLAG      — agent flag for harbor (e.g. -a 'claude-code')
+#   AGENT_ENV_FLAGS — --ae credential flags forwarded into the sandbox
+#                     (used by the multi-bot launch scripts; the skill and
+#                     gold scripts forward creds via ENV_PREFIX and ignore
+#                     this, so it is set best-effort and never skips them).
 # Returns 1 if model should be skipped (missing credentials).
 configure_model_env() {
   local model_name="$1"
   local agents_dir="$2"
 
-  ENV_PREFIX=""
+  # Always expose the adapters dir: the team/market scripts override
+  # AGENT_FLAG with --agent-import-path for EVERY *opencode* agent, including
+  # ones (e.g. qwen3-opencode) that have no case below and would otherwise
+  # leave PYTHONPATH unset. Harmless for -a style agents.
+  ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
   AGENT_FLAG="-a '$(echo "$3" | cut -d'|' -f1)'"
+  AGENT_ENV_FLAGS=""
 
   # Agent dispatch — agent_name (field 1 of ALL_MODELS entry) wins over model label.
   local agent_name
@@ -182,6 +269,16 @@ configure_model_env() {
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'kimi3_adapter:Kimi3LowOpenCode'"
       ;;
+    muse12-opencode)
+      # Muse Spark 1.2 contributor tier — Meta Model API direct (api.meta.ai),
+      # not OpenRouter (the contributor model has no OpenRouter route).
+      if [ -z "${META_API_KEY:-}" ]; then
+        echo "  WARNING: META_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'muse12_adapter:Muse12OpenCode'"
+      ;;
     muse-opencode)
       # Meta Model API direct (api.meta.ai) — needs META_MODEL_API_KEY.
       if [ -z "${META_MODEL_API_KEY:-}" ]; then
@@ -190,14 +287,6 @@ configure_model_env() {
       fi
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'muse_adapter:MuseSparkOpenCode'"
-      ;;
-    muse12-opencode)
-      if [ -z "${META_MODEL_API_KEY:-}" ]; then
-        echo "  WARNING: META_MODEL_API_KEY not found in .env, skipping $model_name"
-        return 1
-      fi
-      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
-      AGENT_FLAG="--agent-import-path 'muse_adapter:Muse12ContributorOpenCode'"
       ;;
     grok46-medium-opencode)
       if [ -z "${OPENROUTER_API_KEY:-}" ]; then
@@ -223,6 +312,14 @@ configure_model_env() {
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'grok46_adapter:Grok46OpenCode'"
       ;;
+    grok46-opencode)
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'grok45_adapter:Grok46OpenCode'"
+      ;;
     grok45-opencode)
       if [ -z "${OPENROUTER_API_KEY:-}" ]; then
         echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
@@ -230,6 +327,16 @@ configure_model_env() {
       fi
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'grok45_adapter:Grok45OpenCode'"
+      ;;
+    luna-xhigh-opencode)
+      # GPT-5.6 Luna at xhigh effort, driven through OpenCode (the team tasks
+      # have no codex-CLI path). Uses the OpenAI API directly, not OpenRouter.
+      if [ -z "${OPENAI_API_KEY:-}" ]; then
+        echo "  WARNING: OPENAI_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'luna_adapter:LunaXhighOpenCode'"
       ;;
     grok43-opencode)
       if [ -z "${OPENROUTER_API_KEY:-}" ]; then
@@ -289,6 +396,27 @@ configure_model_env() {
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'inkling_adapter:InklingOpenCode'"
       ;;
+    hotteok-claude)
+      # EAP Claude model — 404s on every API key; the only credential that
+      # resolves it is the Max-subscription OAuth token from the local Claude
+      # Code keychain entry (bills the subscription; all concurrent sessions
+      # share one five_hour rate-limit window). Driven by the Claude Code CLI
+      # via claude_code_team_adapter — OpenCode cannot reach EAP models.
+      if [ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]; then
+        CLAUDE_CODE_OAUTH_TOKEN="$(security find-generic-password -s 'Claude Code-credentials' -w 2>/dev/null \
+          | python3 -c 'import json,sys;print(json.load(sys.stdin)["claudeAiOauth"]["accessToken"])' 2>/dev/null || true)"
+      fi
+      if [ -z "${CLAUDE_CODE_OAUTH_TOKEN:-}" ]; then
+        echo "  WARNING: no Claude Code OAuth token (keychain 'Claude Code-credentials'), skipping $model_name"
+        return 1
+      fi
+      export CLAUDE_CODE_OAUTH_TOKEN
+      # Blank ANTHROPIC_API_KEY so the CLI can't fall back to a key that
+      # lacks the EAP grant (it would 404 the model id).
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-} ANTHROPIC_API_KEY="
+      AGENT_FLAG="--agent-import-path 'claude_code_team_adapter:ClaudeCodeTeamAdapter'"
+      AGENT_ENV_FLAGS="--ae CLAUDE_CODE_OAUTH_TOKEN=${CLAUDE_CODE_OAUTH_TOKEN}"
+      ;;
     codex)
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'codex_adapter:CodexWithTimeout'"
@@ -299,7 +427,77 @@ configure_model_env() {
       AGENT_FLAG="--agent-import-path 'gemini_adapter:GeminiCliHighThinking'"
       ;;
   esac
+
+  # Forward provider credentials into the sandbox via --ae, keyed on the
+  # model-id provider prefix. Best-effort and non-fatal: the multi-bot
+  # scripts consume $AGENT_ENV_FLAGS; the skill/gold scripts ignore it
+  # (they forward creds through ENV_PREFIX), so a missing key here must
+  # NOT skip those models — hence no `return 1`.
+  # (skipped when the agent case above already set its own flags, e.g. the
+  # hotteok OAuth token — the API key must NOT leak in as a fallback there)
+  [ -n "$AGENT_ENV_FLAGS" ] && return 0
+  case "$(echo "$3" | cut -d'|' -f2)" in
+    anthropic/*)        [ -n "${ANTHROPIC_API_KEY:-}" ]  && AGENT_ENV_FLAGS="--ae ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}" ;;
+    openai/*)           [ -n "${OPENAI_API_KEY:-}" ]     && AGENT_ENV_FLAGS="--ae OPENAI_API_KEY=${OPENAI_API_KEY}" ;;
+    gemini/*|google/*)  [ -n "${GEMINI_API_KEY:-}" ]     && AGENT_ENV_FLAGS="--ae GEMINI_API_KEY=${GEMINI_API_KEY}" ;;
+    openrouter/*)       [ -n "${OPENROUTER_API_KEY:-}" ] && AGENT_ENV_FLAGS="--ae OPENROUTER_API_KEY=${OPENROUTER_API_KEY}" ;;
+    meta/*)             [ -n "${META_API_KEY:-}" ]       && AGENT_ENV_FLAGS="--ae META_API_KEY=${META_API_KEY}" ;;
+  esac
   return 0
+}
+
+# ── team_model_extra_args: per-model harbor flags for team runs ──
+# The multi-bot launch scripts reference $MODEL_EXTRA_ARGS but (unlike the
+# skill script) never set it. Call this right after configure_model_env.
+team_model_extra_args() {
+  MODEL_EXTRA_ARGS=""
+  case "$1" in
+    grok45|grok45-medium|grok43|grok46|muse|muse12)
+      # xAI/Meta 403 EU-origin requests ("not available in your region") — pin
+      # the Modal sandbox to a US region. Needs harbor's sandbox_region patch.
+      MODEL_EXTRA_ARGS="--ek sandbox_region=us-east"
+      ;;
+  esac
+}
+
+# ── team_model_options: per-model opencode options for MIXED runs ──
+# Mixed-model runs (run-market.sh --mix) go through the generic team/split
+# adapter, so a model whose own adapter subclass carries _model_options
+# (reasoning effort etc.) would silently lose them. This maps a model label
+# to the `<model_id>:k=v[,k=v]` spec the adapters take via
+# `--ak model_options=spec;spec` (mirror the subclass in agents/ when adding).
+team_model_options() {
+  MODEL_OPTIONS_SPEC=""
+  case "$1" in
+    gpt56luna-xhigh) MODEL_OPTIONS_SPEC="openai/gpt-5.6-luna:reasoningEffort=xhigh" ;;
+  esac
+}
+
+# ── apply_split_mode: 1-box-per-agent + 1-server-box topology ────
+# Shared by the team run scripts' --split flag. Reads $SPLIT (0/1) and sets:
+#   SPLIT_SUFFIX  task-dir suffix ("-split" → the server-only task variant)
+#   SPLIT_TAG     job-name marker
+#   SPLIT_FLAGS   harbor flags: server tunnels for the agent boxes to dial
+#                 back through (needs the tunnel_ports harbor patch —
+#                 patches/harbor-local.patch)
+# Arg 1: $SOLO — --solo drives all bots from one session in the trial sandbox,
+# which contradicts one-box-per-agent, so the combination is rejected.
+apply_split_mode() {
+  SPLIT_SUFFIX=""; SPLIT_TAG=""; SPLIT_FLAGS=""
+  if [ "${SPLIT:-0}" != "1" ]; then return 0; fi
+  if [ "${1:-0}" = "1" ]; then
+    echo "--split and --solo are mutually exclusive" >&2
+    exit 1
+  fi
+  SPLIT_SUFFIX="-split"
+  SPLIT_TAG="-split"
+  # 8888/7780 = engine/gateway for the agent boxes; 8790 = the live
+  # observation dashboard (shared/dashboard.ts) — the split adapter logs its
+  # public URL and writes it to the job's logs dir as dashboard-url.txt;
+  # 8791 = the market watcher's wealth-rank endpoint (-rank task variants —
+  # the split adapter hands agent boxes the URL via /tmp/rank-url; the tunnel
+  # is harmless on tasks where nothing listens).
+  SPLIT_FLAGS="--ek tunnel_ports=8888,7780,8790,8791"
 }
 
 # ── regenerate_tasks: run the task generator ─────────────────────

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RuneBench — Team-Size Sweep (n=1/3/6)</title>
+<style>
+  :root { color-scheme: dark; }
+  body { background:#0d1117; color:#e6edf3; font:15px/1.5 -apple-system,'Segoe UI',sans-serif; margin:0; padding:32px 24px 80px; }
+  main { max-width:1180px; margin:0 auto; }
+  h1 { font-size:26px; margin:0 0 4px; } h2 { font-size:21px; border-bottom:1px solid #21262d; padding-bottom:6px; margin-top:48px; }
+  h4 { margin:0 0 8px; color:#c9d1d9; }
+  .meta, .desc, .sub, .metric { color:#8b949e; font-size:13px; }
+  .desc { max-width:760px; }
+  table { border-collapse:collapse; width:100%; margin:18px 0; }
+  th, td { text-align:left; padding:8px 12px; border-bottom:1px solid #21262d; vertical-align:top; }
+  th { color:#8b949e; font-size:12px; text-transform:uppercase; letter-spacing:.04em; }
+  td .sub { display:block; }
+  td.best b { color:#7fc88a; }
+  .dot { display:inline-block; width:10px; height:10px; border-radius:5px; margin-right:7px; }
+  .charts { display:flex; gap:28px; flex-wrap:wrap; margin:20px 0; }
+  .chart { background:#161b22; border:1px solid #21262d; border-radius:8px; padding:16px 20px; }
+  .chartrow { display:flex; gap:22px; align-items:flex-end; height:130px; }
+  .bargroup { display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%; }
+  .bars { display:flex; gap:5px; align-items:flex-end; flex:1; }
+  .bar { width:26px; border-radius:3px 3px 0 0; }
+  .barlabel { font-size:12px; color:#8b949e; margin-top:6px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fill, minmax(340px, 1fr)); gap:18px; margin-top:16px; }
+  .card { background:#161b22; border:1px solid #21262d; border-radius:8px; padding:14px 16px; }
+  .cardhead { margin-bottom:6px; }
+  .score { font-size:22px; font-weight:700; margin:2px 0; }
+  .detail { font-size:13px; color:#c9d1d9; }
+  video, .novideo { width:100%; border-radius:6px; margin-top:10px; background:#010409; }
+  .novideo { padding:40px 0; text-align:center; color:#6e7681; border:1px dashed #30363d; }
+  details { margin-top:8px; font-size:12px; color:#8b949e; } summary { cursor:pointer; }
+  .perbot { padding:6px 2px; }
+  .note { background:#161b22; border-left:3px solid #d29922; padding:10px 14px; border-radius:0 6px 6px 0; font-size:13px; color:#c9d1d9; margin:16px 0; }
+</style></head><body><main>
+<h1>Team-Size Sweep — 1 vs 3 vs 6 bots</h1>
+<p class="meta">2026-07-07 · smith/magic/crafting-team · 30-minute horizon · k=1 ·
+GLM-5.2 &amp; Gemini 3.5 Flash · one model drives every bot on its team (one OpenCode session per bot,
+coordination via in-game chat only) · total API cost $189.75</p>
+
+<h2>Scores</h2>
+<table><thead><tr><th>Activity</th><th>Model</th><th>Team of 1</th><th>Team of 3</th><th>Team of 6</th></tr></thead>
+<tbody><tr><td>Smith-team</td>
+      <td><span class="dot" style="background:#f778ba"></span>GLM-5.2</td><td><b>35</b><span class="sub">iron dagger (35gp) by agenta</span></td><td><b>100</b><span class="sub">steel bar (100gp) by agenta</span></td><td><b>160</b><span class="sub">bronze platebody (160gp) by agentc</span></td></tr><tr><td>Smith-team</td>
+      <td><span class="dot" style="background:#58a6ff"></span>Gemini 3.5 Flash</td><td><b>125</b><span class="sub">steel dagger (125gp) by agenta</span></td><td class="best"><b>2,000</b><span class="sub">steel platebody (2,000gp) by agenta</span></td><td class="best"><b>2,000</b><span class="sub">steel platebody (2,000gp) by agenta</span></td></tr><tr><td>Magic-team</td>
+      <td><span class="dot" style="background:#f778ba"></span>GLM-5.2</td><td><b>2</b><span class="sub">Magic 2 (154 xp) on agenta</span></td><td><b>2</b><span class="sub">Magic 2 (153 xp) on agentb</span></td><td><b>6</b><span class="sub">Magic 6 (498 xp) on agente</span></td></tr><tr><td>Magic-team</td>
+      <td><span class="dot" style="background:#58a6ff"></span>Gemini 3.5 Flash</td><td><b>1</b><span class="sub">Magic 1 (0 xp) on agenta</span></td><td><b>16</b><span class="sub">Magic 16 (22,970 xp) on agenta</span></td><td class="best"><b>26</b><span class="sub">Magic 26 (57,380 xp) on agenta</span></td></tr><tr><td>Crafting-team</td>
+      <td><span class="dot" style="background:#f778ba"></span>GLM-5.2</td><td><b>0</b><span class="sub">0 xp (level 1) on agenta</span></td><td><b>248</b><span class="sub">248 xp (level 3) on agentb</span></td><td><b>110</b><span class="sub">110 xp (level 2) on agenta</span></td></tr><tr><td>Crafting-team</td>
+      <td><span class="dot" style="background:#58a6ff"></span>Gemini 3.5 Flash</td><td><b>5,770</b><span class="sub">5,770 xp (level 6) on agenta</span></td><td><b>3,197</b><span class="sub">3,197 xp (level 4) on agenta</span></td><td class="best"><b>26,220</b><span class="sub">26,220 xp (level 18) on agenta</span></td></tr></tbody></table>
+
+<div class="charts"><div class="chart"><h4>Smith-team</h4><div class="chartrow"><div class="bargroup"><div class="bars"><div class="bar" style="height:2px;background:#f778ba" title="GLM-5.2: 35"></div><div class="bar" style="height:8px;background:#58a6ff" title="Gemini 3.5 Flash: 125"></div></div><div class="barlabel">n=1</div></div><div class="bargroup"><div class="bars"><div class="bar" style="height:6px;background:#f778ba" title="GLM-5.2: 100"></div><div class="bar" style="height:120px;background:#58a6ff" title="Gemini 3.5 Flash: 2,000"></div></div><div class="barlabel">n=3</div></div><div class="bargroup"><div class="bars"><div class="bar" style="height:10px;background:#f778ba" title="GLM-5.2: 160"></div><div class="bar" style="height:120px;background:#58a6ff" title="Gemini 3.5 Flash: 2,000"></div></div><div class="barlabel">n=6</div></div></div>
+    <div class="metric">best item store value (gp)</div></div><div class="chart"><h4>Magic-team</h4><div class="chartrow"><div class="bargroup"><div class="bars"><div class="bar" style="height:9px;background:#f778ba" title="GLM-5.2: 2"></div><div class="bar" style="height:5px;background:#58a6ff" title="Gemini 3.5 Flash: 1"></div></div><div class="barlabel">n=1</div></div><div class="bargroup"><div class="bars"><div class="bar" style="height:9px;background:#f778ba" title="GLM-5.2: 2"></div><div class="bar" style="height:74px;background:#58a6ff" title="Gemini 3.5 Flash: 16"></div></div><div class="barlabel">n=3</div></div><div class="bargroup"><div class="bars"><div class="bar" style="height:28px;background:#f778ba" title="GLM-5.2: 6"></div><div class="bar" style="height:120px;background:#58a6ff" title="Gemini 3.5 Flash: 26"></div></div><div class="barlabel">n=6</div></div></div>
+    <div class="metric">best Magic level</div></div><div class="chart"><h4>Crafting-team</h4><div class="chartrow"><div class="bargroup"><div class="bars"><div class="bar" style="height:2px;background:#f778ba" title="GLM-5.2: 0"></div><div class="bar" style="height:26px;background:#58a6ff" title="Gemini 3.5 Flash: 5,770"></div></div><div class="barlabel">n=1</div></div><div class="bargroup"><div class="bars"><div class="bar" style="height:2px;background:#f778ba" title="GLM-5.2: 248"></div><div class="bar" style="height:15px;background:#58a6ff" title="Gemini 3.5 Flash: 3,197"></div></div><div class="barlabel">n=3</div></div><div class="bargroup"><div class="bars"><div class="bar" style="height:2px;background:#f778ba" title="GLM-5.2: 110"></div><div class="bar" style="height:120px;background:#58a6ff" title="Gemini 3.5 Flash: 26,220"></div></div><div class="barlabel">n=6</div></div></div>
+    <div class="metric">best Crafting XP</div></div></div>
+
+<h2>Observations</h2>
+<ul>
+  <li><b>Gemini 3.5 Flash beat GLM-5.2 in all nine cells</b>, usually by an order of magnitude.</li>
+  <li><b>Team size helps, but sublinearly.</b> Gemini’s magic score scaled cleanly (1 → 16 → 26); its smith score
+      saturated at a steel platebody for both n=3 and n=6 — six miners banked ~4M combined Mining XP that the single
+      designated smith couldn’t convert into a higher tier within 30 minutes.</li>
+  <li><b>Coordination overhead can go negative:</b> GLM’s 6-bot smith run scored <i>below</i> its 3-bot run
+      (28 vs 125 gp) — 1,550 chat messages and a designated smith that only reached Smithing 21.</li>
+  <li>Single trials (k=1): treat gaps smaller than ~2× as noise (e.g. gemini crafting n=1 vs n=3).</li>
+</ul>
+<div class="note">The six original n=6 launches fast-failed before any agent ran (the team adapter’s exec command
+exceeded Modal’s 64&nbsp;KB ARG_MAX with six inlined instructions) and were relaunched with the fix —
+their dead job dirs are excluded here.</div>
+
+<section><h2>Smith-team</h2>
+    <p class="desc">Smith the single most valuable item. Score = store value of the best item any team member smiths (level-gated anti-cheat).</p>
+    <div class="cards"><div class="card">
+      <div class="cardhead"><span class="dot" style="background:#f778ba"></span>
+        <b>GLM-5.2</b> · team of 1</div>
+      <div class="score">35 <span class="metric">best item store value (gp)</span></div>
+      <div class="detail">iron dagger (35gp) by agenta</div>
+      <div class="detail sub">0 chat msgs · $1.85 API</div>
+      <video controls preload="none" poster="" src="videos/team-size/smith-team-30m-n1-glm52.mp4"></video>
+      <details><summary>per-bot finals</summary><div class="perbot">agenta: Smithing 46 / Mining 57</div></details>
+    </div><div class="card">
+      <div class="cardhead"><span class="dot" style="background:#58a6ff"></span>
+        <b>Gemini 3.5 Flash</b> · team of 1</div>
+      <div class="score">125 <span class="metric">best item store value (gp)</span></div>
+      <div class="detail">steel dagger (125gp) by agenta</div>
+      <div class="detail sub">0 chat msgs · $4.12 API</div>
+      <video controls preload="none" poster="" src="videos/team-size/smith-team-30m-n1-gemini35flash.mp4"></video>
+      <details><summary>per-bot finals</summary><div class="perbot">agenta: Smithing 41 / Mining 57</div></details>
+    </div><div class="card">
+      <div class="cardhead"><span class="dot" style="background:#f778ba"></span>
+        <b>GLM-5.2</b> · team of 3</div>
+      <div class="score">100 <span class="metric">best item store value (gp)</span></div>
+      <div class="detail">steel bar (100gp) by agenta</div>
+      <div class="detail sub">22 chat msgs · $2.74 API</div>
+      <video controls preload="none" poster="" src="videos/team-size/smith-team-30m-glm52.mp4"></video>
+      <details><summary>per-bot finals</summary><div class="perbot">agenta: Smithing 36 / Mining 54 · agentb: Smithing 27 / Mining 35 · agentc: Smithing 1 / Mining 64</div></details>
+    </div><div class="card">
+      <div class="cardhead"><span class="dot" style="background:#58a6ff"></span>
+        <b>Gemini 3.5 Flash</b> · team of 3</div>
+      <div class="score">2,000 <span class="metric">best item store value (gp)</span></div>
+      <div class="detail">steel platebody (2,000gp) by agenta</div>
+      <div class="detail sub">52 chat msgs · $10.68 API</div>
+      <video controls preload="none" poster="" src="videos/team-size/smith-team-30m-gemini35flash.mp4"></video>
+      <details><summary>per-bot finals</summary><div class="perbot">agenta: Smithing 55 / Mining 21 · agentb: Smithing 1 / Mining 63 · agentc: Smithing 1 / Mining 70</div></details>
+    </div><div class="card">
+      <div class="cardhead"><span class="dot" style="background:#f778ba"></span>
+        <b>GLM-5.2</b> · team of 6</div>
+      <div class="score">160 <span class="metric">best item store value (gp)</span></div>
+      <div class="detail">bronze platebody (160gp) by agentc</div>
+      <div class="detail sub">28 chat msgs · $8.57 API</div>
+      <video controls preload="none" poster="" src="videos/team-size/smith-team-30m-n6-glm52.mp4"></video>
+      <details><summary>per-bot finals</summary><div class="perbot">agenta: Smithing 32 / Mining 54 · agentb: Smithing 10 / Mining 48 · agentc: Smithing 34 / Mining 45 · agentd: Smithing 20 / Mining 47 · agente: Smithing 2 / Mining 35 · agentf: Smithing 15 / Mining 37</div></details>
+    </div><div class="card">
+      <div class="cardhead"><span class="dot" style="background:#58a6ff"></span>
+        <b>Gemini 3.5 Flash</b> · team of 6</div>
+      <div class="score">2,000 <span class="metric">best item store value (gp)</span></div>
+      <div class="detail">steel platebody (2,000gp) by agenta</div>
+      <div class="detail sub">63 chat msgs · $34.33 API</div>
+      <video controls preload="none" poster="" src="videos/team-size/smith-team-30m-n6-gemini35flash.mp4"></video>
+      <details><summary>per-bot finals</summary><div class="perbot">agenta: Smithing 53 / Mining 1 · agentb: Smithing 1 / Mining 61 · agentc: Smithing 1 / Mining 63 · agentd: Smithing 1 / Mining 63 · agente: Smithing 1 / Mining 64 · agentf: Smithing 1 / Mining 59</div></details>
+    </div></div></section><section><h2>Magic-team</h2>
+    <p class="desc">Push ONE account’s Magic level as high as possible. Score = highest Magic level on any single account.</p>
+    <div class="cards"><div class="card">
+      <div class="cardhead"><span class="dot" style="background:#f778ba"></span>
+        <b>GLM-5.2</b> · team of 1</div>
+      <div class="score">2 <span class="metric">best Magic level</span></div>
+      <div class="detail">Magic 2 (154 xp) on agenta</div>
+      <div class="detail sub">0 chat msgs · $1.19 API</div>
+      <video controls preload="none" poster="" src="videos/team-size/magic-team-30m-n1-glm52.mp4"></video>
+      <details><summary>per-bot finals</summary><div class="perbot">agenta: Magic 2</div></details>
+    </div><div class="card">
+      <div class="cardhead"><span class="dot" style="background:#58a6ff"></span>
+        <b>Gemini 3.5 Flash</b> · team of 1</div>
+      <div class="score">1 <span class="metric">best Magic level</span></div>
+      <div class="detail">Magic 1 (0 xp) on agenta</div>
+      <div class="detail sub">0 chat msgs · $4.15 API</div>
+      <video controls preload="none" poster="" src="videos/team-size/magic-team-30m-n1-gemini35flash.mp4"></video>
+      <details><summary>per-bot finals</summary><div class="perbot">agenta: Magic 1</div></details>
+    </div><div class="card">
+      <div class="cardhead"><span class="dot" style="background:#f778ba"></span>
+        <b>GLM-5.2</b> · team of 3</div>
+      <div class="score">2 <span class="metric">best Magic level</span></div>
+      <div class="detail">Magic 2 (153 xp) on agentb</div>
+      <div class="detail sub">13 chat msgs · $3.77 API</div>
+      <video controls preload="none" poster="" src="videos/team-size/magic-team-30m-glm52.mp4"></video>
+      <details><summary>per-bot finals</summary><div class="perbot">agenta: Magic 1 · agentb: Magic 2 · agentc: Magic 1</div></details>
+    </div><div class="card">
+      <div class="cardhead"><span class="dot" style="background:#58a6ff"></span>
+        <b>Gemini 3.5 Flash</b> · team of 3</div>
+      <div class="score">16 <span class="metric">best Magic level</span></div>
+      <div class="detail">Magic 16 (22,970 xp) on agenta</div>
+      <div class="detail sub">105 chat msgs · $11.10 API</div>
+      <video controls preload="none" poster="" src="videos/team-size/magic-team-30m-gemini35flash.mp4"></video>
+      <details><summary>per-bot finals</summary><div class="perbot">agenta: Magic 16 · agentb: Magic 1 · agentc: Magic 1</div></details>
+    </div><div class="card">
+      <div class="cardhead"><span class="dot" style="background:#f778ba"></span>
+        <b>GLM-5.2</b> · team of 6</div>
+      <div class="score">6 <span class="metric">best Magic level</span></div>
+      <div class="detail">Magic 6 (498 xp) on agente</div>
+      <div class="detail sub">52 chat msgs · $5.37 API</div>
+      <video controls preload="none" poster="" src="videos/team-size/magic-team-30m-n6-glm52.mp4"></video>
+      <details><summary>per-bot finals</summary><div class="perbot">agenta: Magic 1 · agentb: Magic 1 · agentc: Magic 1 · agentd: Magic 1 · agente: Magic 6 · agentf: Magic 1</div></details>
+    </div><div class="card">
+      <div class="cardhead"><span class="dot" style="background:#58a6ff"></span>
+        <b>Gemini 3.5 Flash</b> · team of 6</div>
+      <div class="score">26 <span class="metric">best Magic level</span></div>
+      <div class="detail">Magic 26 (57,380 xp) on agenta</div>
+      <div class="detail sub">159 chat msgs · $27.12 API</div>
+      <video controls preload="none" poster="" src="videos/team-size/magic-team-30m-n6-gemini35flash.mp4"></video>
+      <details><summary>per-bot finals</summary><div class="perbot">agenta: Magic 26 · agentb: Magic 1 · agentc: Magic 1 · agentd: Magic 1 · agente: Magic 1 · agentf: Magic 1</div></details>
+    </div></div></section><section><h2>Crafting-team</h2>
+    <p class="desc">Push ONE account’s Crafting XP as high as possible. Score = highest single account’s Crafting XP.</p>
+    <div class="cards"><div class="card">
+      <div class="cardhead"><span class="dot" style="background:#f778ba"></span>
+        <b>GLM-5.2</b> · team of 1</div>
+      <div class="score">0 <span class="metric">best Crafting XP</span></div>
+      <div class="detail">0 xp (level 1) on agenta</div>
+      <div class="detail sub">0 chat msgs · $1.68 API</div>
+      <video controls preload="none" poster="" src="videos/team-size/crafting-team-30m-n1-glm52.mp4"></video>
+      <details><summary>per-bot finals</summary><div class="perbot">agenta: 0 xp</div></details>
+    </div><div class="card">
+      <div class="cardhead"><span class="dot" style="background:#58a6ff"></span>
+        <b>Gemini 3.5 Flash</b> · team of 1</div>
+      <div class="score">5,770 <span class="metric">best Crafting XP</span></div>
+      <div class="detail">5,770 xp (level 6) on agenta</div>
+      <div class="detail sub">0 chat msgs · $6.62 API</div>
+      <video controls preload="none" poster="" src="videos/team-size/crafting-team-30m-n1-gemini35flash.mp4"></video>
+      <details><summary>per-bot finals</summary><div class="perbot">agenta: 5,770 xp</div></details>
+    </div><div class="card">
+      <div class="cardhead"><span class="dot" style="background:#f778ba"></span>
+        <b>GLM-5.2</b> · team of 3</div>
+      <div class="score">248 <span class="metric">best Crafting XP</span></div>
+      <div class="detail">248 xp (level 3) on agentb</div>
+      <div class="detail sub">16 chat msgs · $5.48 API</div>
+      <video controls preload="none" poster="" src="videos/team-size/crafting-team-30m-glm52.mp4"></video>
+      <details><summary>per-bot finals</summary><div class="perbot">agenta: 110 xp · agentb: 248 xp · agentc: 138 xp</div></details>
+    </div><div class="card">
+      <div class="cardhead"><span class="dot" style="background:#58a6ff"></span>
+        <b>Gemini 3.5 Flash</b> · team of 3</div>
+      <div class="score">3,197 <span class="metric">best Crafting XP</span></div>
+      <div class="detail">3,197 xp (level 4) on agenta</div>
+      <div class="detail sub">20 chat msgs · $21.54 API</div>
+      <video controls preload="none" poster="" src="videos/team-size/crafting-team-30m-gemini35flash.mp4"></video>
+      <details><summary>per-bot finals</summary><div class="perbot">agenta: 3,197 xp · agentb: 0 xp · agentc: 0 xp</div></details>
+    </div><div class="card">
+      <div class="cardhead"><span class="dot" style="background:#f778ba"></span>
+        <b>GLM-5.2</b> · team of 6</div>
+      <div class="score">110 <span class="metric">best Crafting XP</span></div>
+      <div class="detail">110 xp (level 2) on agenta</div>
+      <div class="detail sub">55 chat msgs · $7.54 API</div>
+      <video controls preload="none" poster="" src="videos/team-size/crafting-team-30m-n6-glm52.mp4"></video>
+      <details><summary>per-bot finals</summary><div class="perbot">agenta: 110 xp · agentb: 0 xp · agentc: 0 xp · agentd: 0 xp · agente: 0 xp · agentf: 0 xp</div></details>
+    </div><div class="card">
+      <div class="cardhead"><span class="dot" style="background:#58a6ff"></span>
+        <b>Gemini 3.5 Flash</b> · team of 6</div>
+      <div class="score">26,220 <span class="metric">best Crafting XP</span></div>
+      <div class="detail">26,220 xp (level 18) on agenta</div>
+      <div class="detail sub">113 chat msgs · $31.92 API</div>
+      <video controls preload="none" poster="" src="videos/team-size/crafting-team-30m-n6-gemini35flash.mp4"></video>
+      <details><summary>per-bot finals</summary><div class="perbot">agenta: 26,220 xp · agentb: 0 xp · agentc: 0 xp · agentd: 0 xp · agente: 0 xp · agentf: 0 xp</div></details>
+    </div></div></section>
+</main></body></html>

@@ -21,6 +21,16 @@ class Grok45OpenCode(OpenCodeAdapter):
         return "grok45-opencode"
 
 
+class Grok46OpenCode(OpenCodeAdapter):
+    _default_model = "openrouter/x-ai/grok-4.6"
+    _log_prefix = "grok46"
+    _log_file = "opencode-grok46.txt"
+
+    @staticmethod
+    def name() -> str:
+        return "grok46-opencode"
+
+
 class Grok45MediumOpenCode(Grok45OpenCode):
     # xAI grok-4.5 honors reasoning_effort low/medium/high only (high is the
     # default). OpenRouter's schema also accepts "xhigh"/"max" but xAI treats

@@ -25,12 +25,13 @@ Code runs in an async context with `bot` (BotActions) and `sdk` (BotSDK) availab
 ```typescript
 // Just execute - auto-connects on first use
 execute_code({
-  bot_name: "agent",
+  bot_name: "agent",   // use YOUR bot's name
   code: `
     const state = sdk.getState();
     console.log('Position:', state.player.worldX, state.player.worldZ);
 
     // Chop trees for 1 minute
+    const endTime = Date.now() + 60_000;
     while (Date.now() < endTime) {
       const tree = sdk.findNearbyLoc(/^tree$/i);
       if (tree) await bot.chopTree(tree);
@@ -61,6 +62,20 @@ bun sdk/cli.ts {username}
 
 A failed 5-minute run wastes more time than five 30 second diagnostic runs. **Fail fast and start simple.**
 
+**HARD CAP: shell commands are killed at ~120 seconds**, and when that happens
+you may see no output at all — a working script that hits the cap looks exactly
+like a broken one. If a long command "vanished" with no output, assume it hit
+the cap; do NOT rewrite the script. Run anything longer than ~90s in the
+background and poll its log instead:
+
+```bash
+nohup bun run /tmp/grind.ts >> /tmp/grind.log 2>&1 &
+sleep 30 && tail -20 /tmp/grind.log     # poll progress each turn
+```
+
+Have the script print progress (XP, inventory counts) every few iterations so
+`tail` shows it's alive.
+
 Look out for "I can't reach" messages - the solution is often to open closed gates or that the item isn't accessible. 
 
 Read and grep in the learnings/ and wiki/ folder for tips, skill guides, item and npc locations, and shop information.
@@ -81,9 +96,9 @@ For the complete method reference, see **[sdk/API.md](sdk/API.md)** (auto-genera
 | `talkTo(target)` | Walk to NPC, start dialog |
 | `interactNpc(target, option?)` | Walk to NPC, interact with any option (e.g. `'trade'`, `'fish'`) |
 | `interactLoc(target, option?)` | Walk to loc, interact with any option (e.g. `'mine'`, `'smelt'`) |
-| `attackNpc(target)` | Walk to NPC, start combat |
+| `attack(target)` | Walk to NPC, start combat |
 | `pickpocketNpc(target)` | Pickpocket NPC, detects XP gain vs stun |
-| `castSpellOnNpc(target, spell)` | Cast combat spell on NPC |
+| `castSpell(target, spellComponent)` | Cast combat spell on NPC |
 | `chopTree(target?)` | Chop tree, wait for logs |
 | `pickupItem(target)` | Pick up ground item |
 | `openDoor(target?)` | Open a door or gate |
@@ -93,6 +108,8 @@ For the complete method reference, see **[sdk/API.md](sdk/API.md)** (auto-genera
 | `openShop(target?)` | Open shop via shopkeeper NPC |
 | `buyFromShop(target, amount?)` | Buy item from open shop |
 | `sellToShop(target, amount?)` | Sell item to open shop |
+| `trade(player, { give?, want? })` | Trade with another player: walk over, offer `give`, accept once `want` is offered |
+| `serveTrades(opts?)` | Loop accepting incoming trade requests (the receiving half of an item handoff) |
 | `equipItem(target)` | Equip from inventory |
 | `unequipItem(target)` | Unequip to inventory |
 | `eatFood(target)` | Eat food, returns HP gained |
@@ -120,11 +137,23 @@ For the complete method reference, see **[sdk/API.md](sdk/API.md)** (auto-genera
 | `sendClickComponent(id)` | Click interface button |
 | `sendDropItem(slot)` | Drop inventory item |
 | `sendUseItem(slot)` | Use inventory item (bury, etc.) |
-| `sendUseItemOnItem(src, dst)` | Combine two items |
-| `sendSay(message)` | Send chat message |
+| `sendUseItemOnItem(srcSlot, dstSlot)` | Combine two items (by inventory slot) |
+| `sendCloseModal()` | Close a full-screen modal/interface |
 | `waitForCondition(pred)` | Wait for state predicate |
 | `waitForTicks(n)` | Wait n game ticks |
 | `scanNearbyLocs(radius?)` | Extended-range loc scan |
+
+### Chat CLI (talk without taking control)
+
+Public chat is capped at 400 characters per message. To send or read chat
+without disturbing whatever script currently controls the bot, use the chat
+CLI — it connects in observe mode, which can send chat (and nothing else) and
+never pre-empts (or gets pre-empted by) a controller:
+
+```bash
+cd /app && bun sdk/chat.ts BOT_NAME "meet me at the bank"   # send
+cd /app && bun sdk/chat.ts BOT_NAME                         # recent chat
+```
 
 
 
@@ -160,7 +189,7 @@ wiki/
 
 ## Troubleshooting
 
-**"No state received"** - Bot isn't connected to game. Open browser first or use `autoLaunchBrowser: true`.
+**"No state received"** - Bot client isn't connected yet. The container launches the game clients at boot — wait a few seconds and retry.
 
 **Script stalls** - Check for open dialogs (`state.dialog.isOpen`). Level-ups block everything.
 

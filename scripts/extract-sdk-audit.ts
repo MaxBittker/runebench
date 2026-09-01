@@ -11,7 +11,6 @@ mkdirSync(join(OUT, "transcripts"), { recursive: true });
 const JOBS: { label: string; dir: string; format: "claude-code" | "codex" | "gemini" | "opencode" }[] = [
   { label: "opus48", dir: "jobs/skills-30m-opus48-20260528-171018", format: "claude-code" },
   { label: "opus47-xhigh", dir: "jobs/skills-30m-opus47-xhigh-20260524-103619", format: "claude-code" },
-  { label: "***-default", dir: "jobs/skills-30m-***-default-20260521-171134", format: "claude-code" },
   { label: "gpt55-xhigh", dir: "jobs/skills-30m-gpt55-apikey-20260523-232603", format: "codex" },
   { label: "gemini35flash-high", dir: "jobs/skills-30m-gemini35flash-high-20260524-104139", format: "gemini" },
   { label: "qwen3max", dir: "jobs/skills-30m-qwen3max-20260528-162016", format: "opencode" },
