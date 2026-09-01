@@ -4,24 +4,71 @@ FROM ${BASE_IMAGE}
 # 8x faster game simulation (50ms ticks vs default 420ms)
 ENV NODE_TICKRATE=50
 
-# Clone rs-sdk (shallow clone, then delete .git to save ~50MB)
+# Bot-friendly engine tuning (rs-sdk config, plumbed via NODE_* env vars):
+#   maxMessageLength 400 — matches rs-sdk's WordPack/webclient support end-to-end
+#     (the old 500 raised only the SDK chunk threshold while WordPack still cut
+#     received chat at 80 chars; 400 is now honored on the full path)
+#   objRevealTicks 0 — dropped items are immediately visible to the other bot
+#   objDespawnScale 2000 — ground items linger 20x longer in ticks, which at the
+#     50ms tickrate is ~2.4x vanilla wall-clock (~3 min for a typical drop).
+#     Item hand-offs go through the trade API now; this is just enough slack
+#     that a missed pickup isn't instantly lost on the fast tickrate.
+ENV NODE_MAX_MESSAGE_LENGTH=400
+ENV NODE_OBJ_REVEAL_TICKS=0
+ENV NODE_OBJ_DESPAWN_SCALE=2000
+
+# Disable chat censoring end-to-end: NODE_PROFANITY_FILTER covers the engine
+# (and is injected into the browser client via bot.ejs/client.ejs);
+# PROFANITY_FILTER covers the lite client, which has no config channel and
+# falls back to the process env when bot.env doesn't set it.
+ENV NODE_PROFANITY_FILTER=false
+ENV PROFANITY_FILTER=false
+
+# Private messages (sdk.dm / `chat.ts --to`) are relayed by the engine's
+# friend server, which is a separate worker: EASY_STARTUP spawns it (plus the
+# idle login/logger workers) in-process and FRIEND_SERVER makes the world
+# actually connect to it — without both, PMs are dropped silently.
+ENV EASY_STARTUP=true
+ENV FRIEND_SERVER=true
+
+# Engine appends one JSONL line per completed player↔player trade (rs-sdk
+# TradeLedger.ts) — the authoritative trade record; the market watcher folds
+# it into its tracking data, replacing regex-mining of trajectories.
+ENV TRADE_LEDGER_FILE=/logs/tracking/trade_ledger.jsonl
+# NPC kill ledger (rs-sdk KillLedger.ts, hooked at npc_del with heroPoints
+# attribution) — authoritative boss-kill records for the dragon-team task.
+ENV KILL_LEDGER_FILE=/logs/tracking/kill_ledger.jsonl
+
+# rs-sdk source: cloned from GitHub by default, OR baked from a local working
+# tree when build.sh populated rs-sdk-local/ (RS_SDK_LOCAL=/path builds — used
+# for testing uncommitted SDK changes). The COPY layer is content-hashed, so
+# local builds cache-bust themselves whenever the tree changes.
 ARG RS_SDK_REPO=https://github.com/MaxBittker/rs-sdk.git
 ARG RS_SDK_REF=main
-# CACHE-BUST — must change for the clone below to re-run. Nothing else in this
-# layer varies between builds, so without this Docker reuses the cached clone and
-# a freshly-tagged image silently ships the OLD rs-sdk. build.sh resolves the live
-# ref to a SHA (git ls-remote) and passes it, so a plain `./build.sh` is always
-# fresh. Note $RS_SDK_REF can't itself be a SHA: `clone --depth 1 --branch`
-# only accepts branch/tag names.
+# CACHE-BUST for the REMOTE path — must change for the clone below to re-run.
+# Nothing else in that layer varies between builds, so without this Docker
+# reuses the cached clone and a freshly-tagged image silently ships the OLD
+# rs-sdk. build.sh resolves the live ref to a SHA (git ls-remote) and passes
+# it, so a plain `./build.sh` is always fresh. Note $RS_SDK_REF can't itself
+# be a SHA: `clone --depth 1 --branch` only accepts branch/tag names.
 ARG RS_SDK_COMMIT=unknown
-RUN git clone --depth 1 --branch $RS_SDK_REF $RS_SDK_REPO /app \
-    && git -C /app rev-parse HEAD > /app/.rs-sdk-commit \
-    && rm -rf /app/.git \
-    && echo "baked rs-sdk $RS_SDK_REF = $(cat /app/.rs-sdk-commit) (requested: $RS_SDK_COMMIT)" \
-    && if [ "$RS_SDK_COMMIT" != "unknown" ] && [ "$(cat /app/.rs-sdk-commit)" != "$RS_SDK_COMMIT" ]; then \
-         echo "FATAL: baked SDK $(cat /app/.rs-sdk-commit) != requested $RS_SDK_COMMIT (stale cache or ref moved mid-build)" >&2; \
-         exit 1; \
-       fi
+COPY rs-sdk-local /tmp/rs-sdk-local
+RUN if [ -f /tmp/rs-sdk-local/package.json ]; then \
+        cp -a /tmp/rs-sdk-local /app \
+        && rm -rf /tmp/rs-sdk-local \
+        && echo "$RS_SDK_COMMIT" > /app/.rs-sdk-commit \
+        && echo "baked rs-sdk from LOCAL tree: $RS_SDK_COMMIT"; \
+    else \
+        rm -rf /tmp/rs-sdk-local \
+        && git clone --depth 1 --branch $RS_SDK_REF $RS_SDK_REPO /app \
+        && git -C /app rev-parse HEAD > /app/.rs-sdk-commit \
+        && rm -rf /app/.git \
+        && echo "baked rs-sdk $RS_SDK_REF = $(cat /app/.rs-sdk-commit) (requested: $RS_SDK_COMMIT)" \
+        && if [ "$RS_SDK_COMMIT" != "unknown" ] && [ "$(cat /app/.rs-sdk-commit)" != "$RS_SDK_COMMIT" ]; then \
+             echo "FATAL: baked SDK $(cat /app/.rs-sdk-commit) != requested $RS_SDK_COMMIT (stale cache or ref moved mid-build)" >&2; \
+             exit 1; \
+           fi; \
+    fi
 WORKDIR /app
 
 # Install all workspace dependencies.
@@ -40,13 +87,15 @@ RUN cp -r server/webclient/out/bot server/engine/public/bot
 # Remove scripts/ and sdk/test/ — benchmark agents waste budget reading/running these
 RUN rm -rf /app/scripts /app/sdk/test
 
-# Replace upstream instruction files with our simplified benchmark version
-RUN rm -f /app/agents.md /app/claude.md /app/GEMINI.md
+# Replace upstream instruction files with our simplified benchmark version.
+# rs-sdk ships uppercase CLAUDE.md with AGENTS.md/GEMINI.md as symlinks to it —
+# remove every casing/name explicitly so no upstream doc survives a rename.
+RUN rm -f /app/agents.md /app/claude.md /app/AGENTS.md /app/CLAUDE.md /app/GEMINI.md
 COPY agents.md /app/agents.md
 # claude-code only auto-loads CLAUDE.md/AGENTS.md (not lowercase agents.md), so the
 # guidance — including "read and grep the learnings/ and wiki/ folders" — never reached
-# the model. Surface it by giving claude-code the filename it loads.
-RUN cp /app/agents.md /app/CLAUDE.md
+# the model. Surface it under the filenames the CLIs load.
+RUN cp /app/agents.md /app/CLAUDE.md && cp /app/agents.md /app/AGENTS.md
 
 # Pre-pack the game cache using the engine's own pack step.
 #
@@ -102,6 +151,7 @@ RUN chmod +x /entrypoint.sh
 # SAMPLE_INTERVAL_MS can be overridden per task via ENV in the thin FROM layer.
 COPY skill_tracker.ts /app/benchmark/shared/skill_tracker.ts
 COPY check_xp_rate.ts /app/benchmark/shared/check_xp_rate.ts
+COPY save-parser.ts /app/benchmark/shared/save-parser.ts
 
 # Ensure bot.env has SERVER=localhost so scripts connect to the local gateway
 RUN echo 'SERVER=localhost' >> /app/bots/agent/bot.env
@@ -114,8 +164,19 @@ RUN test -f /app/mcp/server.ts || (echo "FATAL: /app/mcp/server.ts missing — r
 RUN bun -e 'require.resolve("@modelcontextprotocol/sdk/server/mcp.js")' \
     || (echo "FATAL: @modelcontextprotocol/sdk not installed by root bun install" >&2; exit 1)
 
+# `bun-svc`: the same bun binary under a different process name, used for
+# every INFRA process (engine, gateway, launch-bot, watchers, MCP server).
+# Agents routinely run `killall -9 bun` / `pkill -f "bun run"` to restart
+# their own scripts; with everything named `bun` that took out the MCP server
+# and game client mid-run (market-split 2026-08-17: bot e lost execute_code
+# for 40 min, bot d killed its client four times). A distinct argv[0] keeps
+# those out of reach without changing behavior. A real copy (~100 MB), not a
+# symlink: killall/pgrep can match on the resolved exe, which for a symlink
+# is still `bun`.
+RUN cp -p /root/.bun/bin/bun /usr/local/bin/bun-svc
+
 # Write .mcp.json so Claude Code can use the MCP server
-RUN echo '{"mcpServers":{"rs-agent":{"command":"bun","args":["run","/app/mcp/server.ts"]}}}' > /app/.mcp.json
+RUN echo '{"mcpServers":{"rs-agent":{"command":"bun-svc","args":["run","/app/mcp/server.ts"]}}}' > /app/.mcp.json
 
 # GEMINI.md: heredoc syntax is rejected by gemini-cli's bash parser,
 # so create a Gemini-specific file with writefile guidance.
@@ -158,6 +219,11 @@ PATCH
 
 # writefile helper — reads stdin and writes to the path given as $1
 RUN printf '#!/bin/bash\ncat > "$1"\n' > /usr/local/bin/writefile && chmod +x /usr/local/bin/writefile
+
+# time-left — minutes remaining in the task (reads the deadline the agent
+# adapter records at /tmp/task-deadline when it launches the session).
+COPY time-left.sh /usr/local/bin/time-left
+RUN chmod +x /usr/local/bin/time-left
 
 # SDK daemon defaults to remote demo server — force localhost for Docker runs.
 # (belt-and-suspenders; bot.env already has SERVER=localhost for the daemon)

@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smith-Team Replay</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #16130e; color: #e8e0d0; font: 13px/1.4 -apple-system, 'Segoe UI', sans-serif; height: 100%; overflow: hidden; }
+  #app { display: grid; grid-template-rows: auto 1fr 170px; grid-template-columns: 215px 1fr 340px; height: 100vh; gap: 0; }
+  /* ── header ── */
+  #header { grid-column: 1 / 4; display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #221d14; border-bottom: 1px solid #3a3225; flex-wrap: wrap; }
+  #header h1 { font-size: 15px; margin: 0 8px 0 0; color: #f0c75e; font-weight: 600; }
+  select, button { background: #2e2719; color: #e8e0d0; border: 1px solid #4a4030; border-radius: 4px; padding: 4px 8px; font-size: 13px; cursor: pointer; }
+  button:hover, select:hover { background: #3a3220; }
+  button.active { background: #5a4a25; border-color: #8a7440; }
+  #scrub { flex: 1; min-width: 160px; accent-color: #f0c75e; }
+  #clock { font-variant-numeric: tabular-nums; font-weight: 600; color: #f0c75e; min-width: 110px; text-align: right; }
+  /* ── leaderboard ── */
+  #leader { background: #1c1812; border-right: 1px solid #3a3225; overflow-y: auto; padding: 6px; }
+  #leader h2 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #998a6d; margin: 4px 4px 6px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+  #leader h2 button { font-size: 10px; padding: 1px 6px; }
+  .lrow { padding: 5px 6px; border-radius: 4px; cursor: pointer; margin-bottom: 2px; border: 1px solid transparent; }
+  .lrow:hover { background: #2a2418; }
+  .lrow.sel { background: #2e2719; border-color: #6a5a30; }
+  .lrow .top { display: flex; justify-content: space-between; align-items: baseline; }
+  .lrow .rank { color: #998a6d; font-size: 10px; margin-right: 4px; }
+  .lrow .name { font-weight: 600; }
+  .lrow .gp { color: #f0c75e; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .lrow .item { color: #998a6d; font-size: 11px; margin-top: 1px; }
+  .lrow .bar { height: 3px; background: #f0c75e; border-radius: 2px; margin-top: 3px; opacity: 0.7; }
+  /* ── map ── */
+  #mapwrap { position: relative; overflow: hidden; background: #000; }
+  #map { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; }
+  #maphint { position: absolute; left: 8px; bottom: 6px; color: #999; font-size: 11px; pointer-events: none; text-shadow: 0 1px 2px #000; }
+  /* ── sidebar ── */
+  #side { display: flex; flex-direction: column; background: #1c1812; border-left: 1px solid #3a3225; min-height: 0; }
+  #stats { padding: 8px 10px; border-bottom: 1px solid #3a3225; }
+  #stats table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  #stats td, #stats th { padding: 2px 4px; text-align: right; font-variant-numeric: tabular-nums; }
+  #stats th { color: #998a6d; font-weight: 500; text-align: right; }
+  #stats td:first-child, #stats th:first-child { text-align: left; }
+  #best { margin-top: 6px; font-size: 12px; color: #f0c75e; min-height: 16px; }
+  #chat { flex: 1; overflow-y: auto; padding: 6px 10px; min-height: 0; }
+  .msg { margin: 3px 0; opacity: 0.18; transition: opacity 0.2s; word-wrap: break-word; }
+  .msg.past { opacity: 1; }
+  .msg.recent { background: #2e2719; border-radius: 3px; }
+  .msg .t { color: #998a6d; font-size: 10px; font-variant-numeric: tabular-nums; margin-right: 4px; }
+  .msg .who { font-weight: 700; margin-right: 4px; }
+  /* ── charts ── */
+  #charts { grid-column: 1 / 4; background: #1c1812; border-top: 1px solid #3a3225; position: relative; }
+  #chartcanvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="header">
+    <h1>⚒ Smith-Team Replay</h1>
+    <select id="trial"></select>
+    <button id="play">▶ Play</button>
+    <span>
+      <button class="speed" data-s="10">10×</button><button class="speed active" data-s="30">30×</button><button class="speed" data-s="60">60×</button><button class="speed" data-s="120">120×</button>
+    </span>
+    <input type="range" id="scrub" min="0" max="2100" value="0" step="1">
+    <span id="clock">00:00</span>
+  </div>
+  <div id="leader">
+    <h2>Results <button id="sortbtn" title="toggle sort">best ↓</button></h2>
+    <div id="leaderlist"></div>
+  </div>
+  <div id="mapwrap">
+    <canvas id="map"></canvas>
+    <div id="maphint">drag to pan · scroll to zoom · F to re-fit</div>
+  </div>
+  <div id="side">
+    <div id="stats">
+      <table>
+        <thead><tr><th>bot</th><th>Smith</th><th>Mine</th><th>where</th></tr></thead>
+        <tbody id="statbody"></tbody>
+      </table>
+      <div id="best"></div>
+    </div>
+    <div id="chat"></div>
+  </div>
+  <div id="charts"><canvas id="chartcanvas"></canvas></div>
+</div>
+
+<script src="../results/smith-team/_viz.js"></script>
+<script>
+(function () {
+  const DATA = window.SMITH_VIZ;
+  if (!DATA) { document.body.innerHTML = '<p style="padding:2em">missing results/smith-team/_viz.js — run scripts/build-smith-team-viz-data.ts</p>'; return; }
+
+  // ── world → unified-map-image coordinates (see rs-sdk MapView.remapZ) ──
+  // Image is the mapview 'E' export: 2 px/tile, origin x=1792, z=5632 at top.
+  const IMG_PPT = 2, ORIGIN_X = 1792, TOP_Z = 5632;
+  function remapZ(z) {
+    const mz = z >> 6;
+    if (mz >= 144) return z - (82 << 6);
+    if (mz >= 70 && mz <= 76) return z + (10 << 6);
+    return z;
+  }
+  const wx2img = x => (x - ORIGIN_X) * IMG_PPT;
+  const wz2img = z => (TOP_Z - remapZ(z)) * IMG_PPT;
+
+  const BOT_COLORS = ['#ff5f4d', '#5aa9ff', '#5ad97a'];
+  const BOT_NAMES = ['agenta', 'agentb', 'agentc'];
+  const LANDMARKS = [
+    { x: 2975, z: 3368, label: 'Furnace' },
+    { x: 2950, z: 3451, label: "Doric's anvil" },
+    { x: 3012, z: 9811, label: 'Mine anvils' },
+    { x: 3082, z: 3421, label: 'Barb. coal' },
+    { x: 3222, z: 3218, label: 'Lumbridge (respawn)' },
+  ];
+  const TRAIL_SECS = 240;        // how much trail history to draw
+  const TELEPORT_TILES = 30;     // marker interpolation: snap (don't glide) across jumps
+  // Max vertical (z) distance for a line segment, in remapped-map tiles.
+  // Bigger jumps are teleports (death respawn, overworld↔underground ladder
+  // on the unified map) — skip the segment instead of drawing a chord.
+  const MAX_SEG_DZ = 3 * 64;     // 3 chunks
+
+  // ── state ──
+  let trial = DATA.trials[0];
+  let t = 0;                      // current time (s, watcher clock)
+  let tMax = 2100;
+  let playing = false, speed = 30, lastFrame = 0;
+  let view = { x: 0, y: 0, scale: 0.5 };   // map viewport (image coords at canvas 0,0 + zoom)
+  const mapC = document.getElementById('map'), mapCtx = mapC.getContext('2d');
+  const chartC = document.getElementById('chartcanvas'), chartCtx = chartC.getContext('2d');
+  const img = new Image();
+  img.src = 'worldmap.png';
+  img.onload = () => { fitView(); draw(); };
+
+  // ── trial selector ──
+  const sel = document.getElementById('trial');
+  DATA.trials.forEach((tr, i) => {
+    const o = document.createElement('option');
+    o.value = i;
+    o.textContent = `${tr.model} — ${tr.bestItem ? tr.bestItem.name.replace(/_/g, ' ') + ' (' + tr.reward + 'gp)' : 'no score'}`;
+    sel.appendChild(o);
+  });
+  sel.onchange = () => loadTrial(DATA.trials[+sel.value]);
+
+  // ── leaderboard sidebar ──
+  let sortDesc = true;
+  const leaderList = document.getElementById('leaderlist');
+  const sortBtn = document.getElementById('sortbtn');
+  sortBtn.onclick = () => { sortDesc = !sortDesc; sortBtn.textContent = sortDesc ? 'best ↓' : 'worst ↓'; buildLeader(); };
+  function buildLeader() {
+    const order = DATA.trials.map((tr, i) => ({ tr, i }))
+      .sort((a, b) => sortDesc ? b.tr.reward - a.tr.reward : a.tr.reward - b.tr.reward);
+    const maxR = Math.max(1, ...DATA.trials.map(tr => tr.reward));
+    leaderList.innerHTML = '';
+    // rank by score desc regardless of display order
+    const rankOf = new Map(DATA.trials.map((tr, i) => [i, 1 + DATA.trials.filter(o => o.reward > tr.reward).length]));
+    for (const { tr, i } of order) {
+      const d = document.createElement('div');
+      d.className = 'lrow' + (tr === trial ? ' sel' : '');
+      const item = tr.bestItem ? tr.bestItem.name.replace(/_/g, ' ') : (tr.chat.length || tr.events.length ? 'nothing valid smithed' : 'no data (infra)');
+      d.innerHTML = `<div class="top"><span><span class="rank">#${rankOf.get(i)}</span><span class="name">${tr.model}</span></span><span class="gp">${tr.reward.toLocaleString()}gp</span></div>
+        <div class="item">${item}</div>
+        <div class="bar" style="width:${Math.max(2, 100 * Math.log10(1 + tr.reward) / Math.log10(1 + maxR))}%"></div>`;
+      d.onclick = () => { sel.value = i; loadTrial(tr); };
+      leaderList.appendChild(d);
+    }
+  }
+
+  function loadTrial(tr) {
+    trial = tr;
+    tMax = tr.samples.length ? tr.samples[tr.samples.length - 1][0] : 2100;
+    document.getElementById('scrub').max = tMax;
+    setTime(0);
+    buildChat();
+    buildLeader();
+    fitView();
+    draw();
+  }
+
+  // ── time control ──
+  const scrub = document.getElementById('scrub');
+  const playBtn = document.getElementById('play');
+  scrub.oninput = () => setTime(+scrub.value);
+  playBtn.onclick = () => { playing = !playing; playBtn.textContent = playing ? '⏸ Pause' : '▶ Play'; lastFrame = performance.now(); };
+  document.querySelectorAll('.speed').forEach(b => b.onclick = () => {
+    speed = +b.dataset.s;
+    document.querySelectorAll('.speed').forEach(x => x.classList.toggle('active', x === b));
+  });
+  function setTime(nt) {
+    t = Math.max(0, Math.min(tMax, nt));
+    scrub.value = t;
+    const mm = String(Math.floor(t / 60)).padStart(2, '0'), ss = String(Math.floor(t % 60)).padStart(2, '0');
+    document.getElementById('clock').textContent = `${mm}:${ss} / ${Math.floor(tMax / 60)}:${String(tMax % 60).padStart(2, '0')}`;
+    updateChat();
+    updateStats();
+  }
+
+  // ── sample interpolation ──
+  // samples row: [t, x0,z0,s0,m0, x1,z1,s1,m1, x2,z2,s2,m2]
+  function sampleIndexAt(time) {
+    const s = trial.samples;
+    let lo = 0, hi = s.length - 1;
+    while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (s[mid][0] <= time) lo = mid; else hi = mid - 1; }
+    return lo;
+  }
+  function botStateAt(time, bi) {
+    const s = trial.samples;
+    if (!s.length) return null;
+    const i = sampleIndexAt(time);
+    const row = s[i], next = s[i + 1];
+    const o = 1 + bi * 4;
+    let x = row[o], z = row[o + 1];
+    const sm = row[o + 2], mi = row[o + 3];
+    if (next && x != null && next[o] != null) {
+      const f = (time - row[0]) / Math.max(1, next[0] - row[0]);
+      const dx = next[o] - x, dz = next[o + 1] - z;
+      if (Math.abs(dx) < TELEPORT_TILES && Math.abs(dz) < TELEPORT_TILES) { x += dx * f; z += dz * f; }
+    }
+    return { x, z, smith: sm, mine: mi };
+  }
+  function bestAt(time) {
+    let best = null;
+    for (const [et, , name, cost, valid] of trial.events) {
+      if (et > time) break;
+      if (valid && (!best || cost > best.cost)) best = { name, cost, t: et };
+    }
+    return best;
+  }
+
+  // ── map viewport ──
+  function fitView() {
+    // bounding box of all positions in image coords
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const row of trial.samples) {
+      for (let bi = 0; bi < 3; bi++) {
+        const x = row[1 + bi * 4], z = row[2 + bi * 4];
+        if (x == null) continue;
+        const ix = wx2img(x), iy = wz2img(z);
+        if (ix < minX) minX = ix; if (ix > maxX) maxX = ix;
+        if (iy < minY) minY = iy; if (iy > maxY) maxY = iy;
+      }
+    }
+    if (!isFinite(minX)) { minX = wx2img(2964) - 200; maxX = minX + 400; minY = wz2img(3378) - 200; maxY = minY + 400; }
+    const pad = 60;
+    minX -= pad; minY -= pad; maxX += pad; maxY += pad;
+    const w = mapC.clientWidth || 800, h = mapC.clientHeight || 600;
+    view.scale = Math.min(w / (maxX - minX), h / (maxY - minY));
+    view.scale = Math.min(2.5, Math.max(0.08, view.scale));
+    view.x = (minX + maxX) / 2 - w / 2 / view.scale;
+    view.y = (minY + maxY) / 2 - h / 2 / view.scale;
+  }
+  const i2sx = ix => (ix - view.x) * view.scale;
+  const i2sy = iy => (iy - view.y) * view.scale;
+
+  // pan / zoom
+  let dragging = false, dragStart = null;
+  mapC.addEventListener('mousedown', e => { dragging = true; dragStart = { mx: e.clientX, my: e.clientY, vx: view.x, vy: view.y }; mapC.style.cursor = 'grabbing'; });
+  window.addEventListener('mouseup', () => { dragging = false; mapC.style.cursor = 'grab'; });
+  window.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    view.x = dragStart.vx - (e.clientX - dragStart.mx) / view.scale;
+    view.y = dragStart.vy - (e.clientY - dragStart.my) / view.scale;
+  });
+  mapC.addEventListener('wheel', e => {
+    e.preventDefault();
+    const r = mapC.getBoundingClientRect();
+    const mx = e.clientX - r.left, my = e.clientY - r.top;
+    const ix = view.x + mx / view.scale, iy = view.y + my / view.scale;
+    view.scale *= Math.pow(1.0015, -e.deltaY);
+    view.scale = Math.min(6, Math.max(0.05, view.scale));
+    view.x = ix - mx / view.scale; view.y = iy - my / view.scale;
+  }, { passive: false });
+  window.addEventListener('keydown', e => {
+    if (e.key === 'f' || e.key === 'F') fitView();
+    if (e.key === ' ') { e.preventDefault(); playBtn.onclick(); }
+  });
+
+  // ── map drawing ──
+  function drawMap() {
+    const w = mapC.clientWidth, h = mapC.clientHeight;
+    if (mapC.width !== w * devicePixelRatio) { mapC.width = w * devicePixelRatio; mapC.height = h * devicePixelRatio; }
+    mapCtx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    mapCtx.fillStyle = '#000'; mapCtx.fillRect(0, 0, w, h);
+    if (img.complete && img.naturalWidth) {
+      mapCtx.imageSmoothingEnabled = view.scale < 1;
+      mapCtx.drawImage(img, view.x, view.y, w / view.scale, h / view.scale, 0, 0, w, h);
+    }
+    // landmarks
+    mapCtx.font = '11px sans-serif'; mapCtx.textAlign = 'left';
+    for (const lm of LANDMARKS) {
+      const sx = i2sx(wx2img(lm.x)), sy = i2sy(wz2img(lm.z));
+      if (sx < -50 || sy < -50 || sx > w + 50 || sy > h + 50) continue;
+      mapCtx.fillStyle = '#ffffffcc';
+      mapCtx.beginPath(); mapCtx.arc(sx, sy, 3, 0, 7); mapCtx.fill();
+      mapCtx.fillStyle = '#fffa'; mapCtx.strokeStyle = '#000a'; mapCtx.lineWidth = 2.5;
+      mapCtx.strokeText(lm.label, sx + 6, sy + 3); mapCtx.fillText(lm.label, sx + 6, sy + 3);
+    }
+    // persistent full-run trajectory lines (entire trial, independent of playback time)
+    for (let bi = 0; bi < 3; bi++) {
+      mapCtx.strokeStyle = BOT_COLORS[bi]; mapCtx.lineWidth = Math.min(2.5, Math.max(1.2, view.scale * 1.2)); mapCtx.lineCap = 'round'; mapCtx.lineJoin = 'round';
+      mapCtx.globalAlpha = 0.5;
+      mapCtx.beginPath();
+      let started = false, pzr = null;
+      for (const row of trial.samples) {
+        const x = row[1 + bi * 4], z = row[2 + bi * 4];
+        if (x == null) continue;  // skip gaps but keep the line connected
+        const zr = remapZ(z);
+        const sx = i2sx(wx2img(x)), sy = i2sy(wz2img(z));
+        if (!started || (pzr != null && Math.abs(zr - pzr) > MAX_SEG_DZ)) {
+          mapCtx.moveTo(sx, sy); started = true;   // teleport: lift the pen
+        } else {
+          mapCtx.lineTo(sx, sy);
+        }
+        pzr = zr;
+      }
+      mapCtx.stroke();
+      mapCtx.globalAlpha = 1;
+    }
+    // recent trail, brighter (last TRAIL_SECS up to current time)
+    const startI = sampleIndexAt(Math.max(0, t - TRAIL_SECS)), endI = sampleIndexAt(t);
+    for (let bi = 0; bi < 3; bi++) {
+      mapCtx.strokeStyle = BOT_COLORS[bi]; mapCtx.lineWidth = 2; mapCtx.lineCap = 'round';
+      let px = null, py = null, pzr2 = null;
+      for (let i = startI; i <= endI; i++) {
+        const row = trial.samples[i];
+        const x = row[1 + bi * 4], z = row[2 + bi * 4];
+        if (x == null) continue;  // skip gaps but keep the line connected
+        const zr = remapZ(z);
+        const sx = i2sx(wx2img(x)), sy = i2sy(wz2img(z));
+        if (px != null && Math.abs(zr - pzr2) <= MAX_SEG_DZ) {
+          mapCtx.globalAlpha = 0.15 + 0.6 * (i - startI) / Math.max(1, endI - startI);
+          mapCtx.beginPath(); mapCtx.moveTo(px, py); mapCtx.lineTo(sx, sy); mapCtx.stroke();
+        }
+        px = sx; py = sy; pzr2 = zr;
+      }
+      mapCtx.globalAlpha = 1;
+    }
+    // bots
+    mapCtx.font = 'bold 12px sans-serif';
+    for (let bi = 0; bi < 3; bi++) {
+      const st = botStateAt(t, bi);
+      if (!st || st.x == null) continue;
+      const sx = i2sx(wx2img(st.x)), sy = i2sy(wz2img(st.z));
+      mapCtx.fillStyle = BOT_COLORS[bi];
+      mapCtx.strokeStyle = '#000'; mapCtx.lineWidth = 1.5;
+      mapCtx.beginPath(); mapCtx.arc(sx, sy, 6, 0, 7); mapCtx.fill(); mapCtx.stroke();
+      const label = `${BOT_NAMES[bi][5].toUpperCase()} S${st.smith ?? '?'} M${st.mine ?? '?'}`;
+      mapCtx.strokeStyle = '#000c'; mapCtx.lineWidth = 3;
+      mapCtx.strokeText(label, sx + 9, sy + 4);
+      mapCtx.fillText(label, sx + 9, sy + 4);
+    }
+    // item-gain pulses (events within last 12s)
+    for (const [et, bi, name, cost, valid] of trial.events) {
+      if (et > t || t - et > 12 || bi < 0) continue;
+      const st = botStateAt(et, bi);
+      if (!st || st.x == null) continue;
+      const sx = i2sx(wx2img(st.x)), sy = i2sy(wz2img(st.z));
+      const age = (t - et) / 12;
+      mapCtx.globalAlpha = 1 - age;
+      mapCtx.strokeStyle = valid ? '#f0c75e' : '#888';
+      mapCtx.lineWidth = 2;
+      mapCtx.beginPath(); mapCtx.arc(sx, sy, 8 + age * 18, 0, 7); mapCtx.stroke();
+      mapCtx.fillStyle = valid ? '#f0c75e' : '#888';
+      mapCtx.font = '11px sans-serif';
+      mapCtx.fillText(`${name.replace(/_/g, ' ')} (${cost}gp)`, sx + 12, sy - 10 - age * 8);
+      mapCtx.font = 'bold 12px sans-serif';
+      mapCtx.globalAlpha = 1;
+    }
+  }
+
+  // ── charts (levels + best value) ──
+  function drawCharts() {
+    const w = chartC.clientWidth, h = chartC.clientHeight;
+    if (chartC.width !== w * devicePixelRatio) { chartC.width = w * devicePixelRatio; chartC.height = h * devicePixelRatio; }
+    const c = chartCtx;
+    c.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    c.fillStyle = '#1c1812'; c.fillRect(0, 0, w, h);
+    const L = 40, R = 56, T = 8, B = 16;
+    const plotW = w - L - R, plotH = h - T - B;
+    const tx = tt => L + plotW * tt / tMax;
+
+    // grid: every 5 min
+    c.strokeStyle = '#2e2719'; c.fillStyle = '#998a6d'; c.font = '10px sans-serif'; c.textAlign = 'center';
+    for (let m = 0; m * 300 <= tMax; m++) {
+      const x = tx(m * 300);
+      c.beginPath(); c.moveTo(x, T); c.lineTo(x, T + plotH); c.stroke();
+      c.fillText(`${m * 5}m`, x, h - 4);
+    }
+
+    // levels: 0–60 left axis. smithing solid, mining dashed
+    const maxLvl = 90;
+    const ly = lvl => T + plotH * (1 - lvl / maxLvl);
+    c.textAlign = 'right';
+    for (const lvl of [30, 60, 90]) { c.fillText(String(lvl), L - 4, ly(lvl) + 3); }
+    for (let bi = 0; bi < 3; bi++) {
+      for (const kind of [2, 3]) { // 2=smith offset, 3=mine offset
+        c.strokeStyle = BOT_COLORS[bi];
+        c.globalAlpha = kind === 2 ? 1 : 0.45;
+        c.setLineDash(kind === 2 ? [] : [3, 3]);
+        c.lineWidth = kind === 2 ? 1.8 : 1.2;
+        c.beginPath();
+        let started = false;
+        for (const row of trial.samples) {
+          const v = row[1 + bi * 4 + kind - 1 + 1]; // o = 1+bi*4; smith=o+2, mine=o+3
+          if (v == null) continue;
+          const x = tx(row[0]), y = ly(v);
+          if (!started) { c.moveTo(x, y); started = true; } else c.lineTo(x, y);
+        }
+        c.stroke();
+      }
+    }
+    c.setLineDash([]); c.globalAlpha = 1;
+
+    // best-value step line (right axis, log scale 1..65000)
+    const vMax = Math.log10(65000);
+    const vy = v => T + plotH * (1 - Math.log10(Math.max(1, v)) / vMax);
+    c.textAlign = 'left'; c.fillStyle = '#f0c75e';
+    for (const v of [10, 100, 1000, 10000]) { c.fillText(v >= 1000 ? (v / 1000) + 'k' : String(v), w - R + 4, vy(v) + 3); }
+    c.strokeStyle = '#f0c75e'; c.lineWidth = 2;
+    c.beginPath();
+    let cur = 0; c.moveTo(tx(0), vy(0));
+    const evs = trial.events.filter(e => e[4]);
+    for (const [et, , , cost] of evs) {
+      if (cost > cur) { c.lineTo(tx(et), vy(cur)); c.lineTo(tx(et), vy(cost)); cur = cost; }
+    }
+    c.lineTo(tx(tMax), vy(cur));
+    c.stroke();
+    // event dots
+    for (const [et, bi, name, cost, valid] of trial.events) {
+      c.fillStyle = valid ? (BOT_COLORS[bi] ?? '#aaa') : '#666';
+      c.beginPath(); c.arc(tx(et), vy(cost), 3, 0, 7); c.fill();
+    }
+
+    // legend
+    c.font = '10px sans-serif'; c.textAlign = 'left';
+    let lx = L + 6;
+    for (let bi = 0; bi < 3; bi++) {
+      c.fillStyle = BOT_COLORS[bi];
+      c.fillText(BOT_NAMES[bi], lx, T + 10); lx += c.measureText(BOT_NAMES[bi]).width + 10;
+    }
+    c.fillStyle = '#998a6d'; c.fillText('— smithing  ··· mining', lx, T + 10);
+    c.fillStyle = '#f0c75e'; c.fillText('— best item value (log)', lx + 140, T + 10);
+
+    // time cursor
+    c.strokeStyle = '#f0c75e'; c.lineWidth = 1;
+    c.beginPath(); c.moveTo(tx(t), T); c.lineTo(tx(t), T + plotH); c.stroke();
+  }
+  // click/drag charts to seek
+  let chartSeeking = false;
+  function chartSeek(e) {
+    const r = chartC.getBoundingClientRect();
+    const L = 40, R = 56;
+    const f = (e.clientX - r.left - L) / (r.width - L - R);
+    setTime(Math.round(f * tMax));
+  }
+  chartC.addEventListener('mousedown', e => { chartSeeking = true; chartSeek(e); });
+  window.addEventListener('mousemove', e => { if (chartSeeking) chartSeek(e); });
+  window.addEventListener('mouseup', () => { chartSeeking = false; });
+
+  // ── chat panel ──
+  const chatEl = document.getElementById('chat');
+  let chatNodes = [];
+  function buildChat() {
+    chatEl.innerHTML = '';
+    chatNodes = trial.chat.map(([ct, bi, text]) => {
+      const d = document.createElement('div');
+      d.className = 'msg';
+      const mm = String(Math.floor(ct / 60)).padStart(2, '0'), ss = String(ct % 60).padStart(2, '0');
+      const who = bi >= 0 ? BOT_NAMES[bi] : '?';
+      const color = bi >= 0 ? BOT_COLORS[bi] : '#aaa';
+      d.innerHTML = `<span class="t">${mm}:${ss}</span><span class="who" style="color:${color}">${who}</span><span class="txt"></span>`;
+      d.querySelector('.txt').textContent = text;
+      chatEl.appendChild(d);
+      return { t: ct, el: d };
+    });
+    if (!chatNodes.length) chatEl.innerHTML = '<div style="color:#776">no chat messages in this trial</div>';
+  }
+  let lastScrollIdx = -1;
+  function updateChat() {
+    let lastPast = -1;
+    chatNodes.forEach((n, i) => {
+      const past = n.t <= t;
+      n.el.classList.toggle('past', past);
+      n.el.classList.toggle('recent', past && t - n.t < 15);
+      if (past) lastPast = i;
+    });
+    if (lastPast >= 0 && lastPast !== lastScrollIdx) {
+      chatNodes[lastPast].el.scrollIntoView({ block: 'nearest' });
+      lastScrollIdx = lastPast;
+    }
+  }
+
+  // ── stats panel ──
+  function updateStats() {
+    const tb = document.getElementById('statbody');
+    let html = '';
+    for (let bi = 0; bi < 3; bi++) {
+      const st = botStateAt(t, bi);
+      const place = st && st.x != null ? describePlace(st.x, st.z) : '—';
+      html += `<tr style="color:${BOT_COLORS[bi]}"><td>${BOT_NAMES[bi]}</td><td>${st?.smith ?? '—'}</td><td>${st?.mine ?? '—'}</td><td>${place}</td></tr>`;
+    }
+    tb.innerHTML = html;
+    const best = bestAt(t);
+    document.getElementById('best').textContent = best
+      ? `best so far: ${best.name.replace(/_/g, ' ')} — ${best.cost}gp (at ${Math.floor(best.t / 60)}:${String(best.t % 60).padStart(2, '0')})`
+      : 'best so far: nothing smithed yet';
+  }
+  function describePlace(x, z) {
+    if (z > 9000) return x < 3120 ? 'Dwarven Mine (ug)' : 'underground';
+    if (x > 2940 && x < 3060 && z > 3310 && z < 3400) return 'Falador';
+    if (x >= 2935 && x < 2975 && z >= 3430 && z < 3470) return "Doric's";
+    if (x >= 3060 && x < 3120 && z > 3390 && z < 3460) return 'Barb. Village';
+    if (x > 3180 && x < 3260 && z > 3190 && z < 3250) return 'Lumbridge';
+    if (x > 3160 && x < 3290 && z > 3380 && z < 3520) return 'Varrock';
+    if (x > 3260 && x < 3330 && z > 3140 && z < 3320) return 'Al Kharid';
+    return `${Math.round(x)},${Math.round(z)}`;
+  }
+
+  // ── main loop ──
+  function draw() { drawMap(); drawCharts(); }
+  function frame(now) {
+    if (playing) {
+      const dt = (now - lastFrame) / 1000;
+      lastFrame = now;
+      setTime(t + dt * speed);
+      if (t >= tMax) { playing = false; playBtn.textContent = '▶ Play'; }
+    } else {
+      lastFrame = now;
+    }
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  loadTrial(trial);
+  requestAnimationFrame(frame);
+
+  // debug / scripting handle
+  window.__viz = {
+    get view() { return view; },
+    setView(v) { Object.assign(view, v); },
+    setTime,
+    centerOn(wx, wz, scale) {
+      if (scale) view.scale = scale;
+      view.x = wx2img(wx) - (mapC.clientWidth / 2) / view.scale;
+      view.y = wz2img(wz) - (mapC.clientHeight / 2) / view.scale;
+    },
+  };
+})();
+</script>
+</body>
+</html>

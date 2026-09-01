@@ -84,9 +84,12 @@ _PROVIDER_KEY_MAP = {
     "gemini": "GEMINI_API_KEY",
     "google": "GEMINI_API_KEY",
     "openrouter": "OPENROUTER_API_KEY",
-    # Meta Model API (api.meta.ai) — custom provider declared in
-    # muse_adapter; the key is referenced as {env:META_MODEL_API_KEY} in opencode.json.
-    "meta": "META_MODEL_API_KEY",
+    # Tinker (Thinking Machines) — custom openai-compatible provider declared by
+    # inkling_adapter; the key is referenced as {env:TINKER_API_KEY} in opencode.json.
+    "tinker": "TINKER_API_KEY",
+    # Meta Model API (api.meta.ai) — custom openai-compatible provider declared
+    # by muse12_adapter; referenced as {env:META_API_KEY} in opencode.json.
+    "meta": "META_API_KEY",
 }
 
 
@@ -221,7 +224,6 @@ class OpenCodeAdapter(BaseInstalledAgent):
             "ANTHROPIC_API_KEY",
             "OPENAI_API_KEY",
             "GEMINI_API_KEY",
-            "META_MODEL_API_KEY",
         ]
     }
 
@@ -241,24 +243,8 @@ class OpenCodeAdapter(BaseInstalledAgent):
                 env["GOOGLE_GENERATIVE_AI_API_KEY"] = key_value
         return env
 
-    async def run(
-        self,
-        instruction: str,
-        environment: BaseEnvironment,
-        context: AgentContext,
-    ) -> None:
-        self._last_instruction = instruction
-        escaped_instruction = shlex.quote(instruction)
-
-        env = self._resolve_api_key_env()
-        env["OPENCODE_YOLO"] = "true"
-        env["OPENCODE_DANGEROUSLY_SKIP_PERMISSIONS"] = "true"
-        env = {k: v for k, v in env.items() if v}
-
-        opencode_config = self._build_opencode_config()
-        config_json = json.dumps(opencode_config, indent=2)
-        escaped_config = shlex.quote(config_json)
-
+    def _resolved_model_name(self) -> str:
+        """Model name with the provider prefix remapped for the OpenCode CLI."""
         model_name = self.model_name or self._default_model
         # Remap provider prefix for OpenCode CLI (e.g. gemini/ → google/)
         if "/" in model_name:
@@ -266,35 +252,69 @@ class OpenCodeAdapter(BaseInstalledAgent):
             remapped = self._PROVIDER_REMAP.get(raw_provider)
             if remapped:
                 model_name = f"{remapped}/{model_suffix}"
+        return model_name
 
-        prefix = self._log_prefix
-        log_file = self._log_file
+    _CONTINUE_PREFIX = (
+        "You were previously working on this task but stopped early. "
+        "There is still time remaining. Check the current game state with "
+        "sdk.getState() and CONTINUE training. Do NOT write a summary — "
+        "keep grinding. "
+    )
 
-        setup_command = (
-            f"echo {escaped_config} > /app/opencode.json && "
-            f"echo '[{prefix}-setup] Wrote /app/opencode.json'"
-        )
+    # Sent when resuming a previous session (context preserved, so the full
+    # instruction is not re-appended).
+    _RESUME_MESSAGE = (
+        "You stopped early but there is still time remaining. Check the "
+        "current game state with sdk.getState() and CONTINUE working on the "
+        "task. Do NOT write a summary — keep going."
+    )
 
-        await self.exec_as_agent(environment, command=setup_command, env=env)
+    def _compose_run_command(
+        self,
+        model_name: str,
+        instruction: str,
+        prefix: str,
+        log_file: str,
+        bash_timeout: int,
+        instruction_file: str | None = None,
+    ) -> str:
+        """Build the opencode restart-loop bash command for one session.
 
+        If opencode exits early, the loop restarts it by RESUMING the previous
+        session (`--session <id>`, id grepped from this session's own JSON
+        log) so the model keeps its context instead of starting cold. A resume
+        that fast-fails (<10s) falls back to a fresh session with the full
+        instruction on the next iteration.
+
+        `prefix` namespaces the log messages and bash variables, so two
+        sessions composed into one command (see opencode_duo_adapter) don't
+        clobber each other's loop state.
+
+        `instruction_file` swaps the inlined instruction for a `$(cat ...)`
+        of a file previously written into the sandbox — needed when several
+        sessions are composed into one exec command (opencode_team_adapter),
+        whose total size must stay under Modal's 64 KB ARG_MAX.
+        """
+        if instruction_file:
+            q_file = shlex.quote(instruction_file)
+            escaped_instruction = f'"$(cat {q_file})"'
+            continue_instruction = (
+                f'"$(printf %s {shlex.quote(self._CONTINUE_PREFIX)}; cat {q_file})"'
+            )
+        else:
+            escaped_instruction = shlex.quote(instruction)
+            continue_instruction = shlex.quote(self._CONTINUE_PREFIX + instruction)
+        resume_message = shlex.quote(self._RESUME_MESSAGE)
         escaped_model = shlex.quote(model_name)
-        continue_instruction = shlex.quote(
-            "You were previously working on this task but stopped early. "
-            "There is still time remaining. Check the current game state with "
-            "sdk.getState() and CONTINUE training. Do NOT write a summary — "
-            "keep grinding. " + instruction
-        )
 
-        # Variable prefix for the restart loop (uppercase of log_prefix).
-        # Sanitize non-alphanumerics: a hyphen (e.g. "grok45-xhigh") would make
-        # invalid shell variable names and silently break the whole loop.
+        # Variable prefix for the restart loop (bash-identifier-safe).
+        # Sanitize ALL non-alphanumerics: a hyphen or dot (e.g. "grok45-medium")
+        # would make invalid shell variable names and silently break the loop.
         vp = re.sub(r"[^A-Za-z0-9_]", "_", prefix.upper())
 
-        # Use run_timeout_sec if provided, otherwise fall back to env var / 1620s default
-        bash_timeout = self._run_timeout_sec or 1620
         bash_timeout_expr = f"{vp}_TIMEOUT=${{{vp}_TIMEOUT:-{bash_timeout}}}; "
 
-        run_command = (
+        return (
             f"echo '[{prefix}-setup] Starting opencode'; "
             # Source NVM so the nvm-installed opencode binary is on PATH
             "export NVM_DIR=\"$HOME/.nvm\"; "
@@ -304,9 +324,15 @@ class OpenCodeAdapter(BaseInstalledAgent):
             "cd /app; "
             f"{vp}_START=$(date +%s); "
             f"{bash_timeout_expr}"
+            # Wall-clock deadline for the image's `time-left` CLI (agents ask
+            # it how long they have). Written per session; team sessions in
+            # one sandbox overwrite each other with near-identical values.
+            f"echo $(( {vp}_START + {vp}_TIMEOUT )) > /tmp/task-deadline; "
             f"{vp}_MIN_RESTART=180; "
             f"{vp}_FAST_FAILS=0; "
             f"{vp}_MAX_FAST_FAILS=3; "
+            f"{vp}_COOLDOWN_USED=0; "
+            f"{vp}_RESUME=1; "
             f"{vp}_RUN=1; "
             f"echo \"[{prefix}-loop] Run ${vp}_RUN starting (budget=${{{vp}_TIMEOUT}}s)\" | tee -a /logs/agent/{log_file}; "
             f"{vp}_RUN_START=$(date +%s); "
@@ -317,9 +343,18 @@ class OpenCodeAdapter(BaseInstalledAgent):
             # Track fast failures (< 10s) to avoid spinning on broken setups
             f"if [ ${vp}_RUN_DUR -lt 10 ]; then {vp}_FAST_FAILS=$(({vp}_FAST_FAILS + 1)); else {vp}_FAST_FAILS=0; fi; "
             "while true; do "
+            # Consecutive fast failures usually mean a transient broken setup
+            # (locked db, API hiccup). Before giving up for good, cool down
+            # once for 60s and retry with a fresh session; abort only if the
+            # fast-fails come right back.
             f"  if [ ${vp}_FAST_FAILS -ge ${vp}_MAX_FAST_FAILS ]; then "
-            f"    echo \"[{prefix}-loop] ${{{vp}_FAST_FAILS}} consecutive fast failures (<10s), aborting\" | tee -a /logs/agent/{log_file}; "
-            "    break; "
+            f"    if [ ${vp}_COOLDOWN_USED -ge 1 ]; then "
+            f"      echo \"[{prefix}-loop] ${{{vp}_FAST_FAILS}} consecutive fast failures (<10s) after cooldown, aborting\" | tee -a /logs/agent/{log_file}; "
+            "      break; "
+            "    fi; "
+            f"    {vp}_COOLDOWN_USED=1; {vp}_FAST_FAILS=0; {vp}_RESUME=0; "
+            f"    echo \"[{prefix}-loop] ${{{vp}_MAX_FAST_FAILS}} consecutive fast failures (<10s) — cooling down 60s, then retrying with a fresh session\" | tee -a /logs/agent/{log_file}; "
+            "    sleep 60; "
             "  fi; "
             f"  {vp}_ELAPSED=$(( $(date +%s) - {vp}_START )); "
             f"  {vp}_REMAINING=$(( {vp}_TIMEOUT - {vp}_ELAPSED )); "
@@ -329,15 +364,68 @@ class OpenCodeAdapter(BaseInstalledAgent):
             "    break; "
             "  fi; "
             f"  {vp}_RUN=$(({vp}_RUN + 1)); "
+            # Resume the previous session (context preserved) when possible:
+            # pull the newest sessionID out of this session's own JSON log.
+            f"  {vp}_SID=''; "
+            f"  if [ ${vp}_RESUME -eq 1 ]; then {vp}_SID=$(grep -o '\"sessionID\":\"[^\"]*\"' /logs/agent/{log_file} | tail -1 | cut -d'\"' -f4); fi; "
             f"  echo \"[{prefix}-loop] Run ${vp}_RUN starting (${{{vp}_REMAINING}}s remaining)\" | tee -a /logs/agent/{log_file}; "
             f"  {vp}_RUN_START=$(date +%s); "
-            f"  timeout ${{{vp}_REMAINING}}s opencode --model {escaped_model} run --format=json {continue_instruction} "
-            f"  2>&1 </dev/null | tee -a /logs/agent/{log_file}; "
+            f"  if [ -n \"${vp}_SID\" ]; then "
+            f"    echo \"[{prefix}-loop] Resuming session ${vp}_SID\" | tee -a /logs/agent/{log_file}; "
+            f"    timeout ${{{vp}_REMAINING}}s opencode --model {escaped_model} run --format=json --session \"${vp}_SID\" {resume_message} "
+            f"    2>&1 </dev/null | tee -a /logs/agent/{log_file}; "
+            "  else "
+            f"    timeout ${{{vp}_REMAINING}}s opencode --model {escaped_model} run --format=json {continue_instruction} "
+            f"    2>&1 </dev/null | tee -a /logs/agent/{log_file}; "
+            "  fi; "
             f"  {vp}_RUN_DUR=$(( $(date +%s) - {vp}_RUN_START )); "
             f"  echo \"[{prefix}-loop] opencode exited after ${{{vp}_RUN_DUR}}s\" | tee -a /logs/agent/{log_file}; "
-            f"  if [ ${vp}_RUN_DUR -lt 10 ]; then {vp}_FAST_FAILS=$(({vp}_FAST_FAILS + 1)); else {vp}_FAST_FAILS=0; fi; "
+            # A fast-failing resume likely means the stored session is bad
+            # (locked db, corrupt state) — fall back to a fresh session.
+            f"  if [ ${vp}_RUN_DUR -lt 10 ]; then "
+            f"    {vp}_FAST_FAILS=$(({vp}_FAST_FAILS + 1)); "
+            f"    if [ -n \"${vp}_SID\" ]; then {vp}_RESUME=0; echo \"[{prefix}-loop] Resume failed fast — next run starts a fresh session\" | tee -a /logs/agent/{log_file}; fi; "
+            f"  else {vp}_FAST_FAILS=0; {vp}_RESUME=1; fi; "
             "done; "
             f"echo \"[{prefix}-loop] Finished after ${vp}_RUN runs\" | tee -a /logs/agent/{log_file}"
+        )
+
+    def _agent_env(self) -> dict[str, str]:
+        env = self._resolve_api_key_env()
+        env["OPENCODE_YOLO"] = "true"
+        env["OPENCODE_DANGEROUSLY_SKIP_PERMISSIONS"] = "true"
+        return {k: v for k, v in env.items() if v}
+
+    async def _write_opencode_config(self, environment: BaseEnvironment, env: dict[str, str]) -> None:
+        opencode_config = self._build_opencode_config()
+        config_json = json.dumps(opencode_config, indent=2)
+        escaped_config = shlex.quote(config_json)
+        setup_command = (
+            f"echo {escaped_config} > /app/opencode.json && "
+            f"echo '[{self._log_prefix}-setup] Wrote /app/opencode.json'"
+        )
+        await self.exec_as_agent(environment, command=setup_command, env=env)
+
+    async def run(
+        self,
+        instruction: str,
+        environment: BaseEnvironment,
+        context: AgentContext,
+    ) -> None:
+        self._last_instruction = instruction
+
+        env = self._agent_env()
+        await self._write_opencode_config(environment, env)
+
+        # Use run_timeout_sec if provided, otherwise fall back to env var / 1620s default
+        bash_timeout = self._run_timeout_sec or 1620
+
+        run_command = self._compose_run_command(
+            model_name=self._resolved_model_name(),
+            instruction=instruction,
+            prefix=self._log_prefix,
+            log_file=self._log_file,
+            bash_timeout=bash_timeout,
         )
 
         # Set Modal-level timeout as backstop: bash timeout + 60s buffer

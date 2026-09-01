@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="skill-icons/smithing.png">
+<title>Market Benchmark — trades & balances</title>
+<script src="../results/market/_data.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  .viz-root {
+    color-scheme: light;
+    --surface-1: #fcfcfb;
+    --page: #f9f9f7;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #898781;
+    --grid: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+    --series-1: #2a78d6;  /* agenta */
+    --series-2: #eb6834;  /* agentb */
+    --series-3: #1baf7a;  /* agentc */
+    --series-4: #eda100;  /* agentd */
+    --series-5: #e87ba4;  /* agente */
+    --series-6: #008300;  /* agentf */
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root {
+      color-scheme: dark;
+      --surface-1: #1a1a19;
+      --page: #0d0d0d;
+      --text-primary: #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted: #898781;
+      --grid: #2c2c2a;
+      --baseline: #383835;
+      --border: rgba(255,255,255,0.10);
+      --series-1: #3987e5;
+      --series-2: #d95926;
+      --series-3: #199e70;
+      --series-4: #c98500;
+      --series-5: #d55181;
+      --series-6: #008300;
+    }
+  }
+  :root[data-theme="dark"] .viz-root {
+    color-scheme: dark;
+    --surface-1: #1a1a19;
+    --page: #0d0d0d;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --grid: #2c2c2a;
+    --baseline: #383835;
+    --border: rgba(255,255,255,0.10);
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+    --series-6: #008300;
+  }
+  body.viz-root {
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--page);
+    color: var(--text-primary);
+    padding: 24px 32px 48px;
+    min-height: 100vh;
+  }
+  h1 { font-size: 20px; font-weight: 600; }
+  .subtitle { font-size: 13px; color: var(--text-muted); margin: 2px 0 16px; }
+  .controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+  select {
+    font: inherit; font-size: 13px; padding: 4px 8px;
+    background: var(--surface-1); color: var(--text-primary);
+    border: 1px solid var(--border); border-radius: 6px;
+  }
+  .stats { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+  .tile {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 16px; min-width: 120px;
+  }
+  .tile .k { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
+  .tile .v { font-size: 20px; font-weight: 600; margin-top: 2px; }
+  .tile .d { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+  .panel {
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px 18px 10px; margin-bottom: 20px;
+  }
+  .panel h2 { font-size: 14px; font-weight: 600; }
+  .panel .hint { font-size: 12px; color: var(--text-muted); margin: 2px 0 8px; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin: 6px 0 10px; font-size: 12px; color: var(--text-secondary); }
+  .legend .chip { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .legend .role { color: var(--text-muted); }
+  svg text { font-family: inherit; }
+  .tick-label { font-size: 11px; fill: var(--text-muted); font-variant-numeric: tabular-nums; }
+  .lane-label { font-size: 12px; fill: var(--text-secondary); }
+  .tabbar { display: inline-flex; margin-left: auto; }
+  .tabbar button {
+    font: inherit; font-size: 12px; padding: 3px 12px; cursor: pointer;
+    background: var(--surface-1); color: var(--text-secondary);
+    border: 1px solid var(--border);
+  }
+  .tabbar button:first-child { border-radius: 6px 0 0 6px; }
+  .tabbar button:last-child { border-radius: 0 6px 6px 0; border-left: none; }
+  .tabbar button.active { background: var(--text-primary); color: var(--surface-1); border-color: var(--text-primary); }
+  .row-head { display: flex; align-items: center; gap: 12px; }
+  #tooltip {
+    position: fixed; pointer-events: none; z-index: 10; display: none;
+    background: var(--surface-1); color: var(--text-primary);
+    border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    padding: 8px 11px; font-size: 12px; max-width: 380px; line-height: 1.5;
+  }
+  #tooltip .t { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+  #tooltip .num { font-variant-numeric: tabular-nums; }
+  table.ledger { border-collapse: collapse; width: 100%; font-size: 12px; margin: 4px 0 10px; }
+  table.ledger th, table.ledger td { text-align: left; padding: 4px 10px; border-bottom: 1px solid var(--grid); }
+  table.ledger th { color: var(--text-muted); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; }
+  table.ledger td { color: var(--text-secondary); }
+  table.ledger td.num { font-variant-numeric: tabular-nums; text-align: right; }
+  table.ledger .who { display: inline-flex; align-items: center; gap: 6px; color: var(--text-primary); }
+  table.ledger .sw { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+  /* ── session replay: video + chat ── */
+  .replay { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 10px; }
+  #vidWrap { flex: 0 1 560px; min-width: 380px; }
+  #vid { width: 100%; aspect-ratio: 4 / 3; background: #000; border-radius: 8px; display: block; }
+  #vidStage { position: relative; }
+  /* gold HUD over the video: current balance + a floating delta pop on change */
+  #goldHud {
+    position: absolute; top: 10px; right: 10px; pointer-events: none;
+    display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  #goldHud .bal {
+    background: rgba(13, 17, 23, 0.82); color: #ffd866; border: 1px solid rgba(255,216,102,0.35);
+    border-radius: 6px; padding: 4px 9px; font-size: 15px; font-weight: 700; line-height: 1.2;
+  }
+  #goldHud .bal .split { display: block; font-size: 10.5px; font-weight: 500; color: #c9d1d9; opacity: 0.85; }
+  #goldHud .pop {
+    font-size: 18px; font-weight: 800; padding: 2px 8px; border-radius: 6px;
+    background: rgba(13, 17, 23, 0.85); animation: goldpop 2.2s ease-out forwards;
+  }
+  #goldHud .pop.up { color: #3fb950; }
+  #goldHud .pop.down { color: #ff7b72; }
+  @keyframes goldpop {
+    0% { opacity: 0; transform: translateY(6px) scale(0.9); }
+    12% { opacity: 1; transform: translateY(0) scale(1.08); }
+    70% { opacity: 1; transform: translateY(-4px) scale(1); }
+    100% { opacity: 0; transform: translateY(-16px) scale(1); }
+  }
+  .vid-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .vid-tabs .vtab {
+    font: inherit; font-size: 12px; padding: 3px 10px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--surface-1); color: var(--text-secondary);
+    border: 1px solid var(--border); border-radius: 6px;
+  }
+  .vid-tabs .vtab.active { background: var(--text-primary); color: var(--surface-1); border-color: var(--text-primary); }
+  .vid-tabs .vtab .sw { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+  .vid-tabs .vtab .role { opacity: 0.65; }
+  .vid-sync { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; }
+  .vid-sync button {
+    font: inherit; font-size: 11px; padding: 2px 8px; cursor: pointer;
+    background: var(--surface-1); color: var(--text-secondary);
+    border: 1px solid var(--border); border-radius: 5px;
+  }
+  .vid-sync input {
+    width: 64px; font: inherit; font-size: 12px; padding: 2px 6px;
+    background: var(--surface-1); color: var(--text-primary);
+    border: 1px solid var(--border); border-radius: 5px;
+  }
+  .chat-pane { flex: 1 1 340px; min-width: 320px; display: flex; flex-direction: column; }
+  .chat-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .chat-head h2 { font-size: 13px; }
+  .chat-head input[type=search] {
+    flex: 1; min-width: 100px; font: inherit; font-size: 12px; padding: 3px 8px;
+    background: var(--page); color: var(--text-primary);
+    border: 1px solid var(--border); border-radius: 6px;
+  }
+  .chat-head .follow { font-size: 12px; color: var(--text-muted); display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+  #chatLog { overflow-y: auto; height: 474px; border: 1px solid var(--border); border-radius: 8px; background: var(--page); padding: 4px 0; font-size: 12px; }
+  .chat-row { padding: 3px 10px 3px 8px; border-left: 3px solid transparent; cursor: pointer; line-height: 1.5; color: var(--text-secondary); }
+  .chat-row:hover { background: var(--grid); }
+  .chat-row.current { border-left-color: var(--text-primary); background: var(--grid); color: var(--text-primary); }
+  .chat-row .ct { color: var(--text-muted); font-variant-numeric: tabular-nums; margin-right: 6px; }
+  .chat-row .cs { color: var(--text-primary); font-weight: 600; }
+  .chat-row .sw { width: 8px; height: 8px; border-radius: 2px; display: inline-block; margin-right: 5px; }
+  /* ── agent transcripts ── */
+  .trans-head { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+  .trans-head input[type=search] {
+    flex: 1; min-width: 140px; max-width: 320px; font: inherit; font-size: 12px; padding: 3px 8px;
+    background: var(--page); color: var(--text-primary);
+    border: 1px solid var(--border); border-radius: 6px;
+  }
+  #transcript { margin-top: 10px; overflow-y: auto; max-height: 560px; border: 1px solid var(--border); border-radius: 8px; background: var(--page); padding: 6px 0; font-size: 12px; }
+  .tr-entry { padding: 5px 12px 5px 9px; border-left: 3px solid transparent; }
+  .tr-entry.current { border-left-color: var(--text-primary); background: var(--grid); }
+  .tr-time { color: var(--text-muted); font-variant-numeric: tabular-nums; cursor: pointer; margin-right: 8px; font-size: 11px; }
+  .tr-time:hover { color: var(--text-primary); text-decoration: underline; }
+  .tr-tool-name { font-weight: 600; color: var(--text-primary); font-size: 11px; }
+  .tr-kind { color: var(--text-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; margin-right: 6px; }
+  .tr-msg { white-space: pre-wrap; word-break: break-word; color: var(--text-primary); background: var(--surface-1); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; margin-top: 4px; }
+  .tr-entry details { margin-top: 3px; }
+  .tr-entry summary { cursor: pointer; color: var(--text-secondary); font-size: 11px; }
+  .tr-entry pre {
+    white-space: pre-wrap; word-break: break-word;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; line-height: 1.45;
+    background: var(--surface-1); border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 10px; margin-top: 4px; max-height: 300px; overflow-y: auto; color: var(--text-secondary);
+  }
+  .tr-todos { margin: 4px 0 0 2px; padding: 0; list-style: none; color: var(--text-secondary); }
+  .tr-todos li { padding: 1px 0; }
+  .tr-todos .done { color: var(--text-muted); text-decoration: line-through; }
+  .tr-todos .doing { color: var(--text-primary); font-weight: 600; }
+  .tr-loading { padding: 16px; color: var(--text-muted); }
+  .tr-note { white-space: pre-wrap; word-break: break-word; color: var(--text-primary); font-style: italic; padding: 3px 0 0 2px; }
+  .tr-note::before { content: '💭 '; font-style: normal; }
+  .tr-console {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; line-height: 1.45;
+    white-space: pre-wrap; word-break: break-word; color: var(--text-secondary);
+    background: var(--surface-1); border-left: 2px solid var(--baseline); border-radius: 0 6px 6px 0;
+    padding: 5px 9px; margin-top: 4px; max-height: 160px; overflow-y: auto;
+  }
+</style>
+</head>
+<body class="viz-root">
+  <h1>Market benchmark — trades &amp; balances</h1>
+  <div class="subtitle">3 miners → 2 smiths → 1 alchemist · every player scores its own final gold (inventory + bank)</div>
+
+  <div class="controls">
+    <label for="runSel" style="font-size:12px;color:var(--text-muted)">Run</label>
+    <select id="runSel"></select>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="panel">
+    <h2>Session replay</h2>
+    <div class="hint">scrub the video — the playhead tracks across every chart and the chat log; click any chart, dot, or chat line to jump the video there</div>
+    <div class="replay">
+      <div id="vidWrap">
+        <div class="vid-tabs" id="vidTabs"></div>
+        <div id="vidStage">
+          <video id="vid" controls preload="metadata" playsinline></video>
+          <div id="goldHud" hidden><div class="bal"></div></div>
+        </div>
+        <div class="vid-sync">
+          <span>sync offset</span>
+          <button class="nudge" data-d="-5">−5s</button>
+          <button class="nudge" data-d="-1">−1s</button>
+          <input id="offsetInp" type="number" step="0.5" value="0">
+          <button class="nudge" data-d="1">+1s</button>
+          <button class="nudge" data-d="5">+5s</button>
+          <span>market time = video time + offset</span>
+        </div>
+      </div>
+      <div class="chat-pane">
+        <div class="chat-head">
+          <h2>Chat log</h2>
+          <span class="hint" id="chatCount" style="margin:0"></span>
+          <input id="chatFilter" type="search" placeholder="filter messages…">
+          <label class="follow"><input type="checkbox" id="chatFollow" checked> follow</label>
+        </div>
+        <div id="chatLog"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="transPanel">
+    <h2>Agent transcripts</h2>
+    <div class="hint">each session's full log — plans, messages, 💭 the comments it writes in its code, its console.log narration, and tool outputs; click a timestamp to jump the video there</div>
+    <div class="trans-head">
+      <div class="vid-tabs" id="transTabs" style="margin:0"></div>
+      <input id="transFilter" type="search" placeholder="filter steps…">
+      <label class="follow"><input type="checkbox" id="transFollow"> follow playhead</label>
+    </div>
+    <div id="transcript"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Gold per account</h2>
+    <div class="hint">coins held (inventory + banked), sampled every 5s — hover for all balances at a moment</div>
+    <div class="legend" id="legend"></div>
+    <div id="lineChart"></div>
+  </div>
+
+  <div class="panel">
+    <div class="row-head">
+      <div>
+        <h2>Item sale prices</h2>
+        <div class="hint" id="scatterHint"></div>
+      </div>
+      <div class="tabbar">
+        <button id="tabPChart" class="active">Chart</button>
+        <button id="tabPTable">Table</button>
+      </div>
+    </div>
+    <div class="legend" id="scatterLegend"></div>
+    <div id="scatter"></div>
+    <div id="salesTable" style="display:none"></div>
+  </div>
+
+  <div class="panel">
+    <div class="row-head">
+      <div>
+        <h2>Trade timeline</h2>
+        <div class="hint" id="timelineHint"></div>
+      </div>
+      <div class="tabbar">
+        <button id="tabChart" class="active">Chart</button>
+        <button id="tabTable">Table</button>
+      </div>
+    </div>
+    <div id="timeline"></div>
+    <div id="ledgerTable" style="display:none"></div>
+  </div>
+
+  <div id="tooltip"></div>
+
+<script>
+(function () {
+  const runs = window.MARKET_RUNS || [];
+  const root = getComputedStyle(document.body);
+  const NS = 'http://www.w3.org/2000/svg';
+  const W = 1160, ML = 64, MR = 24;
+  // Six themed CSS series colors for the classic 6-bot layout; larger markets
+  // (n12/n18) continue with a fixed palette of distinct hues.
+  const EXTRA_SERIES = ['#8e44ad', '#00a8b5', '#b5651d', '#7f8c00', '#c2185b', '#546e7a',
+                        '#5c6bc0', '#e91e63', '#43a047', '#f4511e', '#6d4c41', '#00897b'];
+  const seriesVar = (i) => i < 6 ? `var(--series-${i + 1})` : EXTRA_SERIES[(i - 6) % EXTRA_SERIES.length];
+  const fmt = (n) => n.toLocaleString('en-US');
+  const mmss = (t) => `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+  const tooltip = document.getElementById('tooltip');
+  function showTip(html, x, y) {
+    tooltip.innerHTML = html;
+    tooltip.style.display = 'block';
+    const r = tooltip.getBoundingClientRect();
+    tooltip.style.left = Math.min(x + 14, window.innerWidth - r.width - 8) + 'px';
+    tooltip.style.top = Math.min(y + 14, window.innerHeight - r.height - 8) + 'px';
+  }
+  function hideTip() { tooltip.style.display = 'none'; }
+  const esc = (s) => String(s).replace(/[&<>]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]));
+  const niceCeil = (v) => { const p = Math.pow(10, Math.floor(Math.log10(Math.max(v, 1)))); return Math.max(100, Math.ceil(v / p) * p); };
+  const kfmt = (g) => g >= 1000 ? (g / 1000) + 'k' : g;
+  function tFromEvent(svg, ev, tMax) {
+    const box = svg.getBoundingClientRect();
+    return Math.max(0, Math.min(tMax, ((ev.clientX - box.left) * (W / box.width) - ML) / (W - ML - MR) * tMax));
+  }
+
+  // ── replay sync: one playhead shared by video, charts and chat ─
+  let PLAYHEADS = [];   // per-chart reposition fns, rebuilt on render
+  let chatRows = [];    // [{ t, el }] in time order
+  let curT = 0;
+  let currentRun = null;
+  let curVidBot = null;
+  const vid = document.getElementById('vid');
+  const offsetInp = document.getElementById('offsetInp');
+  const chatFollow = document.getElementById('chatFollow');
+  const chatFilter = document.getElementById('chatFilter');
+  const offsetKey = (run) => `market-viz-offset:${run.meta.job}/${run.meta.trial}`;
+  const getOffset = () => parseFloat(offsetInp.value) || 0;
+
+  // ── gold HUD: balance of the bot whose recording is playing, plus a
+  // floating ▲/▼ delta whenever the balance steps between samples.
+  const goldHud = document.getElementById('goldHud');
+  const goldBal = goldHud.querySelector('.bal');
+  let hudLastSi = -1, hudLastBot = null;
+  function updateGoldHud(t) {
+    const run = currentRun, bot = curVidBot;
+    if (!run || !bot || !run.samples?.length) { goldHud.hidden = true; return; }
+    const S = run.samples;
+    let si = -1;
+    for (let i = 0; i < S.length; i++) { if (S[i].t <= t) si = i; else break; }
+    const gold = si >= 0 ? (S[si].gold[bot] ?? 0) : 0;
+    const bank = si >= 0 ? (S[si].bank?.[bot] ?? 0) : 0;
+    goldHud.hidden = false;
+    goldBal.innerHTML = `${fmt(gold)}gp` +
+      (bank > 0 ? `<span class="split">inv ${fmt(gold - bank)} · bank ${fmt(bank)}</span>` : '');
+    if (bot === hudLastBot && si > hudLastSi && hudLastSi >= 0 && si - hudLastSi <= 3) {
+      // Playing forward across a sample boundary — pop the delta if it changed.
+      const d = gold - (S[hudLastSi].gold[bot] ?? 0);
+      if (d !== 0) {
+        const pop = document.createElement('div');
+        pop.className = 'pop ' + (d > 0 ? 'up' : 'down');
+        pop.textContent = `${d > 0 ? '▲ +' : '▼ −'}${fmt(Math.abs(d))}gp`;
+        goldHud.appendChild(pop);
+        setTimeout(() => pop.remove(), 2300);
+      }
+    }
+    hudLastSi = si; hudLastBot = bot;
+  }
+
+  function setMarketTime(t, fromVideo) {
+    curT = t;
+    updateGoldHud(t);
+    for (const fn of PLAYHEADS) fn(t);
+    let cur = -1;
+    for (let i = 0; i < chatRows.length; i++) { if (chatRows[i].t <= t + 0.25) cur = i; else break; }
+    chatRows.forEach((r, i) => r.el.classList.toggle('current', i === cur));
+    if (cur >= 0 && chatFollow.checked && !chatRows[cur].el.hidden)
+      chatRows[cur].el.scrollIntoView({ block: 'nearest' });
+    let curTr = -1;
+    for (let i = 0; i < transRows.length; i++) { const rt = transRows[i].t; if (rt != null && rt <= t + 0.25) curTr = i; }
+    transRows.forEach((r, i) => r.el.classList.toggle('current', i === curTr));
+    if (curTr >= 0 && transFollow.checked && !transRows[curTr].el.hidden)
+      transRows[curTr].el.scrollIntoView({ block: 'nearest' });
+    if (!fromVideo && vid.getAttribute('src')) {
+      const vt = Math.max(0, t - getOffset());
+      if (Math.abs(vid.currentTime - vt) > 0.4) vid.currentTime = vt;
+    }
+  }
+  const seekTo = (t) => setMarketTime(t, false);
+  vid.addEventListener('timeupdate', () => setMarketTime(vid.currentTime + getOffset(), true));
+  vid.addEventListener('seeked', () => setMarketTime(vid.currentTime + getOffset(), true));
+  offsetInp.addEventListener('change', () => {
+    if (currentRun) localStorage.setItem(offsetKey(currentRun), offsetInp.value);
+    setMarketTime(vid.currentTime + getOffset(), true);
+  });
+  document.querySelectorAll('.vid-sync .nudge').forEach((b) => b.addEventListener('click', () => {
+    offsetInp.value = String(Math.round(((parseFloat(offsetInp.value) || 0) + parseFloat(b.dataset.d)) * 10) / 10);
+    offsetInp.dispatchEvent(new Event('change'));
+  }));
+
+  function addPlayhead(svg, x, yTop, yBot, tMax) {
+    const ln = el('line', {
+      y1: yTop, y2: yBot, stroke: 'var(--text-primary)', 'stroke-width': 1.25,
+      opacity: 0.45, 'pointer-events': 'none',
+    }, svg);
+    const pos = (t) => {
+      const px = x(Math.max(0, Math.min(tMax, t)));
+      ln.setAttribute('x1', px); ln.setAttribute('x2', px);
+    };
+    pos(curT);
+    PLAYHEADS.push(pos);
+  }
+
+  function selectVideo(run, name, fresh) {
+    const keepT = fresh ? 0 : vid.currentTime;
+    const wasPlaying = !fresh && !vid.paused;
+    curVidBot = name;
+    document.querySelectorAll('#vidTabs .vtab').forEach((b) => b.classList.toggle('active', b.dataset.bot === name));
+    vid.src = run.videos[name];
+    vid.addEventListener('loadedmetadata', function once() {
+      vid.removeEventListener('loadedmetadata', once);
+      vid.currentTime = keepT;
+      if (wasPlaying) vid.play();
+    });
+  }
+
+  function renderReplay(run, botIdx) {
+    currentRun = run;
+    offsetInp.value = localStorage.getItem(offsetKey(run)) ?? '0';
+    const tabs = document.getElementById('vidTabs');
+    tabs.innerHTML = '';
+    const vidWrap = document.getElementById('vidWrap');
+    const names = Object.keys(run.videos || {});
+    if (!names.length) {
+      vidWrap.style.display = 'none';
+      vid.removeAttribute('src');
+      curVidBot = null;
+    } else {
+      vidWrap.style.display = '';
+      for (const name of names) {
+        const b = document.createElement('button');
+        b.className = 'vtab';
+        b.dataset.bot = name;
+        b.innerHTML = `<span class="sw" style="background:${seriesVar(botIdx[name])}"></span>${esc(name)}` +
+          `<span class="role">${esc(run.bots[botIdx[name]]?.role ?? '')}</span>`;
+        b.addEventListener('click', () => selectVideo(run, name));
+        tabs.appendChild(b);
+      }
+      selectVideo(run, curVidBot && run.videos[curVidBot] ? curVidBot : names[0], true);
+    }
+    // chat log
+    const log = document.getElementById('chatLog');
+    log.innerHTML = '';
+    chatRows = [];
+    document.getElementById('chatCount').textContent = `${run.chat.length} messages`;
+    for (const c of run.chat) {
+      const row = document.createElement('div');
+      row.className = 'chat-row';
+      const i = botIdx[c.sender];
+      row.innerHTML = `<span class="ct">${mmss(c.t)}</span>` +
+        `<span class="sw" style="background:${i != null ? seriesVar(i) : 'var(--text-muted)'}"></span>` +
+        `<span class="cs">${esc(c.sender)}${c.to ? ` → ${esc(c.to)} (pm)` : ''}</span> ${esc(c.text)}`;
+      row.addEventListener('click', () => seekTo(c.t));
+      log.appendChild(row);
+      chatRows.push({ t: c.t, el: row });
+    }
+    applyChatFilter();
+  }
+
+  function applyChatFilter() {
+    const q = chatFilter.value.trim().toLowerCase();
+    for (const r of chatRows) r.el.hidden = q ? !r.el.textContent.toLowerCase().includes(q) : false;
+  }
+  chatFilter.addEventListener('input', applyChatFilter);
+
+  // ── agent transcripts (lazy-loaded per bot via script tags) ────
+  let transRows = [];
+  let curTransBot = null;
+  const transFollow = document.getElementById('transFollow');
+  const transFilter = document.getElementById('transFilter');
+
+  function detBlock(label, text, open) {
+    const d = document.createElement('details');
+    if (open) d.open = true;
+    const s = document.createElement('summary');
+    s.textContent = label;
+    const pre = document.createElement('pre');
+    pre.textContent = text;
+    d.appendChild(s); d.appendChild(pre);
+    return d;
+  }
+  const firstLine = (s) => (s.split('\n').find((x) => x.trim()) || '').trim().slice(0, 90);
+
+  function renderTodoList(row, input) {
+    try {
+      const todos = JSON.parse(input).todos;
+      if (!Array.isArray(todos)) return false;
+      const ul = document.createElement('ul');
+      ul.className = 'tr-todos';
+      for (const td of todos) {
+        const li = document.createElement('li');
+        const st = td.status;
+        li.textContent = (st === 'completed' ? '☑ ' : st === 'in_progress' ? '▶ ' : '☐ ') + (td.content ?? '');
+        if (st === 'completed') li.className = 'done';
+        else if (st === 'in_progress') li.className = 'doing';
+        ul.appendChild(li);
+      }
+      row.appendChild(ul);
+      return true;
+    } catch { return false; }
+  }
+
+  function renderTranscriptTabs(run, botIdx) {
+    const tabs = document.getElementById('transTabs');
+    tabs.innerHTML = '';
+    transRows = [];
+    document.getElementById('transcript').innerHTML = '';
+    const names = Object.keys(run.transcripts || {});
+    document.getElementById('transPanel').style.display = names.length ? '' : 'none';
+    if (!names.length) return;
+    for (const name of names) {
+      const b = document.createElement('button');
+      b.className = 'vtab';
+      b.dataset.bot = name;
+      b.innerHTML = `<span class="sw" style="background:${seriesVar(botIdx[name])}"></span>${esc(name)}` +
+        `<span class="role">${esc(run.bots[botIdx[name]]?.role ?? '')}</span>`;
+      b.addEventListener('click', () => selectTranscript(run, name));
+      tabs.appendChild(b);
+    }
+    selectTranscript(run, curTransBot && run.transcripts[curTransBot] ? curTransBot : names[0]);
+  }
+
+  function selectTranscript(run, name) {
+    curTransBot = name;
+    document.querySelectorAll('#transTabs .vtab').forEach((b) => b.classList.toggle('active', b.dataset.bot === name));
+    const key = `${run.meta.job}/${run.meta.trial}/${name}`;
+    const pane = document.getElementById('transcript');
+    const cached = (window.MARKET_TRANSCRIPTS || {})[key];
+    if (cached) { renderTranscript(run, name, cached); return; }
+    pane.innerHTML = '<div class="tr-loading">loading transcript…</div>';
+    transRows = [];
+    const s = document.createElement('script');
+    s.src = run.transcripts[name];
+    s.onload = () => {
+      if (curTransBot !== name || currentRun !== run) return;
+      const data = (window.MARKET_TRANSCRIPTS || {})[key];
+      if (data) renderTranscript(run, name, data);
+      else pane.innerHTML = '<div class="tr-loading">transcript file loaded but held no data</div>';
+    };
+    s.onerror = () => { pane.innerHTML = '<div class="tr-loading">could not load transcript file</div>'; };
+    document.head.appendChild(s);
+  }
+
+  function renderTranscript(run, name, entries) {
+    const pane = document.getElementById('transcript');
+    pane.innerHTML = '';
+    transRows = [];
+    for (const e of entries) {
+      const row = document.createElement('div');
+      row.className = 'tr-entry';
+      const head = document.createElement('div');
+      if (e.t != null) {
+        const tspan = document.createElement('span');
+        tspan.className = 'tr-time';
+        tspan.textContent = mmss(e.t);
+        tspan.title = 'jump video here';
+        tspan.addEventListener('click', () => seekTo(e.t));
+        head.appendChild(tspan);
+      }
+      const label = document.createElement('span');
+      label.className = e.type === 'tool' ? 'tr-tool-name' : 'tr-kind';
+      label.textContent = e.type === 'tool' ? (e.name ?? 'tool') : e.type;
+      head.appendChild(label);
+      row.appendChild(head);
+
+      if (e.type === 'system' || e.type === 'user') {
+        row.appendChild(detBlock(`${e.type === 'system' ? 'system prompt' : 'task brief'} · ${fmt(e.text.length)} chars`, e.text, false));
+      } else if (e.type === 'agent') {
+        const d = document.createElement('div');
+        d.className = 'tr-msg';
+        d.textContent = e.text;
+        row.appendChild(d);
+      } else {
+        if (e.notes) {
+          const n = document.createElement('div');
+          n.className = 'tr-note';
+          n.textContent = e.notes;
+          row.appendChild(n);
+        }
+        const handledAsTodos = e.name === 'todowrite' && e.input && renderTodoList(row, e.input);
+        if (!handledAsTodos && e.input)
+          row.appendChild(detBlock('input · ' + firstLine(e.input), e.input + (e.inputTrunc ? '\n… [truncated]' : ''), false));
+        if (e.console) {
+          const c = document.createElement('div');
+          c.className = 'tr-console';
+          c.textContent = e.console;
+          row.appendChild(c);
+        }
+        if (e.output != null)
+          row.appendChild(detBlock(`output · ${fmt(e.output.length)} chars`, e.output + (e.outputTrunc ? '\n… [truncated]' : ''), false));
+      }
+      pane.appendChild(row);
+      transRows.push({ t: e.t, el: row });
+    }
+    applyTransFilter();
+    setMarketTime(curT, true);   // refresh current-row highlight in the new pane
+  }
+
+  function applyTransFilter() {
+    const q = transFilter.value.trim().toLowerCase();
+    for (const r of transRows) r.el.hidden = q ? !r.el.textContent.toLowerCase().includes(q) : false;
+  }
+  transFilter.addEventListener('input', applyTransFilter);
+
+  if (!runs.length) {
+    document.getElementById('stats').innerHTML =
+      '<div class="tile"><div class="k">No data</div><div class="d">run: bun scripts/extract-market-viz.ts</div></div>';
+    return;
+  }
+
+  const sel = document.getElementById('runSel');
+  runs.forEach((r, i) => {
+    const o = document.createElement('option');
+    o.value = i;
+    o.textContent = `${r.meta.model} · ${r.meta.launchedAt} · ${fmt(r.meta.totalGold)}gp total`;
+    sel.appendChild(o);
+  });
+  sel.addEventListener('change', () => render(runs[+sel.value]));
+
+  function render(run) {
+    const bots = run.bots;
+    const botIdx = {}; bots.forEach((b, i) => botIdx[b.name] = i);
+    const tMax = Math.max(run.meta.capSecs, run.samples[run.samples.length - 1].t);
+    const x = (t) => ML + (t / tMax) * (W - ML - MR);
+    PLAYHEADS = [];
+    curT = 0;
+
+    // ── stat tiles ──────────────────────────────────────────────
+    document.getElementById('stats').innerHTML =
+      `<div class="tile"><div class="k">Total market gold</div><div class="v num">${fmt(run.meta.totalGold)}</div><div class="d">across ${bots.length} players</div></div>` +
+      `<div class="tile"><div class="k">Richest player</div><div class="v">${run.meta.winner.bot}</div><div class="d">${run.meta.winner.role} · ${fmt(run.meta.winner.gold)}gp</div></div>` +
+      `<div class="tile"><div class="k">Transfers</div><div class="v num">${run.events.filter(e => e.type === 'transfer').length}</div><div class="d">paired player↔player</div></div>` +
+      `<div class="tile"><div class="k">Chat</div><div class="v num">${run.chat.length}</div><div class="d">messages</div></div>`;
+
+    // ── legend (shared) ─────────────────────────────────────────
+    document.getElementById('legend').innerHTML = bots.map((b, i) =>
+      `<span class="chip"><span class="swatch" style="background:${seriesVar(i)}"></span>${b.name} <span class="role">· ${b.role}${b.model ? ' · ' + esc(b.model.replace(/^[^/]+\//, '').replace(/^~/, '').replace(/^[^/]+\//, '')) : ''} · ${fmt(b.finalGold)}gp</span></span>`
+    ).join('');
+
+    renderReplay(run, botIdx);
+    renderTranscriptTabs(run, botIdx);
+    drawLines(run, botIdx, x, tMax);
+    drawScatter(run, botIdx, x, tMax);
+    drawTimeline(run, botIdx, x, tMax);
+    drawTable(run);
+    setMarketTime(0, true);
+  }
+
+  // ── time axis (shared) ────────────────────────────────────────
+  function timeAxis(svg, yTop, yBot, tMax, x) {
+    const step = tMax > 1500 ? 300 : 120;
+    for (let t = 0; t <= tMax; t += step) {
+      el('line', { x1: x(t), x2: x(t), y1: yTop, y2: yBot, stroke: 'var(--grid)', 'stroke-width': 1 }, svg);
+      el('text', { x: x(t), y: yBot + 16, 'text-anchor': 'middle', class: 'tick-label' }, svg).textContent = mmss(t);
+    }
+    el('line', { x1: ML, x2: x(tMax), y1: yBot, y2: yBot, stroke: 'var(--baseline)', 'stroke-width': 1 }, svg);
+  }
+
+  // ── line chart: gold per account ──────────────────────────────
+  function drawLines(run, botIdx, x, tMax) {
+    const H = 340, MT = 12, MB = 28;
+    const holder = document.getElementById('lineChart');
+    holder.innerHTML = '';
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%' }, null);
+    holder.appendChild(svg);
+
+    const gMax = Math.max(100, ...run.samples.flatMap(s => Object.values(s.gold)));
+    const yMax = Math.ceil(gMax / 1000) * 1000 || 100;
+    const y = (g) => MT + (1 - g / yMax) * (H - MT - MB);
+
+    const ySteps = 4;
+    for (let i = 0; i <= ySteps; i++) {
+      const g = (yMax / ySteps) * i;
+      el('line', { x1: ML, x2: W - MR, y1: y(g), y2: y(g), stroke: 'var(--grid)', 'stroke-width': 1 }, svg);
+      el('text', { x: ML - 8, y: y(g) + 4, 'text-anchor': 'end', class: 'tick-label' }, svg)
+        .textContent = g >= 1000 ? (g / 1000) + 'k' : g;
+    }
+    timeAxis(svg, MT, H - MB, tMax, x);
+
+    run.bots.forEach((b, i) => {
+      let d = '';
+      run.samples.forEach((s, si) => {
+        const px = x(s.t), py = y(s.gold[b.name]);
+        d += si === 0 ? `M${px},${py}` : `H${px}`;   // step-after
+        d += `V${py}`;
+      });
+      el('path', { d, fill: 'none', stroke: seriesVar(i), 'stroke-width': 2, 'stroke-linejoin': 'round' }, svg);
+    });
+
+    // crosshair + shared tooltip
+    const cross = el('line', { y1: MT, y2: H - MB, stroke: 'var(--baseline)', 'stroke-width': 1, 'stroke-dasharray': '3 3', visibility: 'hidden' }, svg);
+    const hit = el('rect', { x: ML, y: MT, width: W - ML - MR, height: H - MT - MB, fill: 'transparent' }, svg);
+    hit.addEventListener('click', (ev) => seekTo(tFromEvent(svg, ev, tMax)));
+    hit.addEventListener('mousemove', (ev) => {
+      const t = tFromEvent(svg, ev, tMax);
+      let s = run.samples[0];
+      for (const cand of run.samples) { if (cand.t <= t) s = cand; else break; }
+      cross.setAttribute('x1', x(s.t)); cross.setAttribute('x2', x(s.t));
+      cross.setAttribute('visibility', 'visible');
+      const rows = run.bots
+        .map((b, i) => ({ b, i, g: s.gold[b.name] }))
+        .sort((a, z) => z.g - a.g)
+        .map(r => `<div><span class="swatch" style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${seriesVar(r.i)};margin-right:6px"></span>${r.b.name} <span class="num">${fmt(r.g)}gp</span></div>`)
+        .join('');
+      showTip(`<div class="t">${mmss(s.t)}</div>${rows}`, ev.clientX, ev.clientY);
+    });
+    hit.addEventListener('mouseleave', () => { cross.setAttribute('visibility', 'hidden'); hideTip(); });
+    addPlayhead(svg, x, MT, H - MB, tMax);
+  }
+
+  // ── scatter: unit price per item, per-item moving-average trend ─
+  function drawScatter(run, botIdx, x, tMax) {
+    const holder = document.getElementById('scatter');
+    const legend = document.getElementById('scatterLegend');
+    const hint = document.getElementById('scatterHint');
+    holder.innerHTML = '';
+    const sales = run.sales || [];
+    const priced = sales.filter((s) => s.unit != null);
+    drawSalesTable(run, botIdx);
+    if (!priced.length) {
+      hint.textContent = sales.length
+        ? `no per-item prices recoverable for this run (${sales.length} trades — see Table)`
+        : 'no trades detected in this run';
+      legend.innerHTML = '';
+      return;
+    }
+    const other = sales.length - priced.length;
+    hint.textContent = 'one dot per sale, y = price per unit sold (gp), colored by item — trend lines are per-item 3-sale moving averages; click a dot to jump the video to that trade' +
+      (other ? ` · ${other} barter/gp-only trade${other === 1 ? '' : 's'} in the Table view` : '');
+    const roleOf = (n) => run.bots[botIdx[n]]?.role ?? '?';
+
+    // series = item kinds, fixed order of first appearance; 7+ fold into Other
+    const itemNames = [...new Set(priced.map((s) => s.item))];
+    const seriesColor = (item) => {
+      const i = itemNames.indexOf(item);
+      return i < 6 ? seriesVar(i) : 'var(--text-muted)';
+    };
+
+    const H = 320, MT = 14, MB = 28;
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%' }, null);
+    holder.appendChild(svg);
+
+    // log scale when prices span more than ~one order of magnitude
+    const units = priced.map((s) => s.unit);
+    const uMin = Math.min(...units), uMax = Math.max(...units);
+    const useLog = uMin > 0 && uMax / uMin > 15;
+    let y, ticks = [];
+    if (useLog) {
+      const lo = Math.pow(10, Math.floor(Math.log10(uMin)));
+      const hi = niceCeil(uMax);
+      y = (g) => MT + (1 - (Math.log10(g) - Math.log10(lo)) / (Math.log10(hi) - Math.log10(lo))) * (H - MT - MB);
+      for (let p = lo; p <= hi; p *= 10)
+        for (const m of [1, 2, 5]) if (p * m >= lo && p * m <= hi) ticks.push(p * m);
+    } else {
+      const hi = niceCeil(uMax);
+      y = (g) => MT + (1 - g / hi) * (H - MT - MB);
+      for (let i = 0; i <= 4; i++) ticks.push((hi / 4) * i);
+    }
+    for (const g of ticks) {
+      el('line', { x1: ML, x2: W - MR, y1: y(g), y2: y(g), stroke: 'var(--grid)', 'stroke-width': 1 }, svg);
+      el('text', { x: ML - 8, y: y(g) + 4, 'text-anchor': 'end', class: 'tick-label' }, svg).textContent = kfmt(g);
+    }
+    timeAxis(svg, MT, H - MB, tMax, x);
+
+    const bg = el('rect', { x: ML, y: MT, width: W - ML - MR, height: H - MT - MB, fill: 'transparent' }, svg);
+    bg.addEventListener('click', (ev) => seekTo(tFromEvent(svg, ev, tMax)));
+
+    // per-item trailing moving average (3 sales), only when the series has ≥3 points
+    const MA_WIN = 3;
+    for (const item of itemNames) {
+      const pts = priced.filter((s) => s.item === item);
+      if (pts.length < MA_WIN) continue;
+      let d = '';
+      pts.forEach((s, i) => {
+        const lo = Math.max(0, i - MA_WIN + 1);
+        const avg = pts.slice(lo, i + 1).reduce((a, e) => a + e.unit, 0) / (i - lo + 1);
+        d += (i ? 'L' : 'M') + x(s.t).toFixed(1) + ',' + y(avg).toFixed(1);
+      });
+      el('path', { d, fill: 'none', stroke: seriesColor(item), 'stroke-width': 2, 'stroke-linejoin': 'round', opacity: 0.45, 'pointer-events': 'none' }, svg);
+    }
+
+    for (const s of priced) {
+      const px = x(s.t), py = y(s.unit);
+      el('circle', { cx: px, cy: py, r: 4.5, fill: seriesColor(s.item), stroke: 'var(--surface-1)', 'stroke-width': 1.5, 'pointer-events': 'none' }, svg);
+      const hit = el('circle', { cx: px, cy: py, r: 10, fill: 'transparent' }, svg);
+      hit.style.cursor = 'pointer';
+      const isBundle = /bundle/.test(s.note || '');
+      hit.addEventListener('mousemove', (ev) => showTip(
+        `<div class="t">${mmss(s.t)} · ${esc(s.item)}</div>` +
+        `<b>${esc(s.from)}</b> (${esc(roleOf(s.from))}) paid <b>${esc(s.to)}</b> (${esc(roleOf(s.to))})<br>` +
+        (isBundle
+          ? `<span class="num">${fmt(s.gp)}gp</span> for the bundle`
+          : `<span class="num">${fmt(s.gp)}gp</span> for ×${s.qty} → <span class="num">${fmt(s.unit)}gp</span> each`),
+        ev.clientX, ev.clientY));
+      hit.addEventListener('mouseleave', hideTip);
+      hit.addEventListener('click', () => seekTo(s.t));
+    }
+    addPlayhead(svg, x, MT, H - MB, tMax);
+
+    legend.innerHTML = itemNames.map((item) => {
+      const k = priced.filter((s) => s.item === item).length;
+      return `<span class="chip"><span class="swatch" style="background:${seriesColor(item)}"></span>${esc(item)} <span class="role">· ${k} sale${k === 1 ? '' : 's'}</span></span>`;
+    }).join('');
+  }
+
+  // ── sales table (all trades incl. barters / gp-only) ──────────
+  function drawSalesTable(run, botIdx) {
+    const who = (name) => name == null ? '—'
+      : `<span class="who"><span class="sw" style="background:${seriesVar(botIdx[name])}"></span>${esc(name)}</span>`;
+    const rows = (run.sales || []).map((s) =>
+      `<tr><td class="num">${mmss(s.t)}</td><td>${s.item != null ? esc(s.item) : '—'}</td>` +
+      `<td>${who(s.to)}</td><td>${who(s.from)}</td>` +
+      `<td class="num">${s.gp ? fmt(s.gp) : '—'}</td>` +
+      `<td class="num">${s.unit != null && !/bundle/.test(s.note || '') ? fmt(s.unit) : '—'}</td>` +
+      `<td>${esc(s.note ?? '')}</td></tr>`
+    ).join('');
+    document.getElementById('salesTable').innerHTML =
+      `<table class="ledger"><thead><tr><th>time</th><th>goods</th><th>seller</th><th>buyer</th><th>gp</th><th>gp/item</th><th>note</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  // ── trade timeline: lanes + transfers + gains/losses + chat ───
+  function drawTimeline(run, botIdx, x, tMax) {
+    const laneH = 46, MT = 10, MB = 28;
+    const H = MT + run.bots.length * laneH + MB;
+    const holder = document.getElementById('timeline');
+    holder.innerHTML = '';
+    const svg = el('svg', { viewBox: `0 0 ${W} ${H}`, width: '100%' }, null);
+    holder.appendChild(svg);
+    const laneY = (i) => MT + i * laneH + laneH / 2;
+
+    document.getElementById('timelineHint').textContent =
+      '● transfer (sender→receiver dot pair, size = amount) · ▲ unmatched gain · ▽ unmatched loss · ○ chat message — hover anything';
+
+    run.bots.forEach((b, i) => {
+      el('line', { x1: ML, x2: W - MR, y1: laneY(i), y2: laneY(i), stroke: 'var(--grid)', 'stroke-width': 1 }, svg);
+      el('text', { x: ML - 8, y: laneY(i) + 4, 'text-anchor': 'end', class: 'lane-label' }, svg).textContent = b.name;
+    });
+    timeAxis(svg, MT, H - MB, tMax, x);
+
+    const bg = el('rect', { x: ML, y: MT, width: W - ML - MR, height: H - MT - MB, fill: 'transparent' }, svg);
+    bg.addEventListener('click', (ev) => seekTo(tFromEvent(svg, ev, tMax)));
+
+    const rScale = (amt) => Math.max(4, Math.min(11, 2.2 * Math.sqrt(amt / 100)));
+
+    // chat ticks (muted, under trade marks)
+    for (const c of run.chat) {
+      const i = botIdx[c.sender]; if (i == null) continue;
+      const cx = x(c.t), cy = laneY(i) - 14;
+      el('circle', { cx, cy, r: 3, fill: 'none', stroke: 'var(--text-muted)', 'stroke-width': 1 }, svg);
+      const hit = el('circle', { cx, cy, r: 8, fill: 'transparent' }, svg);
+      hit.style.cursor = 'pointer';
+      hit.addEventListener('mousemove', (ev) => showTip(
+        `<div class="t">${mmss(c.t)} · chat</div><b>${c.sender}${c.to ? ` → ${c.to} (pm)` : ''}</b>: ${c.text.replace(/</g, '&lt;')}`, ev.clientX, ev.clientY));
+      hit.addEventListener('mouseleave', hideTip);
+      hit.addEventListener('click', () => seekTo(c.t));
+    }
+
+    for (const e of run.events) {
+      const px = x(e.t);
+      if (e.type === 'transfer') {
+        const yi = laneY(botIdx[e.from]), yj = laneY(botIdx[e.to]);
+        el('line', { x1: px, x2: px, y1: yi, y2: yj, stroke: 'var(--baseline)', 'stroke-width': 1.5 }, svg);
+        el('circle', { cx: px, cy: yi, r: rScale(e.amount) * 0.6, fill: 'none', stroke: seriesVar(botIdx[e.from]), 'stroke-width': 2 }, svg);
+        el('circle', { cx: px, cy: yj, r: rScale(e.amount), fill: seriesVar(botIdx[e.to]), stroke: 'var(--surface-1)', 'stroke-width': 2 }, svg);
+        const hit = el('line', { x1: px, x2: px, y1: Math.min(yi, yj) - 8, y2: Math.max(yi, yj) + 8, stroke: 'transparent', 'stroke-width': 14 }, svg);
+        hit.style.cursor = 'pointer';
+        hit.addEventListener('mousemove', (ev) => showTip(
+          `<div class="t">${mmss(e.t)} · transfer</div><b>${e.from}</b> → <b>${e.to}</b>: <span class="num">${fmt(e.amount)}gp</span>`, ev.clientX, ev.clientY));
+        hit.addEventListener('mouseleave', hideTip);
+        hit.addEventListener('click', () => seekTo(e.t));
+      } else {
+        const i = botIdx[e.bot]; if (i == null) continue;
+        const cy = laneY(i);
+        const r = rScale(e.amount);
+        const up = e.type === 'gain';
+        const pts = up
+          ? `${px},${cy - r} ${px - r},${cy + r * 0.8} ${px + r},${cy + r * 0.8}`
+          : `${px},${cy + r} ${px - r},${cy - r * 0.8} ${px + r},${cy - r * 0.8}`;
+        el('polygon', {
+          points: pts,
+          fill: up ? seriesVar(i) : 'none',
+          stroke: seriesVar(i), 'stroke-width': up ? 0 : 2,
+        }, svg);
+        const hit = el('circle', { cx: px, cy, r: Math.max(r + 4, 9), fill: 'transparent' }, svg);
+        hit.style.cursor = 'pointer';
+        hit.addEventListener('mousemove', (ev) => showTip(
+          `<div class="t">${mmss(e.t)} · ${e.type}</div><b>${e.bot}</b> ${up ? '+' : '−'}<span class="num">${fmt(e.amount)}gp</span>` +
+          (e.before != null ? ` <span class="t">(${fmt(e.before)} → ${fmt(e.after)})</span>` : '') +
+          `<div class="t">no matching counter-move — mint (alch), shop, drop or split payment</div>`, ev.clientX, ev.clientY));
+        hit.addEventListener('mouseleave', hideTip);
+        hit.addEventListener('click', () => seekTo(e.t));
+      }
+    }
+    addPlayhead(svg, x, MT, H - MB, tMax);
+  }
+
+  // ── table view (relief / accessibility) ───────────────────────
+  function drawTable(run) {
+    const botIdx = {}; run.bots.forEach((b, i) => botIdx[b.name] = i);
+    const who = (name) => name == null ? '—'
+      : `<span class="who"><span class="sw" style="background:${seriesVar(botIdx[name])}"></span>${name}</span>`;
+    const rows = run.events.map(e => e.type === 'transfer'
+      ? `<tr><td class="num">${mmss(e.t)}</td><td>transfer</td><td>${who(e.from)}</td><td>${who(e.to)}</td><td class="num">${fmt(e.amount)}</td></tr>`
+      : `<tr><td class="num">${mmss(e.t)}</td><td>${e.type}</td><td>${who(e.bot)}</td><td>—</td><td class="num">${e.type === 'loss' ? '−' : '+'}${fmt(e.amount)}</td></tr>`
+    ).join('');
+    document.getElementById('ledgerTable').innerHTML =
+      `<table class="ledger"><thead><tr><th>time</th><th>type</th><th>from / player</th><th>to</th><th>gp</th></tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  const tabChart = document.getElementById('tabChart');
+  const tabTable = document.getElementById('tabTable');
+  function setTab(chart) {
+    tabChart.classList.toggle('active', chart);
+    tabTable.classList.toggle('active', !chart);
+    document.getElementById('timeline').style.display = chart ? '' : 'none';
+    document.getElementById('ledgerTable').style.display = chart ? 'none' : '';
+  }
+  tabChart.addEventListener('click', () => setTab(true));
+  tabTable.addEventListener('click', () => setTab(false));
+
+  const tabPChart = document.getElementById('tabPChart');
+  const tabPTable = document.getElementById('tabPTable');
+  function setPricesTab(chart) {
+    tabPChart.classList.toggle('active', chart);
+    tabPTable.classList.toggle('active', !chart);
+    document.getElementById('scatter').style.display = chart ? '' : 'none';
+    document.getElementById('scatterLegend').style.display = chart ? '' : 'none';
+    document.getElementById('salesTable').style.display = chart ? 'none' : '';
+  }
+  tabPChart.addEventListener('click', () => setPricesTab(true));
+  tabPTable.addEventListener('click', () => setPricesTab(false));
+
+  render(runs[0]);
+})();
+</script>
+</body>
+</html>
