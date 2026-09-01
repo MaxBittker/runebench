@@ -70,6 +70,15 @@ configure_model_env() {
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'glm52wandb_adapter:Glm52WandbOpenCode'"
       ;;
+    glm53-opencode)
+      # z.ai GLM Coding Plan direct (api.z.ai/api/coding/paas/v4) — needs ZHIPU_API_KEY.
+      if [ -z "${ZHIPU_API_KEY:-}" ]; then
+        echo "  WARNING: ZHIPU_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'glm53_adapter:Glm53OpenCode'"
+      ;;
     gemma4-opencode)
       if [ -z "${OPENROUTER_API_KEY:-}" ]; then
         echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
@@ -117,6 +126,14 @@ configure_model_env() {
       fi
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'qwen38max_adapter:Qwen38MaxOpenCode'"
+      ;;
+    qwen38-opencode)
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'qwen38_adapter:Qwen38OpenCode'"
       ;;
     qwen37max-opencode)
       if [ -z "${OPENROUTER_API_KEY:-}" ]; then

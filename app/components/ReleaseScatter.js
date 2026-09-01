@@ -8,6 +8,7 @@ import { makeLabelPlugin } from './scatter-labels.js';
 // no "xh" text appears. (Release date is shared between base and xh.)
 const XH_TO_BASE = {
   'opus5-xhigh': 'opus5',
+  'fable51-xhigh': 'fable51',
   'fable-5-xhigh': 'fable-5',
   'opus48-max': 'opus48',
   'opus47-xhigh': 'opus47',

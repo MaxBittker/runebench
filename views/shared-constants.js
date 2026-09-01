@@ -13,6 +13,9 @@ const MODEL_CONFIG = {
   // Both fable rows are the 2026-07-20 runs on image v52 (they started ~3h before
   // the v53 pin landed in 676038b). The June runs (image v40,
   // pre-÷200 task prompt) are archived under jobs/_archive-v40-fable.
+  // Fable 5.1 (claude-fable-5-1) — API-key run via scripts/run-fable51-30m.sh.
+  'fable51':   { displayName: 'Claude Fable 5.1', shortName: 'Fable 5.1',  color: '#d9843a', order: 0.05, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-09-01' },
+  'fable51-xhigh': { displayName: 'Claude Fable 5.1 xhigh', shortName: 'Fable 5.1 xh', color: '#a8582a', order: 0.07, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-09-01' },
   'fable-5':   { displayName: 'Claude Fable 5',   shortName: 'Fable 5',    color: '#c2703e', order: 0.1, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-06-09' },
   'fable-5-xhigh': { displayName: 'Claude Fable 5 xhigh', shortName: 'Fable 5 xh', color: '#9c5226', order: 0.12, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-06-09' },
   'opus5-fast': { displayName: 'Claude Opus 5 fast', shortName: 'Opus 5 fast', color: '#5c4020', order: 0.24, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-07-24' },
@@ -58,6 +61,7 @@ const MODEL_CONFIG = {
   'glm':      { displayName: 'GLM 5',             shortName: 'GLM 5',       color: '#6c5ce7', order: 11, icon: VIEWS_BASE + 'model-icons/zai.png', releaseDate: '2026-02-11' },
   'glm52':    { displayName: 'GLM 5.2',           shortName: 'GLM 5.2',     color: '#4834d4', order: 11.2, icon: VIEWS_BASE + 'model-icons/zai.png', releaseDate: '2026-06-16' },
   'glm52-wandb': { displayName: 'GLM 5.2 (WandB fp4)', shortName: 'GLM 5.2 fp4', color: '#2d1fa0', order: 11.25, icon: VIEWS_BASE + 'model-icons/zai.png', releaseDate: '2026-06-16' },
+  'glm53':    { displayName: 'GLM 5.3',           shortName: 'GLM 5.3',     color: '#8e44ec', order: 11.3, icon: VIEWS_BASE + 'model-icons/zai.png', releaseDate: '2026-08-14' },
   'gemma4':   { displayName: 'Gemma 4 31B',       shortName: 'Gemma 4 31B', color: '#9b72cb', order: 6.8, icon: VIEWS_BASE + 'model-icons/gemini.webp', releaseDate: '2026-04-02' },
   'gptoss120b': { displayName: 'GPT-OSS-120B',    shortName: 'GPT-OSS-120B', color: '#33c79e', order: 10.8, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2025-08-05' },
   'kimi':     { displayName: 'Kimi K2.5',         shortName: 'Kimi K2.5',   color: '#00b4d8', order: 12, icon: VIEWS_BASE + 'model-icons/kimi.png', releaseDate: '2026-01-15' },
@@ -71,6 +75,7 @@ const MODEL_CONFIG = {
   'qwen3max': { displayName: 'Qwen3 Max',       shortName: 'Qwen3 Max',   color: '#a5b4fc', order: 15, icon: VIEWS_BASE + 'model-icons/qwen.webp', releaseDate: '2025-09-23' },
   'qwen37max': { displayName: 'Qwen3.7 Max',    shortName: 'Qwen3.7 Max', color: '#4f46e5', order: 15.5, icon: VIEWS_BASE + 'model-icons/qwen.webp', releaseDate: '2026-05-21' },
   'qwen38max': { displayName: 'Qwen3.8 Max',    shortName: 'Qwen3.8 Max', color: '#3730a3', order: 15.6, icon: VIEWS_BASE + 'model-icons/qwen.webp', releaseDate: '2026-08-03' },
+  'qwen38':   { displayName: 'Qwen3.8 27B',     shortName: 'Qwen3.8 27B', color: '#6366f1', order: 15.65, icon: VIEWS_BASE + 'model-icons/qwen.webp', releaseDate: '2026-08-14' },
   'grok46':   { displayName: 'Grok 4.6',        shortName: 'Grok 4.6',    color: '#000000', order: 15.9, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-08-10' },
   'grok46-medium': { displayName: 'Grok 4.6 medium', shortName: 'Grok 4.6 med', color: '#4a4a4a', order: 15.91, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-08-10' },
   'grok46-xhigh': { displayName: 'Grok 4.6 xhigh', shortName: 'Grok 4.6 xhigh', color: '#2b2b2b', order: 15.92, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-08-10' },

@@ -87,6 +87,9 @@ _PROVIDER_KEY_MAP = {
     # Meta Model API (api.meta.ai) — custom provider declared in
     # muse_adapter; the key is referenced as {env:META_MODEL_API_KEY} in opencode.json.
     "meta": "META_MODEL_API_KEY",
+    # z.ai GLM Coding Plan (api.z.ai/api/coding/paas/v4) — native models.dev
+    # provider used by glm53_adapter.
+    "zai-coding-plan": "ZHIPU_API_KEY",
 }
 
 
@@ -222,6 +225,7 @@ class OpenCodeAdapter(BaseInstalledAgent):
             "OPENAI_API_KEY",
             "GEMINI_API_KEY",
             "META_MODEL_API_KEY",
+            "ZHIPU_API_KEY",
         ]
     }
 

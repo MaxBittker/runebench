@@ -38,6 +38,9 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // Fable 5: published rate card $10/M input, $50/M output (above Opus). Anthropic
   // cache: read 0.1× input, 5-min cache write 1.25× input.
   'fable-5':    { input: 10e-6,   cachedInput: 1e-6,     cacheWrite: 12.5e-6,  output: 50e-6 },
+  // Fable 5.1 (claude-fable-5-1, 2026-09-01): same $10/$50 tier as Fable 5; cache
+  // reads dropped to $0.25/M (0.025×). 5-min cache write stays 1.25× input.
+  fable51:      { input: 10e-6,   cachedInput: 0.25e-6,  cacheWrite: 12.5e-6,  output: 50e-6 },
   // Opus 5, launched 2026-07-24: standard $5/$25 (same rate card as 4.8).
   // Fast mode (2.5x speed) is 2x base: $10/$50; cache multipliers apply on the
   // fast rates (read 0.1x, 5-min write 1.25x). Fast runs share the harbor model
@@ -115,6 +118,15 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // z-ai/glm-5.2 pinned to the WandB fp4 endpoint, OpenRouter 2026-07-17.
   // Native OpenCode cost is accurate (rates declared in glm52wandb_adapter.py).
   'glm52-wandb': { input: 1.39e-6,  cachedInput: 0.26e-6,  cacheWrite: 1.39e-6,   output: 4.4e-6 },
+  // glm-5.3 via the z.ai GLM Coding Plan direct (api.z.ai/api/coding/paas/v4),
+  // launched 2026-08-14 as a coding-plan exclusive — no pay-as-you-go per-token
+  // rate published yet. Displayed at GLM-5.2's official list rate ($1.40/$4.40
+  // per 1M, cache read $0.26) as a stand-in, by the same comparability decision
+  // as muse12 (subscription billing isn't comparable to per-token rows).
+  // Keep in sync with the per-1M `cost` block in agents/glm53_adapter.py, and
+  // update BOTH when z.ai publishes real 5.3 rates (then re-run
+  // postprocess-costs --force --models glm53 + re-extract).
+  glm53:        { input: 1.4e-6,    cachedInput: 0.26e-6,  cacheWrite: 1.4e-6,    output: 4.4e-6 },
   // google/gemma-4-31b-it pinned to Cerebras fp16, OpenRouter 2026-07-17 (cache read = full
   // input price). Friendli was the original pick but its endpoint rejects tool calls.
   gemma4:       { input: 0.99e-6,   cachedInput: 0.99e-6,  cacheWrite: 0.99e-6,   output: 1.49e-6 },
@@ -129,6 +141,11 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // qwen/qwen3.8-max, OpenRouter (Alibaba, sole provider) 2026-08-12.
   // $2/$6 per 1M; cache read $0.25/1M, cache write $2.50/1M (1.25× input).
   qwen38max:    { input: 2e-6,       cachedInput: 0.25e-6,  cacheWrite: 2.5e-6,    output: 6e-6 },
+  // qwen/qwen3.8-27b, OpenRouter model-level rates 2026-08-16 ($0.45/$3.20 per 1M,
+  // cache read $0.05/1M). Unpinned — routes across Chutes fp8 ($0.40/$3.00) and
+  // AkashML bf16 ($0.45/$3.20), both tool-capable. No cache-write premium →
+  // cacheWrite = input (inert).
+  qwen38:       { input: 0.45e-6,    cachedInput: 0.05e-6,  cacheWrite: 0.45e-6,   output: 3.2e-6 },
   deepseek:     { input: 0.435e-6,  cachedInput: 0.003625e-6, cacheWrite: 0.435e-6, output: 0.87e-6 }, // deepseek-v4-pro
   // deepseek-v4-flash, OpenRouter 2026-07-21. No cache-write premium → cacheWrite = input (inert).
   deepseekflash: { input: 0.0938e-6, cachedInput: 0.01876e-6, cacheWrite: 0.0938e-6, output: 0.1876e-6 },
@@ -188,6 +205,8 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
 
 /** By Harbor model ID (provider/name). Aliased to MODEL_PRICING entries. */
 export const HARBOR_MODEL_PRICING: Record<string, string> = {
+  'anthropic/claude-fable-5-1[1m]':    'fable51',
+  'anthropic/claude-fable-5-1':        'fable51',
   'anthropic/claude-fable-5[1m]':      'fable-5',
   'anthropic/claude-fable-5':          'fable-5',
   // NOTE: opus5-fast shares this model id — postprocess-costs overrides the
@@ -228,6 +247,7 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   // glm52-wandb row shares the model ID so it can't be keyed here — its
   // adapter declares endpoint cost, so OpenCode-native cost_usd is correct.
   'openrouter/z-ai/glm-5.2':           'glm52',
+  'zai-coding-plan/glm-5.3':           'glm53',
   'openrouter/google/gemma-4-31b-it':  'gemma4',
   'openrouter/openai/gpt-oss-120b':    'gptoss120b',
   'openrouter/moonshotai/kimi-k2.5':   'kimi',
@@ -235,6 +255,7 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'openrouter/qwen/qwen3-max':         'qwen3max',
   'openrouter/qwen/qwen3.7-max':       'qwen37max',
   'openrouter/qwen/qwen3.8-max':       'qwen38max',
+  'openrouter/qwen/qwen3.8-27b':       'qwen38',
   'openrouter/deepseek/deepseek-v4-pro': 'deepseek',
   'openrouter/deepseek/deepseek-v4-flash': 'deepseekflash',
   'openrouter/deepseek/deepseek-v4-flash-0731': 'deepseekflash0731',
