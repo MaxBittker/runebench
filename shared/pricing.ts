@@ -112,6 +112,10 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // gemini-3.7-flash, launched 2026-08-13 (models.dev) — halves 3.6 Flash's
   // rates ($0.75/$3.75, cache read $0.075). Same OpenCode-native cost note.
   gemini37flash:     { input: 0.75e-6, cachedInput: 0.075e-6, cacheWrite: 0.75e-6, output: 3.75e-6 },
+  // gemini-3.8-flash, launched 2026-09-02 — same rate card as 3.7 Flash
+  // (models.dev + OpenRouter). Run via OpenRouter (Google first-party
+  // endpoints), OpenCode-native cost; entry for display/backfill parity.
+  gemini38flash:     { input: 0.75e-6, cachedInput: 0.075e-6, cacheWrite: 0.75e-6, output: 3.75e-6 },
   gemini35flashlite: { input: 0.3e-6, cachedInput: 0.03e-6, cacheWrite: 0.3e-6, output: 2.5e-6 },
   glm:          { input: 0.72e-6,   cachedInput: 0,        cacheWrite: 0.72e-6,   output: 2.3e-6 },
   glm52:        { input: 1.4e-6,    cachedInput: 0,        cacheWrite: 1.4e-6,    output: 4.4e-6 }, // z-ai/glm-5.2, OpenRouter 2026-06-16
@@ -127,6 +131,9 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // update BOTH when z.ai publishes real 5.3 rates (then re-run
   // postprocess-costs --force --models glm53 + re-extract).
   glm53:        { input: 1.4e-6,    cachedInput: 0.26e-6,  cacheWrite: 1.4e-6,    output: 4.4e-6 },
+  // z-ai/glm-5.3-flash via OpenRouter (Z.AI endpoint), listed 2026-08-26:
+  // $0.075/$0.25 per 1M, cache read $0.015. OpenCode-native cost.
+  glm53flash:   { input: 0.075e-6,  cachedInput: 0.015e-6, cacheWrite: 0.075e-6,  output: 0.25e-6 },
   // google/gemma-4-31b-it pinned to Cerebras fp16, OpenRouter 2026-07-17 (cache read = full
   // input price). Friendli was the original pick but its endpoint rejects tool calls.
   gemma4:       { input: 0.99e-6,   cachedInput: 0.99e-6,  cacheWrite: 0.99e-6,   output: 1.49e-6 },
@@ -237,6 +244,7 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'google/gemini-3.5-flash':           'gemini35flash',
   'google/gemini-3.6-flash':           'gemini36flash',
   'google/gemini-3.7-flash':           'gemini37flash',
+  'openrouter/google/gemini-3.8-flash': 'gemini38flash',
   'google/gemini-3.5-flash-lite':      'gemini35flashlite',
   'gemini/gemini-3-pro-preview':       'gemini',
   'gemini/gemini-3.1-pro-preview':     'gemini31',
@@ -248,6 +256,7 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   // adapter declares endpoint cost, so OpenCode-native cost_usd is correct.
   'openrouter/z-ai/glm-5.2':           'glm52',
   'zai-coding-plan/glm-5.3':           'glm53',
+  'openrouter/z-ai/glm-5.3-flash':     'glm53flash',
   'openrouter/google/gemma-4-31b-it':  'gemma4',
   'openrouter/openai/gpt-oss-120b':    'gptoss120b',
   'openrouter/moonshotai/kimi-k2.5':   'kimi',

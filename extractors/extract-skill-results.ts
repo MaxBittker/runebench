@@ -32,7 +32,7 @@ const RESULTS_ROOT = join(import.meta.dir, '..', 'results');
 // Longer keys MUST precede the keys they contain — detectModel is first-match-wins.
 // Opus 5 effort variants must precede the bare 'opus5' (high = default, no suffix).
 const KNOWN_MODELS = ['opus5-xhigh', 'opus5-low', 'opus5-medium',
-  'fable51-xhigh', 'fable51', 'fable-5-xhigh', 'fable-5', 'opus5-fast', 'opus5', 'opus48-max', 'opus48', 'opus47-xhigh', 'opus47', 'opus', 'opus45', 'sonnet5-xhigh', 'sonnet5', 'sonnet46', 'sonnet45', 'haiku', 'codex53', 'gpt56terra-xhigh', 'gpt56terra-fast', 'gpt56terra', 'gpt56luna-xhigh', 'gpt56luna-fast', 'gpt56luna', 'gpt56-xhigh', 'gpt56-fast', 'gpt56', 'gpt55-apikey', 'gpt55', 'gpt54mini', 'gpt54nano', 'gpt54', 'gemini31', 'gemini37flash', 'gemini36flash', 'gemini35flashlite', 'gemini35flash-high', 'gemini35flash', 'geminiflash', 'gemini', 'glm53', 'glm52-wandb', 'glm52', 'glm', 'gemma4', 'gptoss120b', 'kimi3-low', 'kimi3', 'kimi27', 'kimi26', 'kimi', 'deepseekflash0731', 'deepseekflash', 'deepseek', 'qwen38max', 'qwen38', 'qwen37max', 'qwen3max', 'qwen35', 'grok46-xhigh', 'grok46-medium', 'grok46', 'grok45-medium', 'grok45', 'grok43', 'inkling', 'laguna', 'muse12', 'muse'];
+  'fable51-xhigh', 'fable51', 'fable-5-xhigh', 'fable-5', 'opus5-fast', 'opus5', 'opus48-max', 'opus48', 'opus47-xhigh', 'opus47', 'opus', 'opus45', 'sonnet5-xhigh', 'sonnet5', 'sonnet46', 'sonnet45', 'haiku', 'codex53', 'gpt56terra-xhigh', 'gpt56terra-fast', 'gpt56terra', 'gpt56luna-xhigh', 'gpt56luna-fast', 'gpt56luna', 'gpt56-xhigh', 'gpt56-fast', 'gpt56', 'gpt55-apikey', 'gpt55', 'gpt54mini', 'gpt54nano', 'gpt54', 'gemini31', 'gemini38flash', 'gemini37flash', 'gemini36flash', 'gemini35flashlite', 'gemini35flash-high', 'gemini35flash', 'geminiflash', 'gemini', 'glm53flash', 'glm53', 'glm52-wandb', 'glm52', 'glm', 'gemma4', 'gptoss120b', 'kimi3-low', 'kimi3', 'kimi27', 'kimi26', 'kimi', 'deepseekflash0731', 'deepseekflash', 'deepseek', 'qwen38max', 'qwen38', 'qwen37max', 'qwen3max', 'qwen35', 'grok46-xhigh', 'grok46-medium', 'grok46', 'grok45-medium', 'grok45', 'grok43', 'inkling', 'laguna', 'muse12', 'muse'];
 
 const KNOWN_SKILLS = [
   'attack', 'defence', 'strength', 'hitpoints', 'ranged', 'prayer', 'magic',
@@ -476,6 +476,7 @@ for (const dir of jobDirs) {
   let model = detectModel(jobName, KNOWN_MODELS);
   if (model === 'unknown') model = detectModelFromConfig(dir, KNOWN_MODELS, {
     preMatch: (lower) => {
+      if (lower.includes('gemini-3.8-flash') || lower.includes('gemini-3_8_flash')) return 'gemini38flash';
       if (lower.includes('gemini-3.7-flash') || lower.includes('gemini-3_7_flash')) return 'gemini37flash';
       if (lower.includes('gemini-3.6-flash') || lower.includes('gemini-3_6_flash')) return 'gemini36flash';
       if (lower.includes('gemini-3.5-flash-lite') || lower.includes('gemini-3_5_flash_lite')) return 'gemini35flashlite';

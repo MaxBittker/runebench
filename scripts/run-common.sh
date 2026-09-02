@@ -70,6 +70,14 @@ configure_model_env() {
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'glm52wandb_adapter:Glm52WandbOpenCode'"
       ;;
+    glm53flash-opencode)
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'glm53flash_adapter:Glm53FlashOpenCode'"
+      ;;
     glm53-opencode)
       # z.ai GLM Coding Plan direct (api.z.ai/api/coding/paas/v4) — needs ZHIPU_API_KEY.
       if [ -z "${ZHIPU_API_KEY:-}" ]; then
@@ -263,6 +271,16 @@ configure_model_env() {
       fi
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'grok45_adapter:Grok45MediumOpenCode'"
+      ;;
+    gemini38flash-opencode)
+      # OpenRouter (Google first-party endpoints) — Google API keys were all
+      # invalid on launch day, see agents/gemini38flash_adapter.py.
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'gemini38flash_adapter:Gemini38FlashOpenCode'"
       ;;
     gemini37flash-opencode)
       # Google API direct (not OpenRouter) — needs GEMINI_API_KEY.
