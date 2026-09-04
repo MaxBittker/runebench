@@ -32,6 +32,7 @@ codex|openai/gpt-5.4|gpt54
 codex|openai/gpt-5.4-mini|gpt54mini
 codex|openai/gpt-5.4-nano|gpt54nano
 codex|openai/gpt-5.5|gpt55
+codex|openai/gpt-6-astra|gpt6astra
 codex|openai/gpt-5.6-sol|gpt56
 codex|openai/gpt-5.6-sol|gpt56-xhigh
 codex|openai/gpt-5.6-sol|gpt56-fast
@@ -77,6 +78,7 @@ grok45-medium-opencode|openrouter/x-ai/grok-4.5|grok45-medium
 grok43-opencode|openrouter/x-ai/grok-4.3|grok43
 muse-opencode|meta/muse-spark-1.1|muse
 muse12-opencode|meta/muse-spark-1.2-contributor|muse12
+muse13-opencode|openrouter/meta/muse-spark-1.3-contributor|muse13
 inkling-opencode|openrouter/thinkingmachines/inkling|inkling
 laguna-opencode|openrouter/poolside/laguna-s-2.1|laguna
 
@@ -99,7 +101,7 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
       echo "Usage: run-skills-30m.sh [-m model] [-s skill] [-k trials]"
       echo ""
-      echo "Models: opus47, opus, opus45, sonnet5, sonnet46, sonnet45, haiku, codex, codex53, gpt55, gpt56, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, gemini35flash, gemini35flash-high, glm, kimi, qwen35 (default: all)"
+      echo "Models: opus47, opus, opus45, sonnet5, sonnet46, sonnet45, haiku, codex, codex53, gpt55, gpt6astra, gpt56, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, gemini35flash, gemini35flash-high, glm, kimi, qwen35 (default: all)"
       echo "Skills: attack, defence, strength, hitpoints, ranged, prayer, magic,"
       echo "        woodcutting, fishing, mining, cooking, fletching, crafting,"
       echo "        smithing, firemaking, thieving (default: all sixteen)"
@@ -135,7 +137,7 @@ TOTAL_FAILED=0
 for model_name in $SELECTED_MODELS; do
   entry=$(lookup_model "$model_name" "$ALL_MODELS")
   if [ -z "$entry" ]; then
-    echo "Unknown model: $model_name (available: opus, opus45, sonnet46, sonnet45, haiku, codex, codex53, gpt55, gpt56, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, gemini35flash, gemini35flash-high, glm, kimi, qwen35)"
+    echo "Unknown model: $model_name (available: opus, opus45, sonnet46, sonnet45, haiku, codex, codex53, gpt55, gpt6astra, gpt56, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, gemini35flash, gemini35flash-high, glm, kimi, qwen35)"
     exit 1
   fi
 
@@ -163,7 +165,9 @@ for model_name in $SELECTED_MODELS; do
       # Requires fast mode enabled for the org in Console (Claude Code preferences).
       MODEL_EXTRA_ARGS="--ak fast_mode=true"
       ;;
-    codex|codex53|gpt55|gpt56|gpt56luna|gpt56terra|gpt54|gpt54mini|gpt54nano)
+    codex|codex53|gpt55|gpt6astra|gpt56|gpt56luna|gpt56terra|gpt54|gpt54mini|gpt54nano)
+      # gpt6astra: harbor's codex default effort (high) — same as every other
+      # codex row, even though the CLI's own default for gpt-6-astra is medium.
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900"
       ;;
     gpt56-xhigh|gpt56luna-xhigh|gpt56terra-xhigh)
@@ -184,7 +188,7 @@ for model_name in $SELECTED_MODELS; do
     glm|glm52|glm52-wandb|glm53|glm53flash|gemma4|gptoss120b|kimi|kimi26|kimi27|kimi3|kimi3-low|qwen35|qwen3max|qwen37max|qwen38max|qwen38|deepseek|deepseekflash|deepseekflash0731|inkling|laguna|gemini38flash|gemini37flash|gemini36flash|gemini35flashlite)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1800"
       ;;
-    grok46|grok46-medium|grok46-xhigh|grok45|grok45-medium|grok43|muse|muse12)
+    grok46|grok46-medium|grok46-xhigh|grok45|grok45-medium|grok43|muse|muse12|muse13)
       # xAI blocks grok models for EU-origin requests (403 "not available in
       # your region") — pin the Modal sandbox to a US region so OpenRouter sees
       # a US client. Requires the sandbox_region patch in harbor's modal.py.
@@ -203,10 +207,12 @@ for model_name in $SELECTED_MODELS; do
       ;;
   esac
   # OAuth auth for codex-family models that need a ChatGPT session token
-  # instead of OPENAI_API_KEY (codex53 uses ~/.codex/auth.json; gpt55 uses
-  # the repo-local agents/auth.json).
+  # instead of OPENAI_API_KEY (codex53/gpt6astra use ~/.codex/auth.json; gpt55
+  # uses the repo-local agents/auth.json). codex_adapter shares ONE decoded
+  # tempfile across all -n trials; the access token must outlive the sweep
+  # (check exp: it is NOT refreshed inside the sandbox).
   CODEX_AUTH_FILE=""
-  if [ "$model_name" = "codex53" ]; then
+  if [ "$model_name" = "codex53" ] || [ "$model_name" = "gpt6astra" ]; then
     CODEX_AUTH_FILE="$HOME/.codex/auth.json"
   elif [ "$model_name" = "gpt55" ]; then
     CODEX_AUTH_FILE="$REPO_ROOT/agents/auth.json"

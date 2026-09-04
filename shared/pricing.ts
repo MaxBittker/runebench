@@ -80,6 +80,11 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // introduces a 1.25× cache-write premium (inert unless usage reports a write
   // bucket). xhigh variants share the base rate card — higher effort just
   // emits more reasoning tokens (billed as output).
+  // gpt-6-astra, released 2026-09-03 (openai.com/index/gpt-6-astra). $10/$50,
+  // cache read $1 (0.1x), cache write $12.50 (1.25x). Requests >272K input
+  // tokens reprice the WHOLE request 2x in / 1.5x out — not modelled here
+  // (codex compaction keeps the benchmark well under it). Fast tier = 2x.
+  gpt6astra:    { input: 10e-6,   cachedInput: 1e-6,     cacheWrite: 12.5e-6,  output: 50e-6 },
   gpt56:        { input: 5e-6,    cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,  output: 30e-6 },
   'gpt56-xhigh': { input: 5e-6,   cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,  output: 30e-6 },
   gpt56terra:   { input: 2e-6,    cachedInput: 0.2e-6,   cacheWrite: 2.5e-6,   output: 12e-6 },
@@ -195,6 +200,12 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // (declared in opencode.json → OpenCode reports standard-rate cost_usd
   // natively for future runs; the 2026-08-12 job was repriced in place).
   muse12:       { input: 1.25e-6,   cachedInput: 0.15e-6,  cacheWrite: 1.25e-6,   output: 4.25e-6 },
+  // muse-spark-1.3-contributor via OpenRouter (single Meta endpoint), 2026-09-03.
+  // Same display decision as muse12: contributor tier actually bills
+  // $0.10/$0.20 (cache read $0.002); shown at the muse-spark-1.3 STANDARD list
+  // price ($1.25/$4.25, cache read $0.15 — unchanged since 1.1). Keep in sync
+  // with the per-1M `cost` block in agents/muse_adapter.py.
+  muse13:       { input: 1.25e-6,   cachedInput: 0.15e-6,  cacheWrite: 1.25e-6,   output: 4.25e-6 },
   // thinkingmachines/inkling, OpenRouter (Together endpoint, the model's only
   // provider) 2026-07-21. No cache-write premium → cacheWrite = input (inert).
   // Keep in sync with the per-1M `cost` block in agents/inkling_adapter.py —
@@ -234,6 +245,7 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'openai/gpt-5.4-mini':               'gpt54mini',
   'openai/gpt-5.4-nano':               'gpt54nano',
   'openai/gpt-5.5':                    'gpt55',
+  'openai/gpt-6-astra':                'gpt6astra',
   'openai/gpt-5.6-sol':                'gpt56',
   'openai/gpt-5.6':                    'gpt56', // alias — routes to Sol
   'openai/gpt-5.6-terra':              'gpt56terra',
@@ -276,6 +288,7 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'openrouter/x-ai/grok-4.3':          'grok43',
   'openrouter/meta/muse-spark-1.1':    'muse',
   'meta/muse-spark-1.2-contributor':   'muse12',
+  'openrouter/meta/muse-spark-1.3-contributor': 'muse13',
   'meta/muse-spark-1.1':               'muse',
   'openrouter/thinkingmachines/inkling': 'inkling',
   'openrouter/poolside/laguna-s-2.1':  'laguna',

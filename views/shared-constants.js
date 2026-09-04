@@ -45,6 +45,7 @@ const MODEL_CONFIG = {
   'haiku':    { displayName: 'Claude Haiku 4.5',   shortName: 'Haiku 4.5',  color: '#e06090', order: 7, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2025-10-15' },
   'codex':    { displayName: 'Codex CLI 5.2',       shortName: 'Codex 5.2', color: '#10a37f', order: 8, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2025-12-11' },
   'codex53':  { displayName: 'Codex CLI 5.3',       shortName: 'Codex 5.3', color: '#0d8c6b', order: 9, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-02-05' },
+  'gpt6astra': { displayName: 'GPT-6 Astra',          shortName: 'GPT-6 Astra', color: '#012a1c', order: 9.3, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-09-03' },
   'gpt56':    { displayName: 'GPT-5.6 Sol',          shortName: 'GPT-5.6 Sol', color: '#044f36', order: 9.4, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-07-09' },
   'gpt56-xhigh': { displayName: 'GPT-5.6 Sol xhigh', shortName: 'GPT-5.6 Sol xh', color: '#022c1e', order: 9.42, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-07-09' },
   'gpt56-fast': { displayName: 'GPT-5.6 Sol fast',   shortName: 'GPT-5.6 Sol fast', color: '#2f7f63', order: 9.425, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-07-09' },
@@ -86,6 +87,7 @@ const MODEL_CONFIG = {
   'grok43':   { displayName: 'Grok 4.3',        shortName: 'Grok 4.3',    color: '#8a8a8a', order: 16.2, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-04-17' },
   'muse':     { displayName: 'Muse Spark 1.1',  shortName: 'Muse Spark',  color: '#0064e0', order: 18, icon: VIEWS_BASE + 'model-icons/meta.svg', releaseDate: '2026-07-09' },
   'muse12':   { displayName: 'Muse Spark 1.2', shortName: 'Muse Spark 1.2', color: '#003f8c', order: 17.9, icon: VIEWS_BASE + 'model-icons/meta.svg', releaseDate: '2026-08-05' },
+  'muse13':   { displayName: 'Muse Spark 1.3', shortName: 'Muse Spark 1.3', color: '#4c8ff0', order: 17.8, icon: VIEWS_BASE + 'model-icons/meta.svg', releaseDate: '2026-09-02' },
   'inkling':  { displayName: 'Inkling',         shortName: 'Inkling',     color: '#343a40', order: 17, icon: VIEWS_BASE + 'model-icons/thinkingmachines.png', releaseDate: '2026-07-15' },
   'laguna':   { displayName: 'Laguna S 2.1',    shortName: 'Laguna S',    color: '#0891b2', order: 19, icon: VIEWS_BASE + 'model-icons/poolside.png', releaseDate: '2026-07-20' },
 };

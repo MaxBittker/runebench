@@ -24,7 +24,7 @@ Usage with Harbor:
         -m 'openai/gpt-5.5' \\
         -p tasks/woodcutting-xp-30m
 
-    # OAuth auth (gpt-5.3-codex):
+    # OAuth auth (gpt-5.3-codex, gpt-6-astra):
     CODEX_AUTH_JSON_B64=$(base64 < ~/.codex/auth.json) \\
     PYTHONPATH=agents harbor run \\
         --agent-import-path 'codex_adapter:CodexWithTimeout' \\
@@ -33,9 +33,11 @@ Usage with Harbor:
         -p tasks/woodcutting-xp-30m
 """
 
+import atexit
 import base64
 import os
 import tempfile
+import threading
 
 from harbor.agents.installed.codex import Codex
 from harbor.environments.base import BaseEnvironment
@@ -48,6 +50,31 @@ def _truthy(value) -> bool:
     if isinstance(value, bool):
         return value
     return str(value).strip().lower() in ("1", "true", "yes", "on")
+
+
+_AUTH_TEMPFILE: str | None = None
+_AUTH_TEMPFILE_LOCK = threading.Lock()
+
+
+def _shared_auth_tempfile(auth_b64: str) -> str:
+    """Decode CODEX_AUTH_JSON_B64 once per process; delete at exit."""
+    global _AUTH_TEMPFILE
+    with _AUTH_TEMPFILE_LOCK:
+        if _AUTH_TEMPFILE and os.path.isfile(_AUTH_TEMPFILE):
+            return _AUTH_TEMPFILE
+        fd, path = tempfile.mkstemp(prefix="codex-auth-", suffix=".json")
+        try:
+            with os.fdopen(fd, "wb") as f:
+                f.write(base64.b64decode(auth_b64))
+        except Exception:
+            try:
+                os.unlink(path)
+            except OSError:
+                pass
+            raise
+        _AUTH_TEMPFILE = path
+        atexit.register(lambda: os.path.exists(path) and os.unlink(path))
+        return path
 
 
 class CodexWithTimeout(Codex):
@@ -91,7 +118,6 @@ class CodexWithTimeout(Codex):
         #   grep -l 'service_tier="fast"' jobs/<job>/*/trial.log | wc -l
         self._fast_mode = _truthy(fast_mode) if fast_mode is not None else False
         self._service_tier = service_tier or ("fast" if self._fast_mode else None)
-        self._auth_tempfile: str | None = None
 
     @staticmethod
     def name() -> str:
@@ -196,18 +222,12 @@ class CodexWithTimeout(Codex):
         auth_path_prev = os.environ.get("CODEX_AUTH_JSON_PATH")
         force_api_key_prev = os.environ.get("CODEX_FORCE_API_KEY")
         if auth_b64 and not auth_path_prev:
-            fd, path = tempfile.mkstemp(prefix="codex-auth-", suffix=".json")
-            try:
-                with os.fdopen(fd, "wb") as f:
-                    f.write(base64.b64decode(auth_b64))
-            except Exception:
-                try:
-                    os.unlink(path)
-                except OSError:
-                    pass
-                raise
-            os.environ["CODEX_AUTH_JSON_PATH"] = path
-            self._auth_tempfile = path
+            # One tempfile per PROCESS, shared by every concurrent trial and
+            # removed only at interpreter exit. The old per-run tempfile was
+            # unlinked in this instance's `finally`, which yanked it out from
+            # under trials that had not uploaded it yet (-n 16 →
+            # "CODEX_AUTH_JSON_PATH points to non-existent file").
+            os.environ["CODEX_AUTH_JSON_PATH"] = _shared_auth_tempfile(auth_b64)
         elif not auth_path_prev and force_api_key_prev is None:
             os.environ["CODEX_FORCE_API_KEY"] = "1"
 
@@ -231,13 +251,6 @@ class CodexWithTimeout(Codex):
                 )
             except Exception:
                 pass
-
-            if self._auth_tempfile:
-                try:
-                    os.unlink(self._auth_tempfile)
-                except OSError:
-                    pass
-                self._auth_tempfile = None
 
             # Restore CODEX_FORCE_API_KEY if we set it
             if force_api_key_prev is None and os.environ.get("CODEX_FORCE_API_KEY") == "1":
