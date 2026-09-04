@@ -31,6 +31,7 @@ kimi-opencode|openrouter/moonshotai/kimi-k2.5|kimi
 qwen35-opencode|openrouter/qwen/qwen3.5-35b-a3b|qwen35
 muse-opencode|meta/muse-spark-1.1|muse
 muse12-opencode|meta/muse-spark-1.2-contributor|muse12
+muse13-opencode|openrouter/meta/muse-spark-1.3-contributor|muse13
 
 "
 

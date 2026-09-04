@@ -3,6 +3,7 @@ Custom Harbor adapters for Meta Muse Spark.
 
 MuseSparkOpenCode        — muse-spark-1.1 via the Meta Model API direct.
 Muse12ContributorOpenCode — muse-spark-1.2-contributor via the Meta Model API direct.
+Muse13ContributorOpenRouter — muse-spark-1.3-contributor via OpenRouter (Meta endpoint).
 
 The muse row originally ran via OpenCode + OpenRouter; the 2026-08-12 Meta-API
 run replaced it (old jobs in jobs/_archive-muse-openrouter-20260813).
@@ -59,6 +60,47 @@ class Muse12ContributorOpenCode(OpenCodeAdapter):
         models = config["provider"]["meta"]["models"]
         models["muse-spark-1.2-contributor"] = {
             **models.get("muse-spark-1.2-contributor", {}),
+            "cost": {"input": 1.25, "output": 4.25, "cache_read": 0.15},
+        }
+        return config
+
+
+class Muse13ContributorOpenRouter(OpenCodeAdapter):
+    """muse-spark-1.3-contributor via OpenRouter (listed 2026-09-02).
+
+    Runs through OpenRouter rather than api.meta.ai per request. OpenRouter has
+    a single endpoint for this model (provider "Meta", tools supported, 1M ctx)
+    — pinned anyway so a future third-party host can't silently take over.
+    Needs the us-east sandbox pin: Meta 403s non-US clients ("only available
+    in the United States") exactly like the OpenRouter muse 1.1 run did.
+    """
+    _default_model = "openrouter/meta/muse-spark-1.3-contributor"
+    _log_prefix = "muse13"
+    _log_file = "opencode-muse13.txt"
+    _model_options = {
+        "provider": {
+            "order": ["meta"],
+            "allow_fallbacks": False,
+        }
+    }
+
+    @staticmethod
+    def name() -> str:
+        return "muse13-opencode"
+
+    def _build_opencode_config(self) -> dict:
+        """Pin the muse13 row's cost to the muse-spark-1.3 STANDARD rate card.
+
+        Same decision as muse12: the contributor tier bills $0.10/$0.20 per 1M
+        (cache read $0.002) for training-data consent, but the leaderboard
+        displays the standard list price ($1.25/$4.25, cache read $0.15 — the
+        same card as 1.1/1.2) so the row is comparable. Keep in sync with
+        'muse13' in shared/pricing.ts.
+        """
+        config = super()._build_opencode_config()
+        models = config["provider"]["openrouter"]["models"]
+        models["meta/muse-spark-1.3-contributor"] = {
+            **models.get("meta/muse-spark-1.3-contributor", {}),
             "cost": {"input": 1.25, "output": 4.25, "cache_read": 0.15},
         }
         return config

@@ -224,6 +224,15 @@ configure_model_env() {
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'muse_adapter:Muse12ContributorOpenCode'"
       ;;
+    muse13-opencode)
+      # muse-spark-1.3-contributor via OpenRouter (single Meta endpoint, pinned).
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'muse_adapter:Muse13ContributorOpenRouter'"
+      ;;
     grok46-medium-opencode)
       if [ -z "${OPENROUTER_API_KEY:-}" ]; then
         echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
