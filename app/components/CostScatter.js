@@ -7,6 +7,7 @@ import { makeLabelPlugin } from './scatter-labels.js';
 // label, so no "xh" text appears.
 const XH_TO_BASE = {
   'opus5-xhigh': 'opus5',
+  'gpt6astra-high': 'gpt6astra',
   'fable51-xhigh': 'fable51',
   'fable-5-xhigh': 'fable-5',
   'opus48-max': 'opus48',
