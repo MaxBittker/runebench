@@ -245,6 +245,8 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'openai/gpt-5.4-mini':               'gpt54mini',
   'openai/gpt-5.4-nano':               'gpt54nano',
   'openai/gpt-5.5':                    'gpt55',
+  // gpt6astra (medium, the CLI default) and gpt6astra-high share this model id
+  // and bill at identical rates, so one entry covers both rows.
   'openai/gpt-6-astra':                'gpt6astra',
   'openai/gpt-5.6-sol':                'gpt56',
   'openai/gpt-5.6':                    'gpt56', // alias — routes to Sol

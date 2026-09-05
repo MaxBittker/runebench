@@ -33,6 +33,7 @@ codex|openai/gpt-5.4-mini|gpt54mini
 codex|openai/gpt-5.4-nano|gpt54nano
 codex|openai/gpt-5.5|gpt55
 codex|openai/gpt-6-astra|gpt6astra
+codex|openai/gpt-6-astra|gpt6astra-high
 codex|openai/gpt-5.6-sol|gpt56
 codex|openai/gpt-5.6-sol|gpt56-xhigh
 codex|openai/gpt-5.6-sol|gpt56-fast
@@ -165,10 +166,15 @@ for model_name in $SELECTED_MODELS; do
       # Requires fast mode enabled for the org in Console (Claude Code preferences).
       MODEL_EXTRA_ARGS="--ak fast_mode=true"
       ;;
-    codex|codex53|gpt55|gpt6astra|gpt56|gpt56luna|gpt56terra|gpt54|gpt54mini|gpt54nano)
-      # gpt6astra: harbor's codex default effort (high) — same as every other
-      # codex row, even though the CLI's own default for gpt-6-astra is medium.
+    codex|codex53|gpt55|gpt6astra-high|gpt56|gpt56luna|gpt56terra|gpt54|gpt54mini|gpt54nano)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900"
+      ;;
+    gpt6astra)
+      # gpt-6-astra's own CLI default is medium (supported_reasoning_levels
+      # low..ultra in ~/.codex/models_cache.json), while harbor's codex default
+      # is high. Pin medium explicitly so the base row is the model's default
+      # thinking level; the high condition lives in the gpt6astra-high row.
+      MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900 --ak reasoning_effort=medium"
       ;;
     gpt56-xhigh|gpt56luna-xhigh|gpt56terra-xhigh)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900 --ak reasoning_effort=xhigh"
@@ -212,7 +218,7 @@ for model_name in $SELECTED_MODELS; do
   # tempfile across all -n trials; the access token must outlive the sweep
   # (check exp: it is NOT refreshed inside the sandbox).
   CODEX_AUTH_FILE=""
-  if [ "$model_name" = "codex53" ] || [ "$model_name" = "gpt6astra" ]; then
+  if [ "$model_name" = "codex53" ] || [ "${model_name%-high}" = "gpt6astra" ]; then
     CODEX_AUTH_FILE="$HOME/.codex/auth.json"
   elif [ "$model_name" = "gpt55" ]; then
     CODEX_AUTH_FILE="$REPO_ROOT/agents/auth.json"

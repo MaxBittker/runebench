@@ -46,6 +46,7 @@ const MODEL_CONFIG = {
   'codex':    { displayName: 'Codex CLI 5.2',       shortName: 'Codex 5.2', color: '#10a37f', order: 8, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2025-12-11' },
   'codex53':  { displayName: 'Codex CLI 5.3',       shortName: 'Codex 5.3', color: '#0d8c6b', order: 9, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-02-05' },
   'gpt6astra': { displayName: 'GPT-6 Astra',          shortName: 'GPT-6 Astra', color: '#012a1c', order: 9.3, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-09-03' },
+  'gpt6astra-high': { displayName: 'GPT-6 Astra high', shortName: 'GPT-6 Astra hi', color: '#0a5a3f', order: 9.31, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-09-03' },
   'gpt56':    { displayName: 'GPT-5.6 Sol',          shortName: 'GPT-5.6 Sol', color: '#044f36', order: 9.4, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-07-09' },
   'gpt56-xhigh': { displayName: 'GPT-5.6 Sol xhigh', shortName: 'GPT-5.6 Sol xh', color: '#022c1e', order: 9.42, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-07-09' },
   'gpt56-fast': { displayName: 'GPT-5.6 Sol fast',   shortName: 'GPT-5.6 Sol fast', color: '#2f7f63', order: 9.425, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-07-09' },
