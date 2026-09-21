@@ -80,6 +80,8 @@ const MODEL_CONFIG = {
   'qwen37max': { displayName: 'Qwen3.7 Max',    shortName: 'Qwen3.7 Max', color: '#4f46e5', order: 15.5, icon: VIEWS_BASE + 'model-icons/qwen.webp', releaseDate: '2026-05-21' },
   'qwen38max': { displayName: 'Qwen3.8 Max',    shortName: 'Qwen3.8 Max', color: '#3730a3', order: 15.6, icon: VIEWS_BASE + 'model-icons/qwen.webp', releaseDate: '2026-08-03' },
   'qwen38':   { displayName: 'Qwen3.8 27B',     shortName: 'Qwen3.8 27B', color: '#6366f1', order: 15.65, icon: VIEWS_BASE + 'model-icons/qwen.webp', releaseDate: '2026-08-14' },
+  'grok47':   { displayName: 'Grok 4.7',        shortName: 'Grok 4.7',    color: '#000000', order: 15.85, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-09-16' },
+  'grok47-xhigh': { displayName: 'Grok 4.7 xhigh', shortName: 'Grok 4.7 xhigh', color: '#2b2b2b', order: 15.86, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-09-16' },
   'grok46':   { displayName: 'Grok 4.6',        shortName: 'Grok 4.6',    color: '#000000', order: 15.9, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-08-10' },
   'grok46-medium': { displayName: 'Grok 4.6 medium', shortName: 'Grok 4.6 med', color: '#4a4a4a', order: 15.91, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-08-10' },
   'grok46-xhigh': { displayName: 'Grok 4.6 xhigh', shortName: 'Grok 4.6 xhigh', color: '#2b2b2b', order: 15.92, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-08-10' },
