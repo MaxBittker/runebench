@@ -41,6 +41,14 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // Fable 5.1 (claude-fable-5-1, 2026-09-01): same $10/$50 tier as Fable 5; cache
   // reads dropped to $0.25/M (0.025×). 5-min cache write stays 1.25× input.
   fable51:      { input: 10e-6,   cachedInput: 0.25e-6,  cacheWrite: 12.5e-6,  output: 50e-6 },
+  // Opus 5.5 (claude-opus-5-5, GA 2026-09-22): $4/M input, $20/M output, cache
+  // read $0.20/M (0.05×). The opus55 / opus55-xhigh rows are the 2026-09-18
+  // pre-GA runs of the same model via subscription OAuth (1h cache bucket), so
+  // cacheWrite is the 1h rate $8/M (2×). An API-key run (5-min bucket) would be
+  // $5/M (1.25×) — split the key if one is ever added. postprocess-costs maps
+  // these job dirs here off the '-opus55-' token (the harbor model id is the
+  // pre-release id).
+  opus55:       { input: 4e-6,    cachedInput: 0.2e-6,   cacheWrite: 8e-6,     output: 20e-6 },
   // Opus 5, launched 2026-07-24: standard $5/$25 (same rate card as 4.8).
   // Fast mode (2.5x speed) is 2x base: $10/$50; cache multipliers apply on the
   // fast rates (read 0.1x, 5-min write 1.25x). Fast runs share the harbor model
@@ -234,6 +242,8 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'anthropic/claude-fable-5':          'fable-5',
   // NOTE: opus5-fast shares this model id — postprocess-costs overrides the
   // pricing key from the job-dir name for '-opus5-fast-' runs.
+  'anthropic/claude-opus-5-5[1m]':     'opus55',
+  'anthropic/claude-opus-5-5':         'opus55',
   'anthropic/claude-opus-5':           'opus5',
   'anthropic/claude-opus-4-8':         'opus48',
   'anthropic/claude-opus-4-7':         'opus47',

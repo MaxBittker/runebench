@@ -113,7 +113,10 @@ function processTrialDir(trialDir: string) {
   // model id — the job-dir name token is the only signal.
   //   opus5-fast      — fast mode is 2x the standard claude-opus-5 rates.
   //   gpt56*-fast     — codex service_tier="fast" (premium-speed serving).
+  //   opus55(-xhigh)  — 2026-09-18 pre-GA runs of claude-opus-5-5 under its
+  //                     pre-release harbor id; priced at the GA rate card.
   if (/[/-]opus5-fast-/.test(trialDir)) modelName = 'opus5-fast';
+  if (/[/-]opus55(?:-xhigh)?-\d{8}-/.test(trialDir)) modelName = 'opus55';
   const gpt56Fast = /[/-](gpt56(?:terra|luna)?)-fast-/.exec(trialDir);
   if (gpt56Fast) modelName = `${gpt56Fast[1]}-fast`;
 

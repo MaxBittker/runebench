@@ -21,6 +21,9 @@ const MODEL_CONFIG = {
   'fable51-xhigh': { displayName: 'Claude Fable 5.1 xhigh', shortName: 'Fable 5.1 xh', color: '#a8582a', order: 0.07, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-09-01' },
   'fable-5':   { displayName: 'Claude Fable 5',   shortName: 'Fable 5',    color: '#c2703e', order: 0.1, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-06-09' },
   'fable-5-xhigh': { displayName: 'Claude Fable 5 xhigh', shortName: 'Fable 5 xh', color: '#9c5226', order: 0.12, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-06-09' },
+  // Opus 5.5 (claude-opus-5-5, GA 2026-09-22) — API-key run via scripts/run-opus55-30m.sh.
+  'opus55':    { displayName: 'Claude Opus 5.5', shortName: 'Opus 5.5', color: '#8c5a2b', order: 0.2, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-09-22' },
+  'opus55-xhigh': { displayName: 'Claude Opus 5.5 xhigh', shortName: 'Opus 5.5 xh', color: '#6b421c', order: 0.22, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-09-22' },
   'opus5-fast': { displayName: 'Claude Opus 5 fast', shortName: 'Opus 5 fast', color: '#5c4020', order: 0.24, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-07-24' },
   'opus5':    { displayName: 'Claude Opus 5',     shortName: 'Opus 5',      color: '#8a6a3f', order: 0.26, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-07-24' },
   'opus5-xhigh': { displayName: 'Claude Opus 5 xhigh', shortName: 'Opus 5 xh', color: '#7a4a2b', order: 0.27, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-07-24' },
