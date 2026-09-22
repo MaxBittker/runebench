@@ -8,7 +8,6 @@ import { makeLabelPlugin } from './scatter-labels.js';
 const XH_TO_BASE = {
   'opus5-xhigh': 'opus5',
   'gpt6astra-high': 'gpt6astra',
-  'gpt6sol-high': 'gpt6sol',
   'gpt6luna-high': 'gpt6luna',
   'fable51-xhigh': 'fable51',
   'fable-5-xhigh': 'fable-5',
@@ -21,6 +20,12 @@ const XH_TO_BASE = {
 // Models intentionally hidden from the cost scatter (older points that clutter
 // the frontier without adding signal).
 const EXCLUDED = new Set(['sonnet45', 'gemini', 'opus45', 'kimi26', 'muse', 'codex53', 'qwen3max', 'qwen37max', 'gpt55', 'gpt55-apikey', 'gptoss120b']);
+
+// By default only models released within this many days of the newest
+// release on the board are plotted; the "show older" toggle brings the rest
+// back. Anchored to the newest release (not today) so the view doesn't drift
+// empty between runs. Models with no releaseDate are always shown.
+const RECENT_WINDOW_DAYS = 90;
 
 // Reuse the same per-model aggregation as CostTable: log-average performance
 // (⟨ln⟩ of peak XP/min across the 16 skills) vs. average API cost per run.
@@ -51,8 +56,10 @@ function buildRows(data) {
 
     if (rateCount === 0 || runsWithCost === 0) continue;
 
+    const releaseMs = Date.parse(MODEL_CONFIG[key].releaseDate);
     out.push({
       key,
+      releaseMs: Number.isNaN(releaseMs) ? null : releaseMs,
       logMean: logSum / rateCount,
       avgCost: totalCost / runsWithCost,
     });
@@ -144,12 +151,26 @@ export function CostScatter({ data }) {
   const canvasRef = useRef(null);
   const chartInstance = useRef(null);
   const [frontierOnly, setFrontierOnly] = useState(false);
+  const [showOlder, setShowOlder] = useState(false);
   // Session-local set of models hidden by clicking their point — not
   // persisted anywhere, a reload brings everything back.
   const [hidden, setHidden] = useState(() => new Set());
 
   const allRows = useMemo(() => buildRows(data), [data]);
-  const rows = useMemo(() => allRows.filter((r) => !hidden.has(r.key)), [allRows, hidden]);
+  const cutoffMs = useMemo(() => {
+    const dates = allRows.map((r) => r.releaseMs).filter((ms) => ms != null);
+    return dates.length ? Math.max(...dates) - RECENT_WINDOW_DAYS * 86400000 : -Infinity;
+  }, [allRows]);
+  const olderCount = useMemo(
+    () => allRows.filter((r) => r.releaseMs != null && r.releaseMs < cutoffMs).length,
+    [allRows, cutoffMs]
+  );
+  const rows = useMemo(
+    () => allRows.filter((r) =>
+      !hidden.has(r.key) && (showOlder || r.releaseMs == null || r.releaseMs >= cutoffMs)
+    ),
+    [allRows, hidden, showOlder, cutoffMs]
+  );
   const frontier = useMemo(() => paretoKeys(rows), [rows]);
 
   useEffect(() => {
@@ -357,17 +378,30 @@ export function CostScatter({ data }) {
             restore ${hidden.size} hidden
           </a>
         `}
-        <label
-          className="checkbox"
+        <div
           style=${{
             position: 'absolute',
             right: 0,
             top: '50%',
             transform: 'translateY(-50%)',
+            display: 'flex',
+            gap: '0.9em',
             fontSize: '0.8rem',
             color: '#666',
           }}
         >
+        ${olderCount > 0 && html`
+          <label className="checkbox">
+            <input
+              type="checkbox"
+              checked=${showOlder}
+              onChange=${(e) => setShowOlder(e.target.checked)}
+              style=${{ marginRight: '0.35em' }}
+            />
+            Show older (${olderCount})
+          </label>
+        `}
+        <label className="checkbox">
           <input
             type="checkbox"
             checked=${frontierOnly}
@@ -376,6 +410,7 @@ export function CostScatter({ data }) {
           />
           Pareto frontier
         </label>
+        </div>
       </div>
       <div style=${{ position: 'relative', height: '480px' }}>
         <canvas ref=${canvasRef}></canvas>
