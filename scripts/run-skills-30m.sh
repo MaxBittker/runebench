@@ -34,6 +34,10 @@ codex|openai/gpt-5.4-nano|gpt54nano
 codex|openai/gpt-5.5|gpt55
 codex|openai/gpt-6-astra|gpt6astra
 codex|openai/gpt-6-astra|gpt6astra-high
+codex|openai/gpt-6-sol|gpt6sol
+codex|openai/gpt-6-sol|gpt6sol-high
+codex|openai/gpt-6-luna|gpt6luna
+codex|openai/gpt-6-luna|gpt6luna-high
 codex|openai/gpt-5.6-sol|gpt56
 codex|openai/gpt-5.6-sol|gpt56-xhigh
 codex|openai/gpt-5.6-sol|gpt56-fast
@@ -105,7 +109,7 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
       echo "Usage: run-skills-30m.sh [-m model] [-s skill] [-k trials]"
       echo ""
-      echo "Models: opus47, opus, opus45, sonnet5, sonnet46, sonnet45, haiku, codex, codex53, gpt55, gpt6astra, gpt56, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, gemini35flash, gemini35flash-high, glm, kimi, qwen35 (default: all)"
+      echo "Models: opus47, opus, opus45, sonnet5, sonnet46, sonnet45, haiku, codex, codex53, gpt55, gpt6astra, gpt6sol, gpt6luna, gpt56, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, gemini35flash, gemini35flash-high, glm, kimi, qwen35 (default: all)"
       echo "Skills: attack, defence, strength, hitpoints, ranged, prayer, magic,"
       echo "        woodcutting, fishing, mining, cooking, fletching, crafting,"
       echo "        smithing, firemaking, thieving (default: all sixteen)"
@@ -141,7 +145,7 @@ TOTAL_FAILED=0
 for model_name in $SELECTED_MODELS; do
   entry=$(lookup_model "$model_name" "$ALL_MODELS")
   if [ -z "$entry" ]; then
-    echo "Unknown model: $model_name (available: opus, opus45, sonnet46, sonnet45, haiku, codex, codex53, gpt55, gpt6astra, gpt56, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, gemini35flash, gemini35flash-high, glm, kimi, qwen35)"
+    echo "Unknown model: $model_name (available: opus, opus45, sonnet46, sonnet45, haiku, codex, codex53, gpt55, gpt6astra, gpt6sol, gpt6luna, gpt56, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, gemini35flash, gemini35flash-high, glm, kimi, qwen35)"
     exit 1
   fi
 
@@ -169,14 +173,15 @@ for model_name in $SELECTED_MODELS; do
       # Requires fast mode enabled for the org in Console (Claude Code preferences).
       MODEL_EXTRA_ARGS="--ak fast_mode=true"
       ;;
-    codex|codex53|gpt55|gpt6astra-high|gpt56|gpt56luna|gpt56terra|gpt54|gpt54mini|gpt54nano)
+    codex|codex53|gpt55|gpt6astra-high|gpt6sol-high|gpt6luna-high|gpt56|gpt56luna|gpt56terra|gpt54|gpt54mini|gpt54nano)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900"
       ;;
-    gpt6astra)
-      # gpt-6-astra's own CLI default is medium (supported_reasoning_levels
-      # low..ultra in ~/.codex/models_cache.json), while harbor's codex default
-      # is high. Pin medium explicitly so the base row is the model's default
-      # thinking level; the high condition lives in the gpt6astra-high row.
+    gpt6astra|gpt6sol|gpt6luna)
+      # The GPT-6 family's own CLI default is medium (default_reasoning_level
+      # in ~/.codex/models_cache.json for astra/sol/luna), while harbor's codex
+      # default is high. Pin medium explicitly so the base row is the model's
+      # default thinking level; the one-step-up condition (high, which is
+      # also harbor's default) lives in the matching -high row.
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900 --ak reasoning_effort=medium"
       ;;
     gpt56-xhigh|gpt56luna-xhigh|gpt56terra-xhigh)
@@ -216,16 +221,17 @@ for model_name in $SELECTED_MODELS; do
       ;;
   esac
   # OAuth auth for codex-family models that need a ChatGPT session token
-  # instead of OPENAI_API_KEY (codex53/gpt6astra use ~/.codex/auth.json; gpt55
+  # instead of OPENAI_API_KEY (codex53/gpt6* use ~/.codex/auth.json; gpt55
   # uses the repo-local agents/auth.json). codex_adapter shares ONE decoded
   # tempfile across all -n trials; the access token must outlive the sweep
   # (check exp: it is NOT refreshed inside the sandbox).
   CODEX_AUTH_FILE=""
-  if [ "$model_name" = "codex53" ] || [ "${model_name%-high}" = "gpt6astra" ]; then
-    CODEX_AUTH_FILE="$HOME/.codex/auth.json"
-  elif [ "$model_name" = "gpt55" ]; then
-    CODEX_AUTH_FILE="$REPO_ROOT/agents/auth.json"
-  fi
+  case "$model_name" in
+    codex53|gpt6astra|gpt6astra-high|gpt6sol|gpt6sol-high|gpt6luna|gpt6luna-high)
+      CODEX_AUTH_FILE="$HOME/.codex/auth.json" ;;
+    gpt55)
+      CODEX_AUTH_FILE="$REPO_ROOT/agents/auth.json" ;;
+  esac
   if [ -n "$CODEX_AUTH_FILE" ]; then
     if [ ! -f "$CODEX_AUTH_FILE" ]; then
       echo "  WARNING: $CODEX_AUTH_FILE not found, skipping $model_name (OAuth required)"

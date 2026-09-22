@@ -9,6 +9,8 @@ import { makeLabelPlugin } from './scatter-labels.js';
 const XH_TO_BASE = {
   'opus5-xhigh': 'opus5',
   'gpt6astra-high': 'gpt6astra',
+  'gpt6sol-high': 'gpt6sol',
+  'gpt6luna-high': 'gpt6luna',
   'fable51-xhigh': 'fable51',
   'fable-5-xhigh': 'fable-5',
   'opus48-max': 'opus48',
