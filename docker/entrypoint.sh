@@ -97,7 +97,8 @@ start_bot
 
 # ── Skill tracker (runs for full container lifetime) ─────────
 echo "[entrypoint] Starting skill tracker..."
-mkdir -p /logs/tracking
+# Root-owned, world-readable, NOT agent-writable: this file is the score.
+mkdir -p /logs/tracking && chmod 755 /logs/tracking
 cd /app && TRACKING_FILE=/logs/tracking/skill_tracking.json \
   nohup bun run benchmark/shared/skill_tracker.ts > /logs/tracking/skill_tracker.log 2>&1 &
 TRACKER_PID=$!
@@ -181,16 +182,19 @@ while true; do
         bot_alive=false
     fi
 
-    # Check tracker — use lock file since agents may have killed and restarted it
+    # Check tracker. The lock lives in /run (root-only) so a non-root agent can't
+    # plant a fake one; only a root-owned lock with a live root pid is adopted.
     tracker_alive=true
-    if [ -f /tmp/skill_tracker.lock ]; then
-        lock_pid=$(cat /tmp/skill_tracker.lock 2>/dev/null)
-        if [ -n "$lock_pid" ] && kill -0 "$lock_pid" 2>/dev/null; then
-            TRACKER_PID=$lock_pid  # adopt agent-started tracker
+    if kill -0 $TRACKER_PID 2>/dev/null; then
+        :
+    elif [ -f /run/skill_tracker.lock ] && [ "$(stat -c %U /run/skill_tracker.lock 2>/dev/null)" = "root" ]; then
+        lock_pid=$(cat /run/skill_tracker.lock 2>/dev/null)
+        if [ -n "$lock_pid" ] && [ "$(ps -o user= -p "$lock_pid" 2>/dev/null | tr -d ' ')" = "root" ]; then
+            TRACKER_PID=$lock_pid
         else
             tracker_alive=false
         fi
-    elif ! kill -0 $TRACKER_PID 2>/dev/null; then
+    else
         tracker_alive=false
     fi
 

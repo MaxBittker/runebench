@@ -18,9 +18,9 @@ for i in $(seq 1 30); do
     sleep 1
 done
 
-# Ensure skill tracker is running
-if ! pgrep -f skill_tracker > /dev/null 2>&1; then
+# Ensure the ROOT-owned skill tracker is running (an agent-started look-alike doesn't count)
+if ! pgrep -u root -f skill_tracker > /dev/null 2>&1; then
     echo "[ensure-services] Starting skill tracker..."
-    mkdir -p /logs/tracking
+    mkdir -p /logs/tracking && chmod 755 /logs/tracking
     cd /app && TRACKING_FILE=/logs/tracking/skill_tracking.json nohup bun run benchmark/shared/skill_tracker.ts > /logs/tracking/skill_tracker.log 2>&1 &
 fi

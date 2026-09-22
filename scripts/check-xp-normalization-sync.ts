@@ -33,6 +33,20 @@ const DEFINES = new RegExp(
 );
 const REFERENCES = /XP_NORMALIZATION_DIVISOR/;
 
+// Peak-window floor: same value must be defined in every standalone copy and referenced
+// (not re-inlined) by the host-side consumers. See shared/extract-utils.ts.
+const MIN_PEAK_WINDOW_MS = 12000;
+const WINDOW_SITES = [
+  { path: 'shared/check_xp_rate.ts', kind: 'defines' },
+  { path: 'shared/check_skill_xp.ts', kind: 'defines' },
+  { path: 'shared/extract-utils.ts', kind: 'defines' },
+  { path: 'views/shared-constants.js', kind: 'defines' },
+  { path: 'extractors/extract-skill-results.ts', kind: 'references' },
+  { path: 'app/components/TrajectoryModal.js', kind: 'references' },
+] as const;
+const WINDOW_DEFINES = new RegExp(`MIN_PEAK_WINDOW_MS\\s*=\\s*${MIN_PEAK_WINDOW_MS}\\b`);
+const WINDOW_REFERENCES = /elapsedMs\s*>=\s*MIN_PEAK_WINDOW_MS|elapsedMs\s*<\s*MIN_PEAK_WINDOW_MS/;
+
 let failed = false;
 for (const { path, kind } of SITES) {
   let src: string;
@@ -52,6 +66,27 @@ for (const { path, kind } of SITES) {
             `If the divisor changed, change it in every 'defines' site: ` +
             SITES.filter(s => s.kind === 'defines').map(s => s.path).join(', ')
         : `FAIL ${path} — expected a reference to the shared XP_NORMALIZATION_DIVISOR`,
+    );
+    failed = true;
+  }
+}
+
+for (const { path, kind } of WINDOW_SITES) {
+  let src: string;
+  try {
+    src = readFileSync(join(ROOT, path), 'utf-8');
+  } catch {
+    console.error(`FAIL ${path} — file not found (update WINDOW_SITES)`);
+    failed = true;
+    continue;
+  }
+  if (kind === 'defines' ? WINDOW_DEFINES.test(src) : WINDOW_REFERENCES.test(src)) {
+    console.log(`ok   ${path} (MIN_PEAK_WINDOW_MS)`);
+  } else {
+    console.error(
+      kind === 'defines'
+        ? `FAIL ${path} — expected MIN_PEAK_WINDOW_MS = ${MIN_PEAK_WINDOW_MS}`
+        : `FAIL ${path} — peak loop must skip windows below MIN_PEAK_WINDOW_MS`,
     );
     failed = true;
   }

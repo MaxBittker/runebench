@@ -6,6 +6,9 @@ const VIEWS_BASE = window.VIEWS_BASE || '';
 // XP score normalization: raw server XP ÷ 8 (game speed) ÷ 25 (server xpRate) = real-game XP.
 // scripts/check-xp-normalization-sync.ts guards this against drift.
 const XP_NORMALIZATION_DIVISOR = 8 * 25;
+// Peak windows shorter than this are ignored (tracker cadence is 15s; shorter gaps are
+// restart artifacts). Mirrors shared/extract-utils.ts MIN_PEAK_WINDOW_MS.
+const MIN_PEAK_WINDOW_MS = 12000;
 
 // releaseDate (YYYY-MM-DD) sourced from https://models.dev/. xhigh variants
 // inherit their base model's date.
@@ -189,10 +192,13 @@ function extractPeakRatePoints(skillData, skill, horizonMinutes) {
     if (x > horizonMinutes) break;
 
     if (i > 0) {
-      const prev = samples[i - 1];
+      // window starts at the nearest earlier sample ≥ MIN_PEAK_WINDOW_MS back (i-1 normally)
+      let k = i - 1;
+      while (k > 0 && s.elapsedMs - samples[k].elapsedMs < MIN_PEAK_WINDOW_MS) k--;
+      const prev = samples[k];
       const deltaXp = getXp(s) - getXp(prev);
       const deltaMs = s.elapsedMs - prev.elapsedMs;
-      if (deltaMs > 0 && deltaXp > 0) {
+      if (deltaMs >= MIN_PEAK_WINDOW_MS && deltaXp > 0) {
         const rate = (deltaXp / deltaMs) * 60000 / XP_NORMALIZATION_DIVISOR; // real-game XP/min
         if (rate > peakRate) peakRate = rate;
       }

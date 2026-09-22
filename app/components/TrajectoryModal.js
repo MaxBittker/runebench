@@ -58,15 +58,18 @@ function computeRateData(samples, skillKey) {
   const peakRates = []; // { x: minutes, y: running max XP/min }
   let peak = 0;
   for (let i = 1; i < samples.length; i++) {
-    const prev = samples[i - 1];
     const curr = samples[i];
+    // window starts at the nearest earlier sample ≥ MIN_PEAK_WINDOW_MS back (i-1 normally)
+    let k = i - 1;
+    while (k > 0 && curr.elapsedMs - samples[k].elapsedMs < MIN_PEAK_WINDOW_MS) k--;
+    const prev = samples[k];
     const dxp = findSkillXp(curr, skillKey) - findSkillXp(prev, skillKey);
     const dms = curr.elapsedMs - prev.elapsedMs;
     if (dms <= 0) continue;
     const rate = (dxp / dms) * 60000 / XP_NORMALIZATION_DIVISOR; // global from views/shared-constants.js
     const mins = curr.elapsedMs / 60000;
     rates.push({ x: mins, y: Math.max(0, rate) });
-    peak = Math.max(peak, rate);
+    if (dms >= MIN_PEAK_WINDOW_MS) peak = Math.max(peak, rate); // sub-cadence windows never count as peak
     peakRates.push({ x: mins, y: peak });
   }
   return { rates, peakRates };

@@ -17,6 +17,9 @@ const STATE_FILE = '/tmp/last_xp_rate_check.json';
 const GAME_SPEED = 8; // engine default 400 ticks / NODE_TICKRATE=50 (docker/Dockerfile)
 const XP_MULTIPLIER = 25; // server xpRate (rs-sdk WorldConfig.ts; overridable via NODE_XPRATE)
 const NORMALIZATION_DIVISOR = GAME_SPEED * XP_MULTIPLIER; // 200
+// Windows shorter than this don't count toward the peak (the verifier applies the same
+// rule). Samples are 15s apart; a shorter gap only comes from a tracker restart.
+const MIN_PEAK_WINDOW_MS = 12000;
 
 const skillName = process.argv[2];
 if (!skillName) {
@@ -48,10 +51,21 @@ const EMPTY_PEAK: PeakWindow = {
   rate: 0, rawRate: 0, deltaXp: 0, deltaMs: 0, startElapsedMs: 0, endElapsedMs: 0,
 };
 
+// Window ending at i starts at the nearest earlier sample ≥ MIN_PEAK_WINDOW_MS back
+// (i-1 on the normal cadence). Same rule as the verifier.
+function peakWindowStart(samples: any[], i: number): number {
+  for (let k = i - 1; k >= 0; k--) {
+    if (samples[i].elapsedMs - samples[k].elapsedMs >= MIN_PEAK_WINDOW_MS) return k;
+  }
+  return -1;
+}
+
 function computePeakRate(samples: any[], skill: string, startIdx: number = 0): PeakWindow {
   let best = EMPTY_PEAK;
   for (let i = Math.max(1, startIdx); i < samples.length; i++) {
-    const prev = samples[i - 1];
+    const k = peakWindowStart(samples, i);
+    if (k < 0) continue;
+    const prev = samples[k];
     const curr = samples[i];
     const deltaXp = getSkillXp(curr, skill) - getSkillXp(prev, skill);
     const deltaMs = curr.elapsedMs - prev.elapsedMs;
@@ -136,7 +150,7 @@ if (benchmarkDuration > 0) {
 }
 const intervalMs = parseInt(process.env.SAMPLE_INTERVAL_MS || '15000');
 const untilNextSecs = Math.max(0, Math.round((intervalMs - (lastSample.elapsedMs % intervalMs)) / 1000));
-console.log(`  Sampled every ${(intervalMs / 1000).toFixed(0)}s; next sample in ~${untilNextSecs}s`);
+console.log(`  Sampled every ${(intervalMs / 1000).toFixed(0)}s; next sample in ~${untilNextSecs}s (windows under ${MIN_PEAK_WINDOW_MS / 1000}s are ignored)`);
 console.log(`Raw in-game XP accrues ${NORMALIZATION_DIVISOR}x faster than this score — that gap is expected.`);
 
 writeFileSync(STATE_FILE, JSON.stringify({ sampleCount: samples.length, timestamp: Date.now() }));

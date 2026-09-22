@@ -15,7 +15,7 @@ const BENCHMARK_DIR = join(import.meta.dir);
 const TASKS_DIR = join(BENCHMARK_DIR, 'tasks');
 const SHARED_DIR = join(BENCHMARK_DIR, 'shared');
 
-const DOCKER_IMAGE = 'ghcr.io/maxbittker/rs-agent-benchmark:v53';
+const DOCKER_IMAGE = 'ghcr.io/maxbittker/rs-agent-benchmark:v70';
 const VERIFIER_TIMEOUT = 400;
 
 // ── Standard skill definitions (XP-grind tasks) ─────────────────
@@ -192,7 +192,7 @@ bun /tmp/my_script.ts > /tmp/train.log 2>&1 &
 Then check progress with \`bun /app/benchmark/shared/check_xp_rate.ts ${skillName}\` and \`tail /tmp/train.log\`.
 Do NOT use the \`timeout\` command — it sends SIGTERM which kills the game connection.
 
-RULES: Gain XP through legitimate in-game actions only. Do NOT modify server files, save files, or use cheat commands.`;
+RULES: Gain XP through legitimate in-game actions only. Do NOT modify server files, save files, or use cheat commands. You run as an unprivileged user: the game server, the skill tracker and its output are root-owned and read-only to you — that is intentional, don't try to restart or replace them. Put your own scripts in /tmp or /app/bots/agent/.`;
 
 function generateSkillXpVariants(horizonMinutes: number, sampleIntervalMs: number): VariantTask[] {
   const horizonLabel = `${horizonMinutes}m`;
@@ -281,6 +281,9 @@ timeout_sec = ${VERIFIER_TIMEOUT}.0
 
 [agent]
 timeout_sec = ${v.agentTimeout}.0
+# Non-root: the tracker, its output (/logs/tracking), the engine + saves and the SDK are
+# root-owned in the image, so the agent can't edit the data it is scored on.
+user = "agent"
 
 [environment]
 cpus = 2

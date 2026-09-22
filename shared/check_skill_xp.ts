@@ -19,11 +19,18 @@ if (!SKILL_NAME) {
     process.exit(1);
 }
 
-// Check multiple locations for tracking data
+// Only the root-owned tracker output counts. /logs/verifier is agent-writable
+// (harbor chmods it 777), so it is deliberately NOT a fallback any more.
 const TRACKING_PATHS = [
     '/logs/tracking/skill_tracking.json',
-    '/logs/verifier/skill_tracking.json',
 ];
+
+// Windows shorter than this are ignored when computing the peak. The tracker samples
+// every 15s; a short gap only appears when a tracker was restarted or two ran at once,
+// and a 1-second window with one hit in it is not a rate. 12s leaves ~3s of wiggle room
+// for scheduler jitter. Keep in sync with shared/check_xp_rate.ts, shared/extract-utils.ts
+// and views/shared-constants.js (scripts/check-xp-normalization-sync.ts guards this).
+const MIN_PEAK_WINDOW_MS = 12000;
 
 const verifierStartTime = new Date().toISOString();
 
@@ -37,10 +44,24 @@ function getSkillXpFromSample(sample: any, skill: string): number {
     return 0;
 }
 
+// Window ending at sample i starts at the NEAREST earlier sample that is at least
+// MIN_PEAK_WINDOW_MS back. On the normal 15s cadence that is simply i-1; when a tracker
+// restart or a duplicate tracker leaves sub-cadence gaps, several samples are merged
+// into one ≥12s window instead of a 1-second spike becoming "the peak".
+// Mirrors extractors/extract-skill-results.ts — verifier and extractor must agree.
+function peakWindowStart(samples: any[], i: number): number {
+    for (let k = i - 1; k >= 0; k--) {
+        if (samples[i].elapsedMs - samples[k].elapsedMs >= MIN_PEAK_WINDOW_MS) return k;
+    }
+    return -1;
+}
+
 function computePeakXpRate(samples: any[], skill: string): number {
     let peak = 0;
     for (let i = 1; i < samples.length; i++) {
-        const prev = samples[i - 1];
+        const k = peakWindowStart(samples, i);
+        if (k < 0) continue;
+        const prev = samples[k];
         const curr = samples[i];
         const deltaXp = getSkillXpFromSample(curr, skill) - getSkillXpFromSample(prev, skill);
         const deltaMs = curr.elapsedMs - prev.elapsedMs;

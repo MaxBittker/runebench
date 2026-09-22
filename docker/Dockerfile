@@ -91,8 +91,11 @@ RUN mkdir -p bots/agent
 COPY bot.env bots/agent/bot.env
 
 # Pre-install Claude Code CLI so Harbor doesn't need to curl it at agent start.
+# Installed into /opt (not /root) so the non-root agent user can execute it.
 RUN curl -fsSL https://claude.ai/install.sh | bash \
-    && ln -s /root/.local/share/claude/versions/* /usr/local/bin/claude
+    && mv /root/.local/share/claude /opt/claude \
+    && ln -sf /opt/claude/versions/* /usr/local/bin/claude \
+    && chmod -R a+rX /opt/claude
 
 # Copy entrypoint and helper scripts
 COPY entrypoint.sh /entrypoint.sh
@@ -171,5 +174,34 @@ ENV GEMINI_CLI_TRUST_WORKSPACE=true
 # Idempotent service checker — verifier calls this to ensure services + tracker are alive
 COPY ensure-services.sh /ensure-services.sh
 RUN chmod +x /ensure-services.sh
+
+# ── Non-root agent user ──────────────────────────────────────────────────────
+# The agent runs as `agent` (harbor: task.toml `[agent] user = "agent"`); entrypoint,
+# engine, gateway, tracker and verifier stay root. Everything the score depends on is
+# therefore out of the agent's reach: the engine + player saves (/app/server), the SDK
+# the tracker imports (/app/sdk, /app/mcp), the tracker/CLI (/app/benchmark) and the
+# tracker output (/logs/tracking, created 755 by entrypoint). History: agents have
+# hand-written skill_tracking.json, restarted the tracker at 1s cadence, overwritten
+# agent.sav via the SDK save-generator and edited engine .env — see analysis/tamper/.
+#
+# Agents may still create their own files: /app is sticky+world-writable (new files OK,
+# can't delete/rename root-owned entries); /app/bots and the harness config entries
+# (/app/opencode.json, /app/.claude, /app/.codex, /app/.gemini) are theirs.
+# bun lives in /root/.bun (unreadable to agent) → copy it to /usr/local/bin. Debian's
+# /etc/profile resets PATH for `bash -lc`, so /usr/local/bin is the reliable spot.
+RUN useradd -m -u 1000 -s /bin/bash agent \
+    && cp /root/.bun/bin/bun /usr/local/bin/bun \
+    && ln -sf /usr/local/bin/bun /usr/local/bin/bunx \
+    && chmod 1777 /app \
+    && chown -R agent:agent /app/bots \
+    && { for f in /app/opencode.json /app/.claude /app/.codex /app/.gemini; do [ -e "$f" ] && chown -R agent:agent "$f"; done; true; } \
+    && chmod -R o-w /app/server /app/sdk /app/mcp /app/benchmark \
+    && mkdir -p /app/server/engine/data/players/main && chmod 700 /app/server/engine/data/players \
+    && su agent -c 'bash -lc "command -v bun && bun --version && command -v claude"' \
+    && su agent -c 'touch /app/benchmark/shared/x 2>/dev/null && echo FATAL: agent can write /app/benchmark && exit 1 || true' \
+    && su agent -c 'touch /app/server/engine/data/players/main/x 2>/dev/null && echo FATAL: agent can write saves && exit 1 || true' \
+    && su agent -c 'touch /app/probe.ts && rm /app/probe.ts' \
+    && su agent -c 'touch /app/bots/agent/probe.ts && rm /app/bots/agent/probe.ts' \
+    && su agent -c 'cp /app/opencode.json /app/.opencode.probe && mv -f /app/.opencode.probe /app/opencode.json'
 
 ENTRYPOINT ["/entrypoint.sh"]

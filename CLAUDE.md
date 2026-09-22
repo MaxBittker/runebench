@@ -79,6 +79,19 @@ cost_usd from token counts using `shared/pricing.ts`.
 
 Each task has an `environment/Dockerfile` that `FROM`s the pre-built GHCR image, so Modal pulls the image with no build step beyond the layer cache.
 
+### Anti-tamper model (image v70+)
+
+The agent runs as the non-root `agent` user (task.toml `[agent] user = "agent"`); entrypoint,
+engine, gateway, skill tracker and verifier run as root. So the agent can read but not write
+`/app/server` (engine + `agent.sav`), `/app/sdk`, `/app/mcp`, `/app/benchmark` (tracker + CLI) and
+`/logs/tracking/skill_tracking.json` (the scored data). `/app` is sticky+world-writable for the
+agent's own scripts; `/app/bots` is agent-owned. The tracker lock is `/run/skill_tracker.lock`
+(root-only) and the watchdog only adopts root-owned trackers. The verifier no longer falls back to
+the agent-writable `/logs/verifier/skill_tracking.json`. Peak windows shorter than
+`MIN_PEAK_WINDOW_MS` (12 s, nominal cadence 15 s) are ignored by verifier, extractor, CLI and
+website alike — `scripts/check-xp-normalization-sync.ts` guards all copies. Background:
+`analysis/tamper/REPORT.md`.
+
 ## Extracting results
 
 ```bash
@@ -116,7 +129,7 @@ cd docker
 PUSH=1 IMAGE_TAG=v2 ./build.sh --base
 
 # App image (bump tag for each new version)
-PUSH=1 IMAGE_TAG=v52 ./build.sh
+PUSH=1 IMAGE_TAG=v70 ./build.sh
 ```
 
 `build.sh` resolves `rs-sdk` `main` to a SHA (`git ls-remote`) and passes it as a cache-bust
@@ -125,11 +138,12 @@ build hard-fails if the baked SHA doesn't match. The commit is recorded in the i
 `/app/.rs-sdk-commit`, so any run can prove which SDK it used:
 
 ```bash
-docker run --rm ghcr.io/maxbittker/rs-agent-benchmark:v52 cat /app/.rs-sdk-commit
+docker run --rm ghcr.io/maxbittker/rs-agent-benchmark:v70 cat /app/.rs-sdk-commit
 ```
 
-**Pick the next FREE tag** — this image repo is shared with `rs-bench3`, so tags can already exist
-above the one this repo pins. Check before building:
+**Pick the next FREE tag, and never re-push an existing one** — Modal caches the pull by tag, so a
+re-pushed tag silently runs the OLD image (v69 was re-pushed and had to be retagged v70). This image
+repo is also shared with `rs-bench3`, so tags can already exist above the one this repo pins. Check before building:
 
 ```bash
 curl -s "https://ghcr.io/token?scope=repository:maxbittker/rs-agent-benchmark:pull&service=ghcr.io" \

@@ -13,6 +13,11 @@ import { computeCost } from './pricing';
 // XP score normalization: raw server XP ÷ 8 (game speed) ÷ 25 (server xpRate) = real-game XP.
 // scripts/check-xp-normalization-sync.ts guards this against drift.
 export const XP_NORMALIZATION_DIVISOR = 8 * 25;
+// Minimum sample gap for a peak window. Tracker cadence is 15s; anything shorter is a
+// tracker restart / duplicate-tracker artifact, not a rate. 12s = ~3s of wiggle room.
+// Same value lives standalone in shared/check_skill_xp.ts, shared/check_xp_rate.ts and
+// views/shared-constants.js — scripts/check-xp-normalization-sync.ts guards the drift.
+export const MIN_PEAK_WINDOW_MS = 12000;
 
 // ── Shared interfaces ────────────────────────────────────────────
 

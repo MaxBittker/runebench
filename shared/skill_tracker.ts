@@ -8,7 +8,7 @@
  *   BOT_PASSWORD      - bot password (default: "test")
  *   GATEWAY_URL       - gateway WebSocket URL (default: "ws://localhost:7780")
  *   SAMPLE_INTERVAL_MS - sampling interval in ms (default: 15000)
- *   TRACKING_FILE     - output JSON path (default: "/logs/verifier/skill_tracking.json")
+ *   TRACKING_FILE     - output JSON path (default: "/logs/tracking/skill_tracking.json")
  *
  * Run: bun run benchmark/shared/skill_tracker.ts
  */
@@ -21,7 +21,7 @@ const botName = process.env.BOT_NAME || 'agent';
 const password = process.env.BOT_PASSWORD || 'test';
 const gatewayUrl = process.env.GATEWAY_URL || 'ws://localhost:7780';
 const intervalMs = parseInt(process.env.SAMPLE_INTERVAL_MS || '15000');
-const outFile = process.env.TRACKING_FILE || '/logs/verifier/skill_tracking.json';
+const outFile = process.env.TRACKING_FILE || '/logs/tracking/skill_tracking.json';
 
 const COINS_ID = 995;
 const INV_TYPE = 93;
@@ -78,7 +78,10 @@ interface SkillSnapshot { level: number; xp: number; }
 interface Sample { timestamp: string; elapsedMs: number; skills: Record<string, SkillSnapshot>; totalLevel: number; gold?: number; inventoryGold?: number; bankGold?: number; }
 interface TrackingData { botName: string; startTime: string; samples: Sample[]; }
 
-const LOCK_FILE = '/tmp/skill_tracker.lock';
+// Root-only location so a non-root agent can't plant a fake lock (entrypoint.sh
+// watchdog and ensure-services.sh only trust a root-owned lock). An unprivileged
+// tracker copy just runs lock-less.
+const LOCK_FILE = process.env.TRACKER_LOCK_FILE || '/run/skill_tracker.lock';
 
 function isTrackerAlreadyRunning(): boolean {
   if (!existsSync(LOCK_FILE)) return false;
@@ -95,7 +98,13 @@ function isTrackerAlreadyRunning(): boolean {
 }
 
 function acquireLock() {
-  writeFileSync(LOCK_FILE, process.pid.toString());
+  try {
+    writeFileSync(LOCK_FILE, process.pid.toString());
+  } catch (err: any) {
+    // Non-root copies can't write /run — run lock-less rather than die.
+    console.warn(`[skill-tracker] Could not write lock ${LOCK_FILE} (${err?.code ?? err}); continuing without lock`);
+    return;
+  }
   // Clean up lock on exit
   const removeLock = () => { try { unlinkSync(LOCK_FILE); } catch {} };
   process.on('exit', removeLock);

@@ -79,6 +79,12 @@ if [ -n "${CLAUDE_FAST:-}" ]; then
   FAST_ARGS=(--ak "fast_mode=true")
 fi
 
+# Optional extra `harbor run` args (e.g. "--ae KEY=VAL --agent-version 2.1.270").
+EXTRA_ARGS=()
+if [ -n "${HARBOR_EXTRA_ARGS:-}" ]; then
+  read -r -a EXTRA_ARGS <<<"$HARBOR_EXTRA_ARGS"
+fi
+
 TS=$(date +%Y%m%d-%H%M%S)
 JOB="skills-30m-${CLAUDE_LABEL}-${TS}"
 echo "JOB=$JOB (model=$CLAUDE_MODEL effort=${CLAUDE_EFFORT:-default})"
@@ -90,6 +96,7 @@ harbor run \
   -m "$CLAUDE_MODEL" \
   ${EFFORT_ARGS[@]+"${EFFORT_ARGS[@]}"} \
   ${FAST_ARGS[@]+"${FAST_ARGS[@]}"} \
+  ${EXTRA_ARGS[@]+"${EXTRA_ARGS[@]}"} \
   --job-name "$JOB" \
   --env modal \
   --ek sandbox_timeout_secs=7200 \

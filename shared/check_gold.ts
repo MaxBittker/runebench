@@ -20,9 +20,9 @@ const INV_TYPE = 93;   // Main inventory (28 slots)
 const WORN_TYPE = 94;  // Equipment (14 slots)
 const BANK_TYPE = 95;  // Bank (496 slots)
 
+// Only the root-owned tracker output counts (/logs/verifier is agent-writable).
 const TRACKING_PATHS = [
     '/logs/tracking/skill_tracking.json',
-    '/logs/verifier/skill_tracking.json',
 ];
 
 // Save file is at /app/server/engine/data/players/main/agent.sav
