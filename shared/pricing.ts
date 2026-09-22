@@ -175,6 +175,9 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // declared in opencode.json → OpenCode reports real cost_usd; postprocess-costs
   // needs --force to override it).
   deepseekflash0731: { input: 0.09e-6, cachedInput: 0.018e-6, cacheWrite: 0.09e-6, output: 0.18e-6 },
+  // deepseek-v4.1-flash pinned to the DeepSeek first-party endpoint, OpenRouter 2026-09-22
+  // ($0.15/$0.60 per 1M, cache read $0.003). No cache-write premium → cacheWrite = input (inert).
+  deepseek41flash: { input: 0.15e-6, cachedInput: 0.003e-6, cacheWrite: 0.15e-6, output: 0.6e-6 },
   kimi26:       { input: 0.68e-6,   cachedInput: 0.34e-6,  cacheWrite: 0.68e-6,   output: 3.41e-6 },
   kimi27:       { input: 0.75e-6,   cachedInput: 0.16e-6,  cacheWrite: 0.75e-6,   output: 3.5e-6 }, // kimi-k2.7-code, OpenRouter 2026-06-14
   kimi3:        { input: 3e-6,      cachedInput: 0.3e-6,   cacheWrite: 3e-6,      output: 15e-6 }, // kimi-k3, OpenRouter 2026-07-16 (no cache-write premium listed)
@@ -297,6 +300,7 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'openrouter/deepseek/deepseek-v4-pro': 'deepseek',
   'openrouter/deepseek/deepseek-v4-flash': 'deepseekflash',
   'openrouter/deepseek/deepseek-v4-flash-0731': 'deepseekflash0731',
+  'openrouter/deepseek/deepseek-v4.1-flash': 'deepseek41flash',
   'openrouter/moonshotai/kimi-k2.6':   'kimi26',
   'openrouter/moonshotai/kimi-k2.7-code': 'kimi27',
   'openrouter/moonshotai/kimi-k3':     'kimi3',

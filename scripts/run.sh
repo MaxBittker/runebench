@@ -32,6 +32,8 @@ qwen35-opencode|openrouter/qwen/qwen3.5-35b-a3b|qwen35
 muse-opencode|meta/muse-spark-1.1|muse
 muse12-opencode|meta/muse-spark-1.2-contributor|muse12
 muse13-opencode|openrouter/meta/muse-spark-1.3-contributor|muse13
+glm53flash-opencode|openrouter/z-ai/glm-5.3-flash|glm53flash
+gemini38flash-opencode|openrouter/google/gemini-3.8-flash|gemini38flash
 
 "
 
