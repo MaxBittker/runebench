@@ -70,7 +70,7 @@ Read and grep in the learnings/ and wiki/ folder for tips, skill guides, item an
 For the complete method reference, see **[sdk/API.md](sdk/API.md)** (auto-generated from source).
 
 **Quick overview:**
-- `bot.*` - High-level actions that wait for effects to complete (chopTree, walkTo, attackNpc, etc.)
+- `bot.*` - High-level actions that wait for effects to complete (chopTree, walkTo, attack, etc.)
 - `sdk.*` - Low-level methods that resolve on server acknowledgment (sendWalk, getState, findNearbyNpc, etc.)
 
 ### bot.* Quick Reference
@@ -81,9 +81,9 @@ For the complete method reference, see **[sdk/API.md](sdk/API.md)** (auto-genera
 | `talkTo(target)` | Walk to NPC, start dialog |
 | `interactNpc(target, option?)` | Walk to NPC, interact with any option (e.g. `'trade'`, `'fish'`) |
 | `interactLoc(target, option?)` | Walk to loc, interact with any option (e.g. `'mine'`, `'smelt'`) |
-| `attackNpc(target)` | Walk to NPC, start combat |
+| `attack(target)` | Walk to NPC (or player), start combat |
 | `pickpocketNpc(target)` | Pickpocket NPC, detects XP gain vs stun |
-| `castSpellOnNpc(target, spell)` | Cast combat spell on NPC |
+| `castSpell(target, spell)` | Cast combat spell on NPC (or player) |
 | `chopTree(target?)` | Chop tree, wait for logs |
 | `pickupItem(target)` | Pick up ground item |
 | `openDoor(target?)` | Open a door or gate |

@@ -163,7 +163,7 @@ Scoring is normalized to real-game rates: raw XP is divided by 8 (the 8x game sp
 Check your peak rate anytime: \`bun /app/benchmark/shared/check_xp_rate.ts ${skillName}\`
 
 You control the bot via the \`rs-agent\` MCP server. Use the \`execute_code\` tool with \`bot_name: "agent"\`. Two globals are available in the code context:
-- \`bot\` (BotActions) — high-level actions: \`await bot.chopTree()\`, \`await bot.interactLoc("rock", "Mine")\`, \`await bot.attackNpc("chicken")\`, etc.
+- \`bot\` (BotActions) — high-level actions: \`await bot.chopTree()\`, \`await bot.interactLoc("rock", "Mine")\`, \`await bot.attack(/^chicken$/i)\`, etc.
 - \`sdk\` (BotSDK) — low-level state & actions: \`sdk.getState()\`, \`sdk.getInventory()\`, \`sdk.findNearbyLoc(/tree/i)\`, etc.
 
 Read the MCP resources ("Bot API", "SDK API") for the full list of available methods. The examples above are illustrative — confirm exact method names there before relying on them, and do NOT invent skill-specific methods (there is no \`mineRock\`/\`fish\`/\`cook\`). Most gathering and processing skills go through generic verbs like \`bot.interactLoc(target, "Mine")\`, \`bot.interactNpc(target, "Fish")\`, or \`bot.useItemOnLoc(item, loc)\`.
