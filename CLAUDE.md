@@ -138,8 +138,14 @@ build hard-fails if the baked SHA doesn't match. The commit is recorded in the i
 `/app/.rs-sdk-commit`, so any run can prove which SDK it used:
 
 ```bash
-docker run --rm ghcr.io/maxbittker/rs-agent-benchmark:v70 cat /app/.rs-sdk-commit
+docker run --rm ghcr.io/maxbittker/rs-agent-benchmark:v71 cat /app/.rs-sdk-commit
 ```
+
+To ship a fix without also shipping every newer SDK/engine change on `main` (which would move
+scores against the existing board), build from an rs-sdk branch instead: `RS_SDK_REF=<branch>`
+(a branch name, not a SHA). v71 is built this way from `bench-v71` = v70's SDK (`56b73e08f`) +
+the MCP console-capture cap; the next image should start from that branch, not `main`, unless a
+deliberate environment change is intended.
 
 **Pick the next FREE tag, and never re-push an existing one** — Modal caches the pull by tag, so a
 re-pushed tag silently runs the OLD image (v69 was re-pushed and had to be retagged v70). This image
