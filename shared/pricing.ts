@@ -104,6 +104,10 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // OpenAI states these are permanent (non-promotional) rates.
   gpt6sol:      { input: 2e-6,    cachedInput: 0.2e-6,   cacheWrite: 2.5e-6,   output: 10e-6 },
   gpt6luna:     { input: 0.1e-6,  cachedInput: 0.01e-6,  cacheWrite: 0.125e-6, output: 0.5e-6 },
+  // gpt-6.1-sol, released 2026-09-29 (developers.openai.com/api/docs/models/
+  // gpt-6.1-sol). Same $2/$10 as gpt-6-sol but cache read is $0.10 (0.05x, half
+  // of 6-sol's); cache write 1.25x. Long-context (>272K) 2x/1.5x not modelled.
+  gpt61sol:     { input: 2e-6,    cachedInput: 0.1e-6,   cacheWrite: 2.5e-6,   output: 10e-6 },
   gpt56:        { input: 5e-6,    cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,  output: 30e-6 },
   'gpt56-xhigh': { input: 5e-6,   cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,  output: 30e-6 },
   gpt56terra:   { input: 2e-6,    cachedInput: 0.2e-6,   cacheWrite: 2.5e-6,   output: 12e-6 },
@@ -278,6 +282,7 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   // gpt6astra (medium, the CLI default) and gpt6astra-high share this model id
   // and bill at identical rates, so one entry covers both rows.
   'openai/gpt-6-astra':                'gpt6astra',
+  'openai/gpt-6.1-sol':                'gpt61sol',
   'openai/gpt-6-sol':                  'gpt6sol',
   'openai/gpt-6-luna':                 'gpt6luna',
   'openai/gpt-5.6-sol':                'gpt56',
