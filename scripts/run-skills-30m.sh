@@ -76,6 +76,7 @@ deepseek-opencode|openrouter/deepseek/deepseek-v4-pro|deepseek
 deepseekflash-opencode|openrouter/deepseek/deepseek-v4-flash|deepseekflash
 deepseekflash0731-opencode|openrouter/deepseek/deepseek-v4-flash-0731|deepseekflash0731
 deepseek41flash-opencode|openrouter/deepseek/deepseek-v4.1-flash|deepseek41flash
+mistrallarge4-opencode|openrouter/mistralai/mistral-large-4-0|mistrallarge4
 kimi26-opencode|openrouter/moonshotai/kimi-k2.6|kimi26
 kimi27-opencode|openrouter/moonshotai/kimi-k2.7-code|kimi27
 kimi3-opencode|openrouter/moonshotai/kimi-k3|kimi3
@@ -217,7 +218,7 @@ for model_name in $SELECTED_MODELS; do
       #   grep -l 'service_tier="fast"' jobs/<job>/*/trial.log | wc -l   # want 16
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900 --ak fast_mode=true"
       ;;
-    glm|glm52|glm52-wandb|glm53|glm53flash|gemma4|gptoss120b|kimi|kimi26|kimi27|kimi3|kimi3-low|qwen35|qwen3max|qwen37max|qwen38max|qwen38|deepseek|deepseekflash|deepseekflash0731|deepseek41flash|inkling|laguna|gemini38flash|gemini37flash|gemini36flash|gemini35flashlite)
+    glm|glm52|glm52-wandb|glm53|glm53flash|gemma4|gptoss120b|kimi|kimi26|kimi27|kimi3|kimi3-low|qwen35|qwen3max|qwen37max|qwen38max|qwen38|deepseek|deepseekflash|deepseekflash0731|deepseek41flash|mistrallarge4|inkling|laguna|gemini38flash|gemini37flash|gemini36flash|gemini35flashlite)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1800"
       ;;
     grok47|grok47-xhigh|grok46|grok46-medium|grok46-xhigh|grok45|grok45-medium|grok43|muse|muse12|muse13)

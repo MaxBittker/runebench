@@ -34,6 +34,7 @@ muse12-opencode|meta/muse-spark-1.2-contributor|muse12
 muse13-opencode|openrouter/meta/muse-spark-1.3-contributor|muse13
 glm53flash-opencode|openrouter/z-ai/glm-5.3-flash|glm53flash
 gemini38flash-opencode|openrouter/google/gemini-3.8-flash|gemini38flash
+mistrallarge4-opencode|openrouter/mistralai/mistral-large-4-0|mistrallarge4
 
 "
 
