@@ -109,6 +109,7 @@ const MODEL_CONFIG = {
   'muse12':   { displayName: 'Muse Spark 1.2', shortName: 'Muse Spark 1.2', color: '#003f8c', order: 17.9, icon: VIEWS_BASE + 'model-icons/meta.svg', releaseDate: '2026-08-05' },
   'muse13':   { displayName: 'Muse Spark 1.3', shortName: 'Muse Spark 1.3', color: '#4c8ff0', order: 17.8, icon: VIEWS_BASE + 'model-icons/meta.svg', releaseDate: '2026-09-02' },
   'mistrallarge4': { displayName: 'Mistral Large 4', shortName: 'Mistral L4', color: '#fa500f', order: 16.5, icon: VIEWS_BASE + 'model-icons/mistral.svg', releaseDate: '2026-10-06' },
+  'mistrallarge4-high': { displayName: 'Mistral Large 4 high', shortName: 'Mistral L4 high', color: '#b83a06', order: 16.51, icon: VIEWS_BASE + 'model-icons/mistral.svg', releaseDate: '2026-10-06' },
   'inkling':  { displayName: 'Inkling',         shortName: 'Inkling',     color: '#343a40', order: 17, icon: VIEWS_BASE + 'model-icons/thinkingmachines.png', releaseDate: '2026-07-15' },
   'laguna':   { displayName: 'Laguna S 2.1',    shortName: 'Laguna S',    color: '#0891b2', order: 19, icon: VIEWS_BASE + 'model-icons/poolside.png', releaseDate: '2026-07-20' },
 };

@@ -49,3 +49,24 @@ class MistralLarge4OpenCode(OpenCodeAdapter):
             "limit": _LIMIT,
         }
         return config
+
+
+class MistralLarge4HighOpenCode(MistralLarge4OpenCode):
+    """Same pin, reasoning effort high.
+
+    Unset, Mistral serves Large 4 with reasoning OFF (0 reasoning tokens/step);
+    the base row scored Σ1562. Like inkling, this row checks whether turning
+    reasoning on changes the picture — verify post-run via step_finish
+    tokens.reasoning that it was honored.
+    """
+
+    _model_options = {
+        **MistralLarge4OpenCode._model_options,
+        "reasoning": {"effort": "high"},
+    }
+    _log_prefix = "mistrallarge4-high"
+    _log_file = "opencode-mistrallarge4-high.txt"
+
+    @staticmethod
+    def name() -> str:
+        return "mistrallarge4-high-opencode"
