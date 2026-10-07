@@ -30,6 +30,12 @@ export interface ModelPricing {
   cacheWrite: number;
   /** USD per output token. */
   output: number;
+  /**
+   * Long-context rate card: a request whose prompt (input + cache reads + cache
+   * writes) exceeds `thresholdTokens` bills ALL its tokens at these rates. Needs
+   * per-request token counts — see computeCost's `promptTokens`.
+   */
+  longContext?: { thresholdTokens: number; input: number; cachedInput: number; cacheWrite: number; output: number };
 }
 
 /** By internal label used in rs-bench2 (opus, sonnet46, gpt54, ...). */
@@ -77,6 +83,11 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   'sonnet5-xhigh': { input: 2e-6, cachedInput: 0.2e-6,   cacheWrite: 2.5e-6,   output: 10e-6 },
   sonnet46:     { input: 3e-6,    cachedInput: 0.3e-6,   cacheWrite: 3.75e-6,  output: 15e-6 },
   sonnet45:     { input: 3e-6,    cachedInput: 0.3e-6,   cacheWrite: 3.75e-6,  output: 15e-6 },
+  // Haiku 5.5 (claude-haiku-5-5, GA 2026-10-07): $0.10/$0.50, cache read $0.01,
+  // 5-min cache write $0.125 for prompts ≤100k tokens; the WHOLE request bills 5×
+  // ($0.50/$2.50, read $0.05, write $0.625) once its prompt exceeds 100k.
+  haiku55:      { input: 0.1e-6,  cachedInput: 0.01e-6,  cacheWrite: 0.125e-6, output: 0.5e-6,
+    longContext: { thresholdTokens: 100_000, input: 0.5e-6, cachedInput: 0.05e-6, cacheWrite: 0.625e-6, output: 2.5e-6 } },
   haiku:        { input: 1e-6,    cachedInput: 0.1e-6,   cacheWrite: 1.25e-6,  output: 5e-6 },
   // OpenAI/Gemini/OpenRouter: no separate cache-write premium → cacheWrite = input (inert).
   codex:        { input: 1.75e-6, cachedInput: 0.175e-6, cacheWrite: 1.75e-6,  output: 14e-6 }, // gpt-5.2-codex
@@ -277,6 +288,7 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'anthropic/claude-sonnet-5-xhigh':   'sonnet5-xhigh',
   'anthropic/claude-sonnet-4-6':       'sonnet46',
   'anthropic/claude-sonnet-4-5':       'sonnet45',
+  'anthropic/claude-haiku-5-5':        'haiku55',
   'anthropic/claude-haiku-4-5':        'haiku',
   'openai/gpt-5.2-codex':              'codex',
   'openai/gpt-5.3-codex':              'codex53',
@@ -365,10 +377,14 @@ export function computeCost(
   cacheTokens: number,
   outputTokens: number,
   cacheWriteTokens: number = 0,
+  /** Prompt size of a SINGLE request — selects the longContext tier when set. */
+  promptTokens?: number,
 ): number | null {
-  const p = getPricing(modelKey);
-  if (!p) return null;
-  if (p.input === 0 && p.output === 0) return null; // not yet priced
+  const base = getPricing(modelKey);
+  if (!base) return null;
+  if (base.input === 0 && base.output === 0) return null; // not yet priced
+  const lc = base.longContext;
+  const p = lc && promptTokens != null && promptTokens > lc.thresholdTokens ? lc : base;
   const nonCached = Math.max(0, inputTokens - cacheTokens);
   return (
     nonCached * p.input +

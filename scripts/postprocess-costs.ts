@@ -24,7 +24,7 @@
 
 import { readdirSync, readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
-import { computeCost, MODEL_PRICING, HARBOR_MODEL_PRICING } from '../shared/pricing';
+import { computeCost, getPricing, MODEL_PRICING, HARBOR_MODEL_PRICING } from '../shared/pricing';
 
 // ── CLI args ────────────────────────────────────────────────────────
 let jobsDir = join(process.cwd(), 'jobs');
@@ -82,6 +82,34 @@ function readTrajectoryCostData(trialDir: string): { cacheWriteTokens: number; p
     }
   } catch {}
   return { cacheWriteTokens, perStepCost };
+}
+
+/**
+ * Cost for models with a longContext tier (haiku55): each trajectory step's
+ * metrics is one API request, so the tier is picked per request by its prompt
+ * size. Same token conventions as the flat formula — at a single tier it
+ * reproduces computeCost on the trial totals exactly.
+ */
+function computeTieredTrajectoryCost(trialDir: string, modelName: string): number | null {
+  const trajPath = join(trialDir, 'agent', 'trajectory.json');
+  if (!existsSync(trajPath)) return null;
+  let total = 0;
+  let requests = 0;
+  try {
+    const traj = JSON.parse(readFileSync(trajPath, 'utf-8'));
+    for (const s of traj.steps ?? []) {
+      const m = s?.metrics;
+      if (typeof m?.prompt_tokens !== 'number') continue;
+      const c = computeCost(modelName, m.prompt_tokens, m.cached_tokens ?? 0, m.completion_tokens ?? 0,
+        m.extra?.cache_creation_input_tokens ?? 0, m.prompt_tokens);
+      if (c === null) return null;
+      total += c;
+      requests++;
+    }
+  } catch {
+    return null;
+  }
+  return requests > 0 ? total : null;
 }
 
 if (!existsSync(jobsDir)) {
@@ -144,6 +172,9 @@ function processTrialDir(trialDir: string) {
     cost = perStepCost;
   } else {
     cost = computeCost(modelName, inputTokens, cacheTokens, outputTokens);
+  }
+  if (cost !== null && getPricing(modelName)?.longContext) {
+    cost = computeTieredTrajectoryCost(trialDir, modelName) ?? cost;
   }
   if (cost === null) {
     skippedNoPricing++;

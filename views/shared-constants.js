@@ -51,6 +51,10 @@ const MODEL_CONFIG = {
   'gemini37flash': { displayName: 'Gemini 3.7 Flash', shortName: 'Gemini 3.7 Flash', color: '#1a4fc0', order: 6.675, icon: VIEWS_BASE + 'model-icons/gemini.webp', releaseDate: '2026-08-13' },
   'gemini38flash': { displayName: 'Gemini 3.8 Flash', shortName: 'Gemini 3.8 Flash', color: '#123c9c', order: 6.676, icon: VIEWS_BASE + 'model-icons/gemini.webp', releaseDate: '2026-09-02' },
   'gemini35flashlite': { displayName: 'Gemini 3.5 Flash-Lite', shortName: 'Gemini 3.5 F-Lite', color: '#9dc0f9', order: 6.68, icon: VIEWS_BASE + 'model-icons/gemini.webp', releaseDate: '2026-07-21' },
+  // Haiku 5.5 (claude-haiku-5-5, GA 2026-10-07) — OAuth runs via scripts/run-claude-oauth-30m.sh;
+  // the CLI default effort for this model is medium, so the -high row is one level up.
+  'haiku55':  { displayName: 'Claude Haiku 5.5',   shortName: 'Haiku 5.5',  color: '#c0306e', order: 6.9, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-10-07' },
+  'haiku55-high': { displayName: 'Claude Haiku 5.5 high', shortName: 'Haiku 5.5 hi', color: '#8f1d4f', order: 6.95, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-10-07' },
   'haiku':    { displayName: 'Claude Haiku 4.5',   shortName: 'Haiku 4.5',  color: '#e06090', order: 7, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2025-10-15' },
   'codex':    { displayName: 'Codex CLI 5.2',       shortName: 'Codex 5.2', color: '#10a37f', order: 8, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2025-12-11' },
   'codex53':  { displayName: 'Codex CLI 5.3',       shortName: 'Codex 5.3', color: '#0d8c6b', order: 9, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-02-05' },

@@ -19,6 +19,7 @@ const XH_TO_BASE = {
   'opus47-xhigh': 'opus47',
   'gpt55-apikey': 'gpt55',
   'gemini35flash-high': 'gemini35flash',
+  'haiku55-high': 'haiku55',
 };
 
 // Models left off this chart. The earliest model plotted is always on the
