@@ -216,10 +216,13 @@ function GoldIcon({ skill, size, className }) {
 
 function getNavLists(data, model, skill) {
   const gold = isGold(skill);
-  // Models that have data for this skill (in config order)
+  const metric = gold ? 'peakGold' : 'peakXpRate';
+  // Models that have data for this skill, best score first (config order breaks ties)
   const modelsForSkill = Object.keys(MODEL_CONFIG)
     .filter(m => data?.[m]?.[skill])
-    .sort((a, b) => (MODEL_CONFIG[a]?.order || 99) - (MODEL_CONFIG[b]?.order || 99));
+    .sort((a, b) =>
+      (data[b][skill][metric] || 0) - (data[a][skill][metric] || 0)
+      || (MODEL_CONFIG[a]?.order || 99) - (MODEL_CONFIG[b]?.order || 99));
   // Rail: skills for skill runs, conditions for gold runs.
   const skillsForModel = gold
     ? GOLD_CONDITIONS.filter(s => data?.[model]?.[s])
@@ -277,6 +280,7 @@ export function TrajectoryModal({ model, skill, data, seekTs }) {
   const containerRef = useRef(null);
   const videoRef = useRef(null);
   const transcriptRef = useRef(null);
+  const navChipsRef = useRef(null);
   const chartCanvasRef = useRef(null);
   const chartInstanceRef = useRef(null);
   const rateChartCanvasRef = useRef(null);
@@ -298,6 +302,19 @@ export function TrajectoryModal({ model, skill, data, seekTs }) {
       containerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, [model, skill]);
+
+  // Keep the active model chip visible in the horizontally-scrolling chip strip.
+  // Sets scrollLeft directly — scrollIntoView would also scroll the page.
+  useEffect(() => {
+    const strip = navChipsRef.current;
+    const chip = strip?.querySelector('.traj-chip.active');
+    if (!chip) return;
+    const s = strip.getBoundingClientRect();
+    const c = chip.getBoundingClientRect();
+    if (c.left < s.left || c.right > s.right) {
+      strip.scrollLeft += c.left - s.left - (s.width - c.width) / 2;
+    }
+  }, [model, skill, modelsForSkill]);
 
   // Seek video to a step timestamp
   const seekVideo = useCallback((stepTs) => {
@@ -900,7 +917,7 @@ export function TrajectoryModal({ model, skill, data, seekTs }) {
 
   const navBar = html`
     <div className="traj-topbar">
-      <div className="traj-nav-chips">
+      <div className="traj-nav-chips" ref=${navChipsRef}>
         ${modelsForSkill.map(m => {
           const mc = MODEL_CONFIG[m] || { shortName: m };
           const tier = modelTiers[m] || TIERS.zero;

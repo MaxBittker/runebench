@@ -845,8 +845,18 @@ body {
   width: 16px;
   height: 16px;
 }
+/* Three rows, filled column-by-column (so x = score rank), overflow scrolls sideways */
 .traj-nav-chips {
-  display: contents;
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  grid-template-rows: repeat(3, auto);
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  gap: 4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
 }
 .traj-chip {
   display: flex;
