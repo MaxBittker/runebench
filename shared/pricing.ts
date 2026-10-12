@@ -252,6 +252,9 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // $0.10/$0.20 (cache read $0.002); shown at the muse-spark-1.3 STANDARD list
   // price ($1.25/$4.25, cache read $0.15 — unchanged since 1.1). Keep in sync
   // with the per-1M `cost` block in agents/muse_adapter.py.
+  // muse-wonder via OpenRouter (single Meta endpoint), 2026-10-12. Standard
+  // paid tier: $4/$20 per 1M, cache read $0.20 (no cache-write charge).
+  musewonder:   { input: 4e-6,      cachedInput: 0.2e-6,   cacheWrite: 4e-6,      output: 20e-6 },
   muse13:       { input: 1.25e-6,   cachedInput: 0.15e-6,  cacheWrite: 1.25e-6,   output: 4.25e-6 },
   // thinkingmachines/inkling, OpenRouter (Together endpoint, the model's only
   // provider) 2026-07-21. No cache-write premium → cacheWrite = input (inert).
@@ -348,6 +351,7 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'openrouter/meta/muse-spark-1.1':    'muse',
   'meta/muse-spark-1.2-contributor':   'muse12',
   'openrouter/meta/muse-spark-1.3-contributor': 'muse13',
+  'openrouter/meta/muse-wonder': 'musewonder',
   'meta/muse-spark-1.1':               'muse',
   'openrouter/thinkingmachines/inkling': 'inkling',
   'openrouter/poolside/laguna-s-2.1':  'laguna',

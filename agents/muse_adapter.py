@@ -4,6 +4,7 @@ Custom Harbor adapters for Meta Muse Spark.
 MuseSparkOpenCode        — muse-spark-1.1 via the Meta Model API direct.
 Muse12ContributorOpenCode — muse-spark-1.2-contributor via the Meta Model API direct.
 Muse13ContributorOpenRouter — muse-spark-1.3-contributor via OpenRouter (Meta endpoint).
+MuseWonderOpenRouter     — muse-wonder via OpenRouter (Meta endpoint).
 
 The muse row originally ran via OpenCode + OpenRouter; the 2026-08-12 Meta-API
 run replaced it (old jobs in jobs/_archive-muse-openrouter-20260813).
@@ -104,3 +105,26 @@ class Muse13ContributorOpenRouter(OpenCodeAdapter):
             "cost": {"input": 1.25, "output": 4.25, "cache_read": 0.15},
         }
         return config
+
+
+class MuseWonderOpenRouter(OpenCodeAdapter):
+    """muse-wonder via OpenRouter (listed 2026-10-12).
+
+    Single "Meta" endpoint on OpenRouter (tools supported, 1M ctx), pinned so a
+    future third-party host can't silently take over. Standard paid tier
+    ($4/$20, cache read $0.20), so OpenRouter's native cost is the displayed
+    cost — no override. Needs the us-east sandbox pin like the other muse rows.
+    """
+    _default_model = "openrouter/meta/muse-wonder"
+    _log_prefix = "musewonder"
+    _log_file = "opencode-musewonder.txt"
+    _model_options = {
+        "provider": {
+            "order": ["meta"],
+            "allow_fallbacks": False,
+        }
+    }
+
+    @staticmethod
+    def name() -> str:
+        return "musewonder-opencode"

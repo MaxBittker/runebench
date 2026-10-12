@@ -128,7 +128,7 @@ class OpenCodeAdapter(BaseInstalledAgent):
                     "curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.2/install.sh | bash && "
                     'export NVM_DIR="$HOME/.nvm" && '
                     '. "$NVM_DIR/nvm.sh" && '
-                    "nvm install 22 && npm i -g opencode-ai@latest && "
+                    "nvm install 22 && npm i -g opencode-ai@1 && "
                     "opencode --version"
                 ),
             )

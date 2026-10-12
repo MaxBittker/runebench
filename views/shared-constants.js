@@ -111,6 +111,7 @@ const MODEL_CONFIG = {
   'grok43':   { displayName: 'Grok 4.3',        shortName: 'Grok 4.3',    color: '#8a8a8a', order: 16.2, icon: VIEWS_BASE + 'model-icons/xai.svg', releaseDate: '2026-04-17' },
   'muse':     { displayName: 'Muse Spark 1.1',  shortName: 'Muse Spark',  color: '#0064e0', order: 18, icon: VIEWS_BASE + 'model-icons/meta.svg', releaseDate: '2026-07-09' },
   'muse12':   { displayName: 'Muse Spark 1.2', shortName: 'Muse Spark 1.2', color: '#003f8c', order: 17.9, icon: VIEWS_BASE + 'model-icons/meta.svg', releaseDate: '2026-08-05' },
+  'musewonder': { displayName: 'Muse Wonder', shortName: 'Muse Wonder', color: '#2f6fe0', order: 17.9, icon: VIEWS_BASE + 'model-icons/meta.svg', releaseDate: '2026-10-12' },
   'muse13':   { displayName: 'Muse Spark 1.3', shortName: 'Muse Spark 1.3', color: '#4c8ff0', order: 17.8, icon: VIEWS_BASE + 'model-icons/meta.svg', releaseDate: '2026-09-02' },
   'mistrallarge4': { displayName: 'Mistral Large 4', shortName: 'Mistral L4', color: '#fa500f', order: 16.5, icon: VIEWS_BASE + 'model-icons/mistral.svg', releaseDate: '2026-10-06' },
   'mistrallarge4-high': { displayName: 'Mistral Large 4 high', shortName: 'Mistral L4 high', color: '#b83a06', order: 16.51, icon: VIEWS_BASE + 'model-icons/mistral.svg', releaseDate: '2026-10-06' },
