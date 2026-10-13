@@ -155,9 +155,11 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // (models.dev + OpenRouter). Run via OpenRouter (Google first-party
   // endpoints), OpenCode-native cost; entry for display/backfill parity.
   gemini38flash:     { input: 0.75e-6, cachedInput: 0.075e-6, cacheWrite: 0.75e-6, output: 3.75e-6 },
-  // gemini-4-argon, OpenRouter 2026-10-13 — Google standard tier ($2/$10, cache
-  // read $0.20); the adapter pins standard endpoints only (no flex/priority).
-  gemini4argon:      { input: 2e-6, cachedInput: 0.2e-6, cacheWrite: 2e-6, output: 10e-6 },
+  // gemini-4-argon, OpenRouter 2026-10-13 — Google's REGULAR standard-tier card
+  // ($4/$20, cache read $0.20, cache write $0.375). Launch billing is an
+  // introductory half-price promo ($2/$10); the row displays the regular price,
+  // like muse12/13. Keep in sync with Gemini4ArgonOpenCode._build_opencode_config.
+  gemini4argon:      { input: 4e-6, cachedInput: 0.2e-6, cacheWrite: 0.375e-6, output: 20e-6 },
   gemini35flashlite: { input: 0.3e-6, cachedInput: 0.03e-6, cacheWrite: 0.3e-6, output: 2.5e-6 },
   glm:          { input: 0.72e-6,   cachedInput: 0,        cacheWrite: 0.72e-6,   output: 2.3e-6 },
   glm52:        { input: 1.4e-6,    cachedInput: 0,        cacheWrite: 1.4e-6,    output: 4.4e-6 }, // z-ai/glm-5.2, OpenRouter 2026-06-16
