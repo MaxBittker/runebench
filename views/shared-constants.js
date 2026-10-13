@@ -44,6 +44,7 @@ const MODEL_CONFIG = {
   'sonnet45': { displayName: 'Claude Sonnet 4.5', shortName: 'Sonnet 4.5',  color: '#e07850', order: 4, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2025-09-29' },
   'gemini':   { displayName: 'Gemini 3 Pro',      shortName: 'Gemini 3 Pro',    color: '#4285f4', order: 5, icon: VIEWS_BASE + 'model-icons/gemini.webp', releaseDate: '2025-11-18' },
   'gemini31': { displayName: 'Gemini 3.1 Pro',    shortName: 'Gemini 3.1 Pro',  color: '#1a57c4', order: 6, icon: VIEWS_BASE + 'model-icons/gemini.webp', releaseDate: '2026-02-19' },
+  'gemini4argon': { displayName: 'Gemini 4 Argon', shortName: 'Gemini 4 Argon', color: '#0b2f8a', order: 6.1, icon: VIEWS_BASE + 'model-icons/gemini.webp', releaseDate: '2026-10-13' },
   'geminiflash': { displayName: 'Gemini 3 Flash', shortName: 'Gemini 3 Flash', color: '#7baaf7', order: 6.5, icon: VIEWS_BASE + 'model-icons/gemini.webp', releaseDate: '2025-12-17' },
   'gemini35flash': { displayName: 'Gemini 3.5 Flash', shortName: 'Gemini 3.5 Flash', color: '#5295e8', order: 6.6, icon: VIEWS_BASE + 'model-icons/gemini.webp', releaseDate: '2026-05-19' },
   'gemini35flash-high': { displayName: 'Gemini 3.5 Flash high', shortName: 'Gemini 3.5 Flash hi', color: '#1f6fd0', order: 6.65, icon: VIEWS_BASE + 'model-icons/gemini.webp', releaseDate: '2026-05-19' },

@@ -330,6 +330,16 @@ configure_model_env() {
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'grok45_adapter:Grok45MediumOpenCode'"
       ;;
+    gemini4argon-opencode)
+      # OpenRouter, pinned to Google's standard-tier endpoints (no flex/priority),
+      # see agents/gemini4argon_adapter.py.
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'gemini4argon_adapter:Gemini4ArgonOpenCode'"
+      ;;
     gemini38flash-opencode)
       # OpenRouter (Google first-party endpoints) — Google API keys were all
       # invalid on launch day, see agents/gemini38flash_adapter.py.

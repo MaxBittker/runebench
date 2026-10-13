@@ -155,6 +155,9 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // (models.dev + OpenRouter). Run via OpenRouter (Google first-party
   // endpoints), OpenCode-native cost; entry for display/backfill parity.
   gemini38flash:     { input: 0.75e-6, cachedInput: 0.075e-6, cacheWrite: 0.75e-6, output: 3.75e-6 },
+  // gemini-4-argon, OpenRouter 2026-10-13 — Google standard tier ($2/$10, cache
+  // read $0.20); the adapter pins standard endpoints only (no flex/priority).
+  gemini4argon:      { input: 2e-6, cachedInput: 0.2e-6, cacheWrite: 2e-6, output: 10e-6 },
   gemini35flashlite: { input: 0.3e-6, cachedInput: 0.03e-6, cacheWrite: 0.3e-6, output: 2.5e-6 },
   glm:          { input: 0.72e-6,   cachedInput: 0,        cacheWrite: 0.72e-6,   output: 2.3e-6 },
   glm52:        { input: 1.4e-6,    cachedInput: 0,        cacheWrite: 1.4e-6,    output: 4.4e-6 }, // z-ai/glm-5.2, OpenRouter 2026-06-16
@@ -316,6 +319,7 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'google/gemini-3.6-flash':           'gemini36flash',
   'google/gemini-3.7-flash':           'gemini37flash',
   'openrouter/google/gemini-3.8-flash': 'gemini38flash',
+  'openrouter/google/gemini-4-argon':   'gemini4argon',
   'google/gemini-3.5-flash-lite':      'gemini35flashlite',
   'gemini/gemini-3-pro-preview':       'gemini',
   'gemini/gemini-3.1-pro-preview':     'gemini31',
