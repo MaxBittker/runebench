@@ -775,6 +775,31 @@ body {
   background: #e0e0e0;
   color: #555;
 }
+.traj-copy-link {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 5px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  background: #fff;
+  color: #888;
+  font-family: monospace;
+  font-size: 10px;
+  line-height: 1.5;
+  cursor: pointer;
+  vertical-align: middle;
+}
+.traj-copy-link:hover {
+  border-color: #bbb;
+  color: #555;
+  background: #f8f8f8;
+}
+.traj-tool-detail-row {
+  cursor: pointer;
+}
+.traj-tool-detail-row .traj-copy-link {
+  margin-top: 4px;
+}
 
 /* Sortable column headers */
 .sort-header {
