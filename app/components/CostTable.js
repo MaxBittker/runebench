@@ -1,4 +1,5 @@
 import { html, useMemo, useState } from '../html.js';
+import { TIERS } from './Heatmap.js';
 
 function fmt$(v) {
   if (v == null || v <= 0) return '—';
@@ -19,6 +20,21 @@ function fmtTokens(n) {
 }
 
 const COLLAPSED_ROWS = 13;
+
+// Continuous shading through the skill heatmap's greens (light → mid → dark).
+// t is goodness in [0, 1]; values outside the scale clamp to the ends.
+const GREEN_STOPS = [TIERS.low.bg, TIERS.mid.bg, TIERS.high.bg].map((h) => {
+  const n = parseInt(h.slice(1), 16);
+  return [n >> 16, (n >> 8) & 255, n & 255];
+});
+
+function shade(t) {
+  const x = Math.min(1, Math.max(0, t)) * (GREEN_STOPS.length - 1);
+  const i = Math.min(GREEN_STOPS.length - 2, Math.floor(x));
+  const f = x - i;
+  const rgb = GREEN_STOPS[i].map((c, k) => Math.round(c + (GREEN_STOPS[i + 1][k] - c) * f));
+  return { bg: `rgb(${rgb.join(',')})`, color: t >= 0.9 ? TIERS.high.color : TIERS.mid.color };
+}
 
 export function CostTable({ data }) {
   const [sortCol, setSortCol] = useState('logMean');
@@ -66,7 +82,9 @@ export function CostTable({ data }) {
         }
       }
 
-      if (rateCount === 0) continue;
+      // Partial sweeps (e.g. gpt4o, woodcutting only) would be log-averaged
+      // over a subset of skills; only rank models with all 16 runs.
+      if (rateCount < SKILL_ORDER.length) continue;
 
       const logMean = logSum / rateCount;
       const avgCost = runsWithCost > 0 ? totalCost / runsWithCost : 0;
@@ -95,6 +113,21 @@ export function CostTable({ data }) {
     });
     return arr;
   }, [rows, sortCol, sortAsc]);
+
+  // Shading scale spans only the models shown by default (top COLLAPSED_ROWS by
+  // score): the weakest of them is lightest, the best darkest. Cost is scaled
+  // in log space (cheapest = darkest) since it spans ~10x even within that set.
+  const scale = useMemo(() => {
+    const top = rows.slice().sort((a, b) => b.logMean - a.logMean).slice(0, COLLAPSED_ROWS);
+    const scores = top.map((r) => r.logMean);
+    const logCosts = top.filter((r) => r.avgCost > 0).map((r) => Math.log(r.avgCost));
+    return {
+      scoreLo: Math.min(...scores),
+      scoreHi: Math.max(...scores),
+      costLo: Math.min(...logCosts),
+      costHi: Math.max(...logCosts),
+    };
+  }, [rows]);
 
   if (!data || sorted.length === 0) return null;
 
@@ -142,14 +175,18 @@ export function CostTable({ data }) {
               ${visible.map(m => {
                 const cfg = MODEL_CONFIG[m.key];
                 if (!cfg) return null;
+                const scoreTier = shade((m.logMean - scale.scoreLo) / ((scale.scoreHi - scale.scoreLo) || 1));
+                const costTier = m.avgCost > 0
+                  ? shade((scale.costHi - Math.log(m.avgCost)) / ((scale.costHi - scale.costLo) || 1))
+                  : TIERS.zero;
                 return html`
                   <tr key=${m.key}>
                     <td className="heatmap-model">
                       <img src=${cfg.icon} alt="" />
                       <span>${cfg.shortName}</span>
                     </td>
-                    <td style=${{ fontVariantNumeric: 'tabular-nums' }}>${m.logMean.toFixed(1)}</td>
-                    <td style=${{ fontVariantNumeric: 'tabular-nums' }}>${fmt$(m.avgCost)}</td>
+                    <td style=${{ fontVariantNumeric: 'tabular-nums', background: scoreTier.bg, color: scoreTier.color }}>${m.logMean.toFixed(1)}</td>
+                    <td style=${{ fontVariantNumeric: 'tabular-nums', background: costTier.bg, color: costTier.color }}>${fmt$(m.avgCost)}</td>
                     <td style=${{ fontVariantNumeric: 'tabular-nums', fontSize: '11px' }}>${m.runsWithCost > 0 ? fmtTokens(m.totalInput / m.runsWithCost) : '—'} / ${m.runsWithCost > 0 ? fmtTokens(m.totalOutput / m.runsWithCost) : '—'}</td>
                     <td style=${{ fontVariantNumeric: 'tabular-nums' }}>${m.avgTurns > 0 ? Math.round(m.avgTurns) : '—'}</td>
                   </tr>

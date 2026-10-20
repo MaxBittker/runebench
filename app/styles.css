@@ -379,6 +379,14 @@ body {
 }
 
 /* Heatmap styles */
+.heatmap-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+  color: #666;
+}
+.heatmap-controls input { margin-right: 0.35em; }
 .heatmap-scroll {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;

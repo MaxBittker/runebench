@@ -1,32 +1,60 @@
 import { html, useEffect, useRef, useMemo, useState } from '../html.js';
 import { makeLabelPlugin } from './scatter-labels.js';
 
-// High-effort ("xh") variants are folded into their base model: we never plot
-// the xh point on its own — instead, if the xh run scored higher than the base
-// run, the base model adopts the xh point (cost + score) but keeps the base
-// label, so no "xh" text appears.
-const XH_TO_BASE = {
-  'opus5-xhigh': 'opus5',
-  'gpt6astra-high': 'gpt6astra',
-  'gpt6luna-high': 'gpt6luna',
-  'fable51-xhigh': 'fable51',
-  'fable-5-xhigh': 'fable-5',
-  'opus48-max': 'opus48',
-  'opus47-xhigh': 'opus47',
-  'gpt55-apikey': 'gpt55',
-  'gemini35flash-high': 'gemini35flash',
-  'haiku55-high': 'haiku55',
-};
+// Thinking-effort variants (opus5-xhigh, gpt61sol-low, grok46-medium, …) share
+// a family with their default-effort row, and only the variants that earn a
+// spot are plotted. A variant is hidden when its score is within
+// VARIANT_SCORE_TOL of the default's (in doubt, show the default) or when
+// another row of its family Pareto-dominates it (cheaper-or-equal and
+// higher-or-equal scoring). The default itself is hidden only when a surviving
+// variant dominates it.
+const THINKING_SUFFIX = /-(xhigh|high|medium|low|max)$/;
+const VARIANT_SCORE_TOL = 0.1; // ⟨ln⟩ units, ~10% XP/min
+
+function familyOf(key) {
+  return key.replace(THINKING_SUFFIX, '');
+}
+
+function dominates(o, r) {
+  return o.avgCost <= r.avgCost && o.logMean >= r.logMean &&
+    (o.avgCost < r.avgCost || o.logMean > r.logMean);
+}
+
+function dropDominatedVariants(rows) {
+  const families = new Map();
+  for (const r of rows) {
+    const f = familyOf(r.key);
+    if (!families.has(f)) families.set(f, []);
+    families.get(f).push(r);
+  }
+  const out = [];
+  for (const [f, members] of families) {
+    const def = members.find((r) => r.key === f);
+    const variants = members.filter((r) => r !== def);
+    const kept = variants.filter((v) =>
+      !(def && Math.abs(v.logMean - def.logMean) < VARIANT_SCORE_TOL) &&
+      !members.some((o) => o !== v && dominates(o, v))
+    );
+    if (def && !kept.some((v) => dominates(v, def))) out.push(def);
+    out.push(...kept);
+  }
+  return out;
+}
 
 // Models intentionally hidden from the cost scatter (older points that clutter
 // the frontier without adding signal).
-const EXCLUDED = new Set(['sonnet45', 'gemini', 'opus45', 'kimi26', 'muse', 'codex53', 'qwen3max', 'qwen37max', 'gpt55', 'gpt55-apikey', 'gptoss120b']);
+const EXCLUDED = new Set(['sonnet45', 'gemini', 'kimi26', 'muse', 'codex53', 'qwen3max', 'qwen37max', 'gpt55', 'gpt55-apikey', 'gptoss120b']);
 
 // By default only models released within this many days of the newest
 // release on the board are plotted; the "show older" toggle brings the rest
 // back. Anchored to the newest release (not today) so the view doesn't drift
 // empty between runs. Models with no releaseDate are always shown.
 const RECENT_WINDOW_DAYS = 90;
+
+// Older models kept on the default view regardless of the recency window —
+// reference points for how far cheap new models have come (Opus 4.5/4.6 vs
+// Haiku 5.5).
+const ALWAYS_SHOWN = new Set(['opus', 'opus45']);
 
 // Reuse the same per-model aggregation as CostTable: log-average performance
 // (⟨ln⟩ of peak XP/min across the 16 skills) vs. average API cost per run.
@@ -55,7 +83,11 @@ function buildRows(data) {
       }
     }
 
-    if (rateCount === 0 || runsWithCost === 0) continue;
+    // Zero-score skills count (ln(1+0) = 0 in the mean), but a model missing
+    // skill runs entirely (e.g. gpt4o, woodcutting only) would be averaged over
+    // a subset — leave it off rather than plot an inflated score.
+    // ($0 can't sit on the log cost axis.)
+    if (rateCount < SKILL_ORDER.length || runsWithCost === 0 || totalCost <= 0) continue;
 
     const releaseMs = Date.parse(MODEL_CONFIG[key].releaseDate);
     out.push({
@@ -66,23 +98,7 @@ function buildRows(data) {
     });
   }
 
-  // Fold xh variants into their base model, keeping the higher-scoring point.
-  const byKey = new Map(out.map((r) => [r.key, r]));
-  for (const [xhKey, baseKey] of Object.entries(XH_TO_BASE)) {
-    const xh = byKey.get(xhKey);
-    if (!xh) continue;
-    byKey.delete(xhKey); // never plot the xh point on its own
-    const base = byKey.get(baseKey);
-    if (!base) {
-      // No base run — adopt the xh point under the base identity.
-      byKey.set(baseKey, { ...xh, key: baseKey });
-    } else if (xh.logMean > base.logMean) {
-      // xh scored higher — base adopts the xh point but keeps its own label.
-      base.logMean = xh.logMean;
-      base.avgCost = xh.avgCost;
-    }
-  }
-  return [...byKey.values()];
+  return out;
 }
 
 // Keys of models on the Pareto frontier: no other model is both cheaper (or
@@ -102,12 +118,11 @@ function paretoKeys(rows) {
   return keys;
 }
 
-// Icons are shared across chart rebuilds: the frontier toggle tears the chart
-// down and back up, and a fresh Image per toggle starts !complete even when
-// the file is in the HTTP cache — so the faded copies would flash blank every
-// time. One Image (and one greyed canvas) per src, kept for the page's life.
+// Icons are shared across chart rebuilds (hiding a model or toggling older
+// ones tears the chart down and back up): a fresh Image per rebuild starts
+// !complete even when the file is in the HTTP cache. One Image per src, kept
+// for the page's life.
 const iconCache = new Map();
-const fadedCache = new Map();
 
 function iconFor(src) {
   let img = iconCache.get(src);
@@ -119,39 +134,61 @@ function iconFor(src) {
   return img;
 }
 
-// Greyed-out copy of a model icon for off-frontier points. Icons are usually
-// cached by this point, but redraw on load (and repaint the chart) if not.
-function makeFadedIcon(src, repaint) {
-  let c = fadedCache.get(src);
-  if (c) return c;
-  const img = iconFor(src);
-  c = document.createElement('canvas');
-  c.width = 20;
-  c.height = 20;
-  const draw = () => {
-    const ctx = c.getContext('2d');
-    ctx.clearRect(0, 0, 20, 20);
-    ctx.filter = 'grayscale(1) opacity(0.15)';
-    ctx.drawImage(img, 0, 0, 20, 20);
-  };
-  if (img.complete && img.naturalWidth) {
-    draw();
-    fadedCache.set(src, c);
-  } else {
-    // Don't cache until it has real pixels, or a blank canvas sticks around.
-    img.addEventListener('load', () => {
-      draw();
-      fadedCache.set(src, c);
-      repaint();
-    }, { once: true });
+// 1-2-5 sequence helpers for the log cost axis.
+const STEP_MULTS = [1, 2, 5];
+
+function niceSteps(lo, hi) {
+  const out = [];
+  for (let e = Math.floor(Math.log10(lo)) - 1; e <= Math.ceil(Math.log10(hi)); e++) {
+    for (const m of STEP_MULTS) {
+      const v = +(m * 10 ** e).toPrecision(3);
+      if (v >= lo && v <= hi) out.push(v);
+    }
   }
-  return c;
+  return out;
+}
+
+// Nearest 1-2-5 step strictly past v (a v already on a step still gets
+// padded, so its icon clears the axis edge).
+function niceStep(v, dir) {
+  const steps = niceSteps(v / 10, v * 10);
+  return dir === 'down'
+    ? steps.filter((s) => s < v).pop()
+    : steps.find((s) => s > v);
+}
+
+// Pareto frontier as a faint dashed line through the frontier points (cheapest
+// first), drawn under the icons. A plugin rather than a line dataset so it never
+// shows up in tooltips or click hit-testing.
+function makeFrontierPlugin(frontierPts) {
+  return {
+    id: 'paretoFrontier',
+    beforeDatasetsDraw(chart) {
+      if (frontierPts.length < 2) return;
+      const { ctx, chartArea, scales } = chart;
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(chartArea.left, chartArea.top, chartArea.right - chartArea.left, chartArea.bottom - chartArea.top);
+      ctx.clip();
+      ctx.setLineDash([3, 4]);
+      ctx.lineWidth = 1.25;
+      ctx.strokeStyle = 'rgba(120, 120, 120, 0.55)';
+      ctx.beginPath();
+      frontierPts.forEach((p, i) => {
+        const x = scales.x.getPixelForValue(p.x);
+        const y = scales.y.getPixelForValue(p.y);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+      ctx.restore();
+    },
+  };
 }
 
 export function CostScatter({ data }) {
   const canvasRef = useRef(null);
   const chartInstance = useRef(null);
-  const [frontierOnly, setFrontierOnly] = useState(false);
   const [showOlder, setShowOlder] = useState(false);
   // Session-local set of models hidden by clicking their point — not
   // persisted anywhere, a reload brings everything back.
@@ -162,13 +199,14 @@ export function CostScatter({ data }) {
     const dates = allRows.map((r) => r.releaseMs).filter((ms) => ms != null);
     return dates.length ? Math.max(...dates) - RECENT_WINDOW_DAYS * 86400000 : -Infinity;
   }, [allRows]);
+  const isRecent = (r) => r.releaseMs == null || r.releaseMs >= cutoffMs || ALWAYS_SHOWN.has(r.key);
   const olderCount = useMemo(
-    () => allRows.filter((r) => r.releaseMs != null && r.releaseMs < cutoffMs).length,
+    () => allRows.filter((r) => !isRecent(r)).length,
     [allRows, cutoffMs]
   );
   const rows = useMemo(
-    () => allRows.filter((r) =>
-      !hidden.has(r.key) && (showOlder || r.releaseMs == null || r.releaseMs >= cutoffMs)
+    () => dropDominatedVariants(
+      allRows.filter((r) => !hidden.has(r.key) && (showOlder || isRecent(r)))
     ),
     [allRows, hidden, showOlder, cutoffMs]
   );
@@ -185,41 +223,26 @@ export function CostScatter({ data }) {
       return;
     }
 
-    const repaint = () => chartInstance.current && chartInstance.current.update();
-
-    // Preload model icons so points can be drawn as logos. When the frontier
-    // toggle is on, off-frontier points get a greyed icon + grey label.
+    // Preload model icons so points can be drawn as logos.
     const points = rows.map((r) => {
       const cfg = MODEL_CONFIG[r.key];
-      const img = iconFor(cfg.icon);
-      const dimmed = frontierOnly && !frontier.has(r.key);
-      const dimImg = dimmed ? makeFadedIcon(cfg.icon, repaint) : null;
       return {
         x: r.avgCost,
         y: r.logMean,
         key: r.key,
         label: cfg.shortName,
-        color: dimmed ? '#b6b6b6' : cfg.color,
-        img: dimmed ? dimImg : img,
-        big: frontierOnly && frontier.has(r.key),
-        alpha: dimmed ? 0.3 : 1,
-        ghost: dimmed,
-        // Kept for hover: a greyed point temporarily regains its full look.
-        fullImg: img,
-        fullColor: cfg.color,
-        dimImg,
+        color: cfg.color,
+        img: iconFor(cfg.icon),
       };
     });
-
-    // With the frontier toggle on, fit the cost axis to the frontier points
-    // only — dominated points past that just clip off the chart. The y axis
-    // keeps its full range.
-    let xMax;
-    if (frontierOnly) {
-      const f = rows.filter((r) => frontier.has(r.key));
-      // Whole dollars so the edge tick stays clean ("$6", not "$5.62…").
-      xMax = Math.ceil(Math.max(...f.map((r) => r.avgCost)) * 1.05);
-    }
+    // Log cost axis: pad out to the 1-2-5 steps just past the cheapest and
+    // priciest points so edge icons aren't sitting on the axis.
+    const costs = points.map((p) => p.x);
+    const xMin = niceStep(Math.min(...costs), 'down');
+    const xMax = niceStep(Math.max(...costs), 'up');
+    const frontierPts = points
+      .filter((p) => frontier.has(p.key))
+      .sort((a, b) => a.x - b.x);
 
     if (chartInstance.current) {
       chartInstance.current.destroy();
@@ -233,8 +256,7 @@ export function CostScatter({ data }) {
       data: {
         datasets: [{
           data: points,
-          // Let edge icons overflow a little, but clip points pushed outside
-          // the chart area when the frontier-fit bounds exclude them.
+          // Let edge icons overflow the chart area a little.
           clip: 14,
           pointStyle: points.map((p) => p.img),
           pointRadius: 11,
@@ -243,22 +265,26 @@ export function CostScatter({ data }) {
           borderColor: points.map((p) => p.color),
         }],
       },
-      plugins: [labelPlugin],
+      plugins: [makeFrontierPlugin(frontierPts), labelPlugin],
       options: {
         responsive: true,
         maintainAspectRatio: false,
         devicePixelRatio: Math.max(2, window.devicePixelRatio || 1),
         // Point positions move on every animation frame, which invalidates the
         // label plugin's layout cache and re-solves placements ~60 times for
-        // one toggle. The entry animation isn't worth that.
+        // one rebuild. The entry animation isn't worth that.
         animation: false,
         scales: {
           x: {
-            type: 'linear',
-            beginAtZero: true,
-            reverse: true,
+            type: 'logarithmic',
+            min: xMin,
             max: xMax,
-            title: { display: true, text: 'Avg API Cost / Run (USD)' },
+            title: { display: true, text: 'Avg API Cost / Run (USD, log scale)' },
+            // Chart.js's default log ticks are every integer multiple of each
+            // decade (1,2,3…9,10,20…); keep just the 1-2-5 steps.
+            afterBuildTicks: (axis) => {
+              axis.ticks = niceSteps(xMin, xMax).map((value) => ({ value }));
+            },
             ticks: {
               callback: (v) => '$' + v,
             },
@@ -281,30 +307,7 @@ export function CostScatter({ data }) {
       },
     });
 
-    // Hovering a greyed-out point — or its label — restores the pair's full
-    // color until the pointer moves away. Layout is untouched (same size), so
-    // the cached label placements are reused and nothing shifts.
     const canvas = canvasRef.current;
-    let hoverIdx = -1;
-    const applyHover = (idx) => {
-      if (idx === hoverIdx) return;
-      const chart = chartInstance.current;
-      if (!chart) return;
-      const ds = chart.data.datasets[0];
-      const set = (i, on) => {
-        const p = points[i];
-        if (!p || !p.ghost) return false;
-        p.color = on ? p.fullColor : '#b6b6b6';
-        p.alpha = on ? 1 : 0.3;
-        ds.pointStyle[i] = on ? p.fullImg : p.dimImg;
-        ds.backgroundColor[i] = p.color;
-        ds.borderColor[i] = p.color;
-        return true;
-      };
-      const changed = set(hoverIdx, false) | set(idx, true);
-      hoverIdx = idx;
-      if (changed) chart.update('none');
-    };
     // Point index under the cursor — the dot itself or its placed label.
     const idxAt = (e) => {
       const chart = chartInstance.current;
@@ -324,9 +327,7 @@ export function CostScatter({ data }) {
     const onMove = (e) => {
       const idx = idxAt(e);
       canvas.style.cursor = idx >= 0 ? 'pointer' : 'default';
-      applyHover(idx);
     };
-    const onLeave = () => applyHover(-1);
     // Clicking a model (dot or label) hides it for this session; the chart
     // rebuilds and the axes re-fit to the models that remain.
     const onClick = (e) => {
@@ -340,19 +341,17 @@ export function CostScatter({ data }) {
       });
     };
     canvas.addEventListener('mousemove', onMove);
-    canvas.addEventListener('mouseleave', onLeave);
     canvas.addEventListener('click', onClick);
 
     return () => {
       canvas.removeEventListener('mousemove', onMove);
-      canvas.removeEventListener('mouseleave', onLeave);
       canvas.removeEventListener('click', onClick);
       if (chartInstance.current) {
         chartInstance.current.destroy();
         chartInstance.current = null;
       }
     };
-  }, [rows, frontier, frontierOnly]);
+  }, [rows, frontier]);
 
   if (!data || allRows.length === 0) return null;
 
@@ -402,15 +401,6 @@ export function CostScatter({ data }) {
             Show older (${olderCount})
           </label>
         `}
-        <label className="checkbox">
-          <input
-            type="checkbox"
-            checked=${frontierOnly}
-            onChange=${(e) => setFrontierOnly(e.target.checked)}
-            style=${{ marginRight: '0.35em' }}
-          />
-          Pareto frontier
-        </label>
         </div>
       </div>
       <div style=${{ position: 'relative', height: '480px' }}>
