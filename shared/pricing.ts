@@ -83,6 +83,9 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   'sonnet5-xhigh': { input: 2e-6, cachedInput: 0.2e-6,   cacheWrite: 2.5e-6,   output: 10e-6 },
   sonnet46:     { input: 3e-6,    cachedInput: 0.3e-6,   cacheWrite: 3.75e-6,  output: 15e-6 },
   sonnet45:     { input: 3e-6,    cachedInput: 0.3e-6,   cacheWrite: 3.75e-6,  output: 15e-6 },
+  // Sonnet 4 (claude-sonnet-4, 2025-05-22): $3/$15 card, via OpenRouter (Bedrock endpoint)
+  // with claude-code (scripts/run-claude-openrouter-30m.sh).
+  sonnet4:      { input: 3e-6,    cachedInput: 0.3e-6,   cacheWrite: 3.75e-6,  output: 15e-6 },
   // Haiku 5.5 (claude-haiku-5-5, GA 2026-10-07): $0.10/$0.50, cache read $0.01,
   // 5-min cache write $0.125 for prompts ≤100k tokens; the WHOLE request bills 5×
   // ($0.50/$2.50, read $0.05, write $0.625) once its prompt exceeds 100k.
@@ -160,6 +163,12 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // introductory half-price promo ($2/$10); the row displays the regular price,
   // like muse12/13. Keep in sync with Gemini4ArgonOpenCode._build_opencode_config.
   gemini4argon:      { input: 4e-6, cachedInput: 0.2e-6, cacheWrite: 0.375e-6, output: 20e-6 },
+  // Reflection Beam-1.0-501B-A23B, run direct on api.reflection.ai (no public
+  // rate card). Priced at OpenRouter's default route, 2026-10-19
+  // (reflection/beam-1.0-501b-a23b → CoreWeave fp4): $0.30/$1.00 per 1M, cache
+  // read $0.04. Other OR endpoints: Nebius $0.25/$1.00, Together $0.40/$1.20,
+  // BaseTen $1.30/$4.30. No cache-write premium → cacheWrite = input (inert).
+  beam:              { input: 0.3e-6, cachedInput: 0.04e-6, cacheWrite: 0.3e-6, output: 1e-6 },
   gemini35flashlite: { input: 0.3e-6, cachedInput: 0.03e-6, cacheWrite: 0.3e-6, output: 2.5e-6 },
   glm:          { input: 0.72e-6,   cachedInput: 0,        cacheWrite: 0.72e-6,   output: 2.3e-6 },
   glm52:        { input: 1.4e-6,    cachedInput: 0,        cacheWrite: 1.4e-6,    output: 4.4e-6 }, // z-ai/glm-5.2, OpenRouter 2026-06-16
@@ -175,6 +184,9 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // update BOTH when z.ai publishes real 5.3 rates (then re-run
   // postprocess-costs --force --models glm53 + re-extract).
   glm53:        { input: 1.4e-6,    cachedInput: 0.26e-6,  cacheWrite: 1.4e-6,    output: 4.4e-6 },
+  // z-ai/glm-5.3 via OpenRouter pinned to the PrimeIntellect endpoint, 2026-10-01
+  // (OpenRouter list rate). Native OpenCode cost (rates declared in glm53prime_adapter.py).
+  'glm53-prime': { input: 1.4e-6,  cachedInput: 0.26e-6,  cacheWrite: 1.4e-6,    output: 4.4e-6 },
   // z-ai/glm-5.3-flash via OpenRouter (Z.AI endpoint), listed 2026-08-26:
   // $0.075/$0.25 per 1M, cache read $0.015. OpenCode-native cost.
   glm53flash:   { input: 0.075e-6,  cachedInput: 0.015e-6, cacheWrite: 0.075e-6,  output: 0.25e-6 },
@@ -209,6 +221,11 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // deepseek-v4.1-flash pinned to the DeepSeek first-party endpoint, OpenRouter 2026-09-22
   // ($0.15/$0.60 per 1M, cache read $0.003). No cache-write premium → cacheWrite = input (inert).
   deepseek41flash: { input: 0.15e-6, cachedInput: 0.003e-6, cacheWrite: 0.15e-6, output: 0.6e-6 },
+  // deepseek-v4.1-flash-1017 snapshot (2026-10-17), same first-party pin + list price. DeepSeek
+  // doubles it in weekday UTC peak windows; the 2026-10-17 run was a Saturday (flat rate).
+  deepseek41flash1017: { input: 0.15e-6, cachedInput: 0.003e-6, cacheWrite: 0.15e-6, output: 0.6e-6 },
+  // GPT-4o 2024-08-06 snapshot, OpenAI first-party via OpenRouter (rates declared in gpt4o_adapter.py).
+  gpt4o:        { input: 2.5e-6,  cachedInput: 1.25e-6,  cacheWrite: 2.5e-6,   output: 10e-6 },
   // mistralai/mistral-large-4-0 via OpenRouter (Mistral endpoint), released 2026-10-06:
   // $0.68/$2.09 per 1M, cache read $0.07 (probe billed exactly at list).
   // OpenCode-native cost (rates declared in mistrallarge4_adapter.py).
@@ -260,6 +277,8 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // muse-wonder via OpenRouter (single Meta endpoint), 2026-10-12. Standard
   // paid tier: $4/$20 per 1M, cache read $0.20 (no cache-write charge).
   musewonder:   { input: 4e-6,      cachedInput: 0.2e-6,   cacheWrite: 4e-6,      output: 20e-6 },
+  // muse-wonder-1.0 via Meta Model API direct (api.meta.ai), same card.
+  'musewonder-meta': { input: 4e-6, cachedInput: 0.2e-6,   cacheWrite: 4e-6,      output: 20e-6 },
   muse13:       { input: 1.25e-6,   cachedInput: 0.15e-6,  cacheWrite: 1.25e-6,   output: 4.25e-6 },
   // thinkingmachines/inkling, OpenRouter (Together endpoint, the model's only
   // provider) 2026-07-21. No cache-write premium → cacheWrite = input (inert).
@@ -274,6 +293,19 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // agents/laguna_adapter.py (cost declared in opencode.json → OpenCode reports
   // real cost_usd; postprocess-costs needs --force to override it).
   laguna:       { input: 0.1e-6,    cachedInput: 0.01e-6,  cacheWrite: 0.1e-6,    output: 0.2e-6 },
+  // meta/muse-spark-open (open weights), OpenRouter 2026-10-20, restricted to
+  // Together/Fireworks/Modal (all $1.25/$4.25, cache read $0.15). No cache-write
+  // premium → cacheWrite = input (inert). Keep in sync with
+  // MuseSparkOpenOpenRouter in agents/muse_adapter.py (cost declared in
+  // opencode.json → postprocess-costs needs --force to override it).
+  musesparkopen:   { input: 1.25e-6, cachedInput: 0.15e-6, cacheWrite: 1.25e-6, output: 4.25e-6 },
+  // nvidia/nemotron-3-ultra-550b-a55b, OpenRouter pinned to BaseTen fp4
+  // 2026-10-20 ($0.60/$2.40, cache read $0.12). Keep in sync with
+  // agents/nemotron_adapter.py.
+  nemotron3ultra:  { input: 0.6e-6,  cachedInput: 0.12e-6, cacheWrite: 0.6e-6,  output: 2.4e-6 },
+  // nvidia/nemotron-3.5-super-vl, OpenRouter pinned to Together 2026-10-20
+  // ($0.15/$0.50, cache read $0.02). Keep in sync with agents/nemotron_adapter.py.
+  nemotron35super: { input: 0.15e-6, cachedInput: 0.02e-6, cacheWrite: 0.15e-6, output: 0.5e-6 },
 };
 
 /** By Harbor model ID (provider/name). Aliased to MODEL_PRICING entries. */
@@ -296,6 +328,7 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'anthropic/claude-sonnet-5-xhigh':   'sonnet5-xhigh',
   'anthropic/claude-sonnet-4-6':       'sonnet46',
   'anthropic/claude-sonnet-4-5':       'sonnet45',
+  'anthropic/claude-sonnet-4':         'sonnet4',
   'anthropic/claude-haiku-5-5':        'haiku55',
   'anthropic/claude-haiku-4-5':        'haiku',
   'openai/gpt-5.2-codex':              'codex',
@@ -322,6 +355,7 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'google/gemini-3.7-flash':           'gemini37flash',
   'openrouter/google/gemini-3.8-flash': 'gemini38flash',
   'openrouter/google/gemini-4-argon':   'gemini4argon',
+  'reflection/Beam-1.0-501B-A23B':     'beam',
   'google/gemini-3.5-flash-lite':      'gemini35flashlite',
   'gemini/gemini-3-pro-preview':       'gemini',
   'gemini/gemini-3.1-pro-preview':     'gemini31',
@@ -333,6 +367,7 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   // adapter declares endpoint cost, so OpenCode-native cost_usd is correct.
   'openrouter/z-ai/glm-5.2':           'glm52',
   'zai-coding-plan/glm-5.3':           'glm53',
+  'openrouter/z-ai/glm-5.3':           'glm53-prime',
   'openrouter/z-ai/glm-5.3-flash':     'glm53flash',
   'openrouter/google/gemma-4-31b-it':  'gemma4',
   'openrouter/openai/gpt-oss-120b':    'gptoss120b',
@@ -346,6 +381,8 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'openrouter/deepseek/deepseek-v4-flash': 'deepseekflash',
   'openrouter/deepseek/deepseek-v4-flash-0731': 'deepseekflash0731',
   'openrouter/deepseek/deepseek-v4.1-flash': 'deepseek41flash',
+  'openrouter/deepseek/deepseek-v4.1-flash-1017': 'deepseek41flash1017',
+  'openrouter/openai/gpt-4o-2024-08-06': 'gpt4o',
   'openrouter/mistralai/mistral-large-4-0': 'mistrallarge4',
   'openrouter/moonshotai/kimi-k2.6':   'kimi26',
   'openrouter/moonshotai/kimi-k2.7-code': 'kimi27',
@@ -358,9 +395,13 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'meta/muse-spark-1.2-contributor':   'muse12',
   'openrouter/meta/muse-spark-1.3-contributor': 'muse13',
   'openrouter/meta/muse-wonder': 'musewonder',
+  'meta/muse-wonder-1.0':      'musewonder-meta',
   'meta/muse-spark-1.1':               'muse',
   'openrouter/thinkingmachines/inkling': 'inkling',
   'openrouter/poolside/laguna-s-2.1':  'laguna',
+  'openrouter/meta/muse-spark-open':   'musesparkopen',
+  'openrouter/nvidia/nemotron-3-ultra-550b-a55b': 'nemotron3ultra',
+  'openrouter/nvidia/nemotron-3.5-super-vl':      'nemotron35super',
 };
 
 /** Look up pricing by either internal label or Harbor model ID. */

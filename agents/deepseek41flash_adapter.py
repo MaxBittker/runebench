@@ -34,3 +34,20 @@ class DeepSeek41FlashOpenCode(OpenCodeAdapter):
     @staticmethod
     def name() -> str:
         return "deepseek41flash-opencode"
+
+
+class DeepSeek41Flash1017OpenCode(DeepSeek41FlashOpenCode):
+    """deepseek-v4.1-flash-1017 (Oct 17 2026 snapshot), same first-party pin.
+
+    Same list price as the base V4.1 Flash on the DeepSeek endpoint; DeepSeek
+    doubles it during weekday UTC peak windows (01-04, 06-10), so weekend runs
+    bill at the flat $0.15/$0.60 rate stored in pricing.ts.
+    """
+
+    _default_model = "openrouter/deepseek/deepseek-v4.1-flash-1017"
+    _log_prefix = "deepseek41flash1017"
+    _log_file = "opencode-deepseek41flash1017.txt"
+
+    @staticmethod
+    def name() -> str:
+        return "deepseek41flash1017-opencode"

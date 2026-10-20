@@ -36,6 +36,7 @@ opencode|gemini/gemini-3-pro-preview|gemini
 opencode|gemini/gemini-3-flash-preview|geminiflash
 opencode|gemini/gemini-3.5-flash|gemini35flash
 glm-opencode|openrouter/z-ai/glm-5|glm
+glm53-prime-opencode|openrouter/z-ai/glm-5.3|glm53-prime
 kimi-opencode|openrouter/moonshotai/kimi-k2.5|kimi
 qwen35-opencode|openrouter/qwen/qwen3.5-35b-a3b|qwen35
 "

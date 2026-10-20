@@ -90,6 +90,9 @@ _PROVIDER_KEY_MAP = {
     # z.ai GLM Coding Plan (api.z.ai/api/coding/paas/v4) — native models.dev
     # provider used by glm53_adapter.
     "zai-coding-plan": "ZHIPU_API_KEY",
+    # Reflection API (api.reflection.ai) — custom provider declared by
+    # beam_adapter; referenced as {env:REFLECTION_API_KEY}.
+    "reflection": "REFLECTION_API_KEY",
 }
 
 
@@ -226,6 +229,7 @@ class OpenCodeAdapter(BaseInstalledAgent):
             "GEMINI_API_KEY",
             "META_MODEL_API_KEY",
             "ZHIPU_API_KEY",
+            "REFLECTION_API_KEY",
         ]
     }
 

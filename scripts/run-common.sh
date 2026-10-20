@@ -78,6 +78,16 @@ configure_model_env() {
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'glm53flash_adapter:Glm53FlashOpenCode'"
       ;;
+    glm53-prime-opencode)
+      # GLM-5.3 via OpenRouter pinned to the PrimeIntellect endpoint (harness
+      # comparison vs PI's prime-agent run — analysis/primeintellect-traces/).
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'glm53prime_adapter:Glm53PrimeOpenCode'"
+      ;;
     glm53-opencode)
       # z.ai GLM Coding Plan direct (api.z.ai/api/coding/paas/v4) — needs ZHIPU_API_KEY.
       if [ -z "${ZHIPU_API_KEY:-}" ]; then
@@ -183,6 +193,14 @@ configure_model_env() {
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'deepseek41flash_adapter:DeepSeek41FlashOpenCode'"
       ;;
+    deepseek41flash1017-opencode)
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'deepseek41flash_adapter:DeepSeek41Flash1017OpenCode'"
+      ;;
     mistrallarge4-opencode)
       if [ -z "${OPENROUTER_API_KEY:-}" ]; then
         echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
@@ -198,6 +216,14 @@ configure_model_env() {
       fi
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'mistrallarge4_adapter:MistralLarge4HighOpenCode'"
+      ;;
+    gpt4o-opencode)
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'gpt4o_adapter:Gpt4oOpenCode'"
       ;;
     kimi26-opencode)
       if [ -z "${OPENROUTER_API_KEY:-}" ]; then
@@ -231,6 +257,15 @@ configure_model_env() {
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'kimi3_adapter:Kimi3LowOpenCode'"
       ;;
+    beam-opencode)
+      # Reflection Beam-1.0-501B-A23B — Reflection API direct (api.reflection.ai).
+      if [ -z "${REFLECTION_API_KEY:-}" ]; then
+        echo "  WARNING: REFLECTION_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'beam_adapter:BeamOpenCode'"
+      ;;
     muse-opencode)
       # Meta Model API direct (api.meta.ai) — needs META_MODEL_API_KEY.
       if [ -z "${META_MODEL_API_KEY:-}" ]; then
@@ -256,6 +291,15 @@ configure_model_env() {
       fi
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'muse_adapter:Muse13ContributorOpenRouter'"
+      ;;
+    musewonder-meta-opencode)
+      # muse-wonder-1.0 via Meta Model API direct (api.meta.ai).
+      if [ -z "${META_MODEL_API_KEY:-}" ]; then
+        echo "  WARNING: META_MODEL_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'muse_adapter:MuseWonderMetaOpenCode'"
       ;;
     musewonder-opencode)
       # muse-wonder via OpenRouter (single Meta endpoint, pinned).
@@ -391,6 +435,30 @@ configure_model_env() {
       fi
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'inkling_adapter:InklingOpenCode'"
+      ;;
+    musesparkopen-opencode)
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'muse_adapter:MuseSparkOpenOpenRouter'"
+      ;;
+    nemotron3ultra-opencode)
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'nemotron_adapter:Nemotron3UltraOpenCode'"
+      ;;
+    nemotron35super-opencode)
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'nemotron_adapter:Nemotron35SuperOpenCode'"
       ;;
     codex)
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"

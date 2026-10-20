@@ -64,6 +64,7 @@ glm-opencode|openrouter/z-ai/glm-5|glm
 glm52-opencode|openrouter/z-ai/glm-5.2|glm52
 glm52-wandb-opencode|openrouter/z-ai/glm-5.2|glm52-wandb
 glm53-opencode|zai-coding-plan/glm-5.3|glm53
+glm53-prime-opencode|openrouter/z-ai/glm-5.3|glm53-prime
 glm53flash-opencode|openrouter/z-ai/glm-5.3-flash|glm53flash
 gemma4-opencode|openrouter/google/gemma-4-31b-it|gemma4
 gptoss120b-opencode|openrouter/openai/gpt-oss-120b|gptoss120b
@@ -77,8 +78,10 @@ deepseek-opencode|openrouter/deepseek/deepseek-v4-pro|deepseek
 deepseekflash-opencode|openrouter/deepseek/deepseek-v4-flash|deepseekflash
 deepseekflash0731-opencode|openrouter/deepseek/deepseek-v4-flash-0731|deepseekflash0731
 deepseek41flash-opencode|openrouter/deepseek/deepseek-v4.1-flash|deepseek41flash
+deepseek41flash1017-opencode|openrouter/deepseek/deepseek-v4.1-flash-1017|deepseek41flash1017
 mistrallarge4-opencode|openrouter/mistralai/mistral-large-4-0|mistrallarge4
 mistrallarge4-high-opencode|openrouter/mistralai/mistral-large-4-0|mistrallarge4-high
+gpt4o-opencode|openrouter/openai/gpt-4o-2024-08-06|gpt4o
 kimi26-opencode|openrouter/moonshotai/kimi-k2.6|kimi26
 kimi27-opencode|openrouter/moonshotai/kimi-k2.7-code|kimi27
 kimi3-opencode|openrouter/moonshotai/kimi-k3|kimi3
@@ -94,8 +97,13 @@ muse-opencode|meta/muse-spark-1.1|muse
 muse12-opencode|meta/muse-spark-1.2-contributor|muse12
 muse13-opencode|openrouter/meta/muse-spark-1.3-contributor|muse13
 musewonder-opencode|openrouter/meta/muse-wonder|musewonder
+musewonder-meta-opencode|meta/muse-wonder-1.0|musewonder-meta
 inkling-opencode|openrouter/thinkingmachines/inkling|inkling
 laguna-opencode|openrouter/poolside/laguna-s-2.1|laguna
+musesparkopen-opencode|openrouter/meta/muse-spark-open|musesparkopen
+nemotron3ultra-opencode|openrouter/nvidia/nemotron-3-ultra-550b-a55b|nemotron3ultra
+nemotron35super-opencode|openrouter/nvidia/nemotron-3.5-super-vl|nemotron35super
+beam-opencode|reflection/Beam-1.0-501B-A23B|beam
 
 "
 
@@ -221,10 +229,10 @@ for model_name in $SELECTED_MODELS; do
       #   grep -l 'service_tier="fast"' jobs/<job>/*/trial.log | wc -l   # want 16
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900 --ak fast_mode=true"
       ;;
-    glm|glm52|glm52-wandb|glm53|glm53flash|gemma4|gptoss120b|kimi|kimi26|kimi27|kimi3|kimi3-low|qwen35|qwen3max|qwen37max|qwen38max|qwen38|deepseek|deepseekflash|deepseekflash0731|deepseek41flash|mistrallarge4|mistrallarge4-high|inkling|laguna|gemini4argon|gemini38flash|gemini37flash|gemini36flash|gemini35flashlite)
+    glm|glm52|glm52-wandb|glm53|glm53-prime|glm53flash|gemma4|gptoss120b|kimi|kimi26|kimi27|kimi3|kimi3-low|qwen35|qwen3max|qwen37max|qwen38max|qwen38|deepseek|deepseekflash|deepseekflash0731|deepseek41flash|deepseek41flash1017|mistrallarge4|mistrallarge4-high|gpt4o|inkling|laguna|beam|musesparkopen|nemotron3ultra|nemotron35super|gemini4argon|gemini38flash|gemini37flash|gemini36flash|gemini35flashlite)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1800"
       ;;
-    grok47|grok47-xhigh|grok46|grok46-medium|grok46-xhigh|grok45|grok45-medium|grok43|muse|muse12|muse13|musewonder)
+    grok47|grok47-xhigh|grok46|grok46-medium|grok46-xhigh|grok45|grok45-medium|grok43|muse|muse12|muse13|musewonder|musewonder-meta)
       # xAI blocks grok models for EU-origin requests (403 "not available in
       # your region") — pin the Modal sandbox to a US region so OpenRouter sees
       # a US client. Requires the sandbox_region patch in harbor's modal.py.
