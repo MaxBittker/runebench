@@ -51,7 +51,15 @@ function readBankGoldFromSave(): number {
       pos += version >= 2 ? 4 : 2; // playtime
       pos += 21 * 5; // skills (xp:4 + level:1 each)
       const varpCount = g2();
-      pos += varpCount * 4;
+      if (version >= 7) {
+        // Version 7+ writes only the non-zero perm varps, as (id, varint) pairs.
+        for (let i = 0; i < varpCount; i++) {
+          pos += 2; // id
+          while (g1() & 0x80) {} // varint value
+        }
+      } else {
+        pos += varpCount * 4;
+      }
 
       const invCount = g1();
       let bankGold = 0;
