@@ -93,6 +93,9 @@ _PROVIDER_KEY_MAP = {
     # Reflection API (api.reflection.ai) — custom provider declared by
     # beam_adapter; referenced as {env:REFLECTION_API_KEY}.
     "reflection": "REFLECTION_API_KEY",
+    # Kimi Code subscription (api.kimi.com/coding/v1) — native models.dev
+    # provider used by kimi31pro_adapter.
+    "kimi-code-plan-cn": "KIMI_API_KEY",
 }
 
 
@@ -230,6 +233,7 @@ class OpenCodeAdapter(BaseInstalledAgent):
             "META_MODEL_API_KEY",
             "ZHIPU_API_KEY",
             "REFLECTION_API_KEY",
+            "KIMI_API_KEY",
         ]
     }
 

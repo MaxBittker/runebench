@@ -234,6 +234,7 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   kimi26:       { input: 0.68e-6,   cachedInput: 0.34e-6,  cacheWrite: 0.68e-6,   output: 3.41e-6 },
   kimi27:       { input: 0.75e-6,   cachedInput: 0.16e-6,  cacheWrite: 0.75e-6,   output: 3.5e-6 }, // kimi-k2.7-code, OpenRouter 2026-06-14
   kimi3:        { input: 3e-6,      cachedInput: 0.3e-6,   cacheWrite: 3e-6,      output: 15e-6 }, // kimi-k3, OpenRouter 2026-07-16 (no cache-write premium listed)
+  kimi31pro:    { input: 3e-6,      cachedInput: 0.3e-6,   cacheWrite: 3e-6,      output: 15e-6 }, // k3.1-pro via Kimi Code subscription; NO published rate yet — K3 list price stand-in (keep in sync w/ kimi31pro_adapter.py)
   // x-ai/grok-4.7 (endpoint grok-4.7-20260916), OpenRouter 2026-09-21. ≤200k-
   // context rates ($1.60/$4.80 per 1M, cache read $0.40/1M); 2× past 200k input.
   // No cache-write premium listed → cacheWrite = input (inert).
@@ -387,6 +388,7 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'openrouter/moonshotai/kimi-k2.6':   'kimi26',
   'openrouter/moonshotai/kimi-k2.7-code': 'kimi27',
   'openrouter/moonshotai/kimi-k3':     'kimi3',
+  'kimi-code-plan-cn/k3.1-pro':       'kimi31pro',
   'openrouter/x-ai/grok-4.7':          'grok47',
   'openrouter/x-ai/grok-4.6':          'grok46',
   'openrouter/x-ai/grok-4.5':          'grok45',

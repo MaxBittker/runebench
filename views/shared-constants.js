@@ -98,6 +98,7 @@ const MODEL_CONFIG = {
   'kimi26':   { displayName: 'Kimi K2.6',         shortName: 'Kimi K2.6',   color: '#0077b6', order: 12.5, icon: VIEWS_BASE + 'model-icons/kimi.png', releaseDate: '2026-04-21' },
   'kimi27':   { displayName: 'Kimi K2.7 Code',    shortName: 'Kimi K2.7',   color: '#023e8a', order: 12.6, icon: VIEWS_BASE + 'model-icons/kimi.png', releaseDate: '2026-06-12' },
   'kimi3':    { displayName: 'Kimi K3',           shortName: 'Kimi K3',     color: '#03045e', order: 12.7, icon: VIEWS_BASE + 'model-icons/kimi.png', releaseDate: '2026-07-16' },
+  'kimi31pro': { displayName: 'Kimi K3.1 Pro',   shortName: 'Kimi K3.1 Pro', color: '#0077b6', order: 12.8, icon: VIEWS_BASE + 'model-icons/kimi.png', releaseDate: '2026-10-23' },
   'deepseek': { displayName: 'DeepSeek V4 Pro',   shortName: 'DeepSeek V4', color: '#4d6bfe', order: 12.8, icon: VIEWS_BASE + 'model-icons/deepseek.png', releaseDate: '2026-04-24' },
   'deepseekflash': { displayName: 'DeepSeek V4 Flash', shortName: 'DS V4 Flash', color: '#8fa3ff', order: 12.85, icon: VIEWS_BASE + 'model-icons/deepseek.png', releaseDate: '2026-04-24' },
   'deepseekflash0731': { displayName: 'DeepSeek V4 Flash 0731', shortName: 'DS Flash 0731', color: '#6b85f0', order: 12.86, icon: VIEWS_BASE + 'model-icons/deepseek.png', releaseDate: '2026-07-31' },

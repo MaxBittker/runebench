@@ -257,6 +257,15 @@ configure_model_env() {
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'kimi3_adapter:Kimi3LowOpenCode'"
       ;;
+    kimi31pro-opencode)
+      # Kimi Code subscription direct (api.kimi.com/coding/v1) — needs KIMI_API_KEY.
+      if [ -z "${KIMI_API_KEY:-}" ]; then
+        echo "  WARNING: KIMI_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'kimi31pro_adapter:Kimi31ProOpenCode'"
+      ;;
     beam-opencode)
       # Reflection Beam-1.0-501B-A23B — Reflection API direct (api.reflection.ai).
       if [ -z "${REFLECTION_API_KEY:-}" ]; then
