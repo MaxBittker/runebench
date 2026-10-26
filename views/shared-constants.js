@@ -67,6 +67,7 @@ const MODEL_CONFIG = {
   'gpt61sol': { displayName: 'GPT-6.1 Sol',          shortName: 'GPT-6.1 Sol', color: '#08563a', order: 9.315, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-09-29' },
   'gpt61sol-low': { displayName: 'GPT-6.1 Sol low', shortName: 'GPT-6.1 Sol lo', color: '#0c7550', order: 9.316, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-09-29' },
   'gpt61sol-high': { displayName: 'GPT-6.1 Sol high', shortName: 'GPT-6.1 Sol hi', color: '#139163', order: 9.317, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-09-29' },
+  'gpt61terra': { displayName: 'GPT-6.1 Terra',      shortName: 'GPT-6.1 Terra', color: '#1aa874', order: 9.318, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-10-26' },
   'gpt6sol':  { displayName: 'GPT-6 Sol',             shortName: 'GPT-6 Sol',   color: '#0f6b47', order: 9.32, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-09-22' },
   'gpt6sol-high': { displayName: 'GPT-6 Sol high',    shortName: 'GPT-6 Sol hi', color: '#1a8a5e', order: 9.33, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-09-22' },
   'gpt6luna': { displayName: 'GPT-6 Luna',            shortName: 'GPT-6 Luna',  color: '#2fb07a', order: 9.34, icon: VIEWS_BASE + 'model-icons/openai.png', releaseDate: '2026-09-22' },

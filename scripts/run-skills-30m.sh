@@ -37,6 +37,7 @@ codex|openai/gpt-6-astra|gpt6astra-high
 codex|openai/gpt-6.1-sol|gpt61sol
 codex|openai/gpt-6.1-sol|gpt61sol-low
 codex|openai/gpt-6.1-sol|gpt61sol-high
+codex|openai/gpt-6.1-terra|gpt61terra
 codex|openai/gpt-6-sol|gpt6sol
 codex|openai/gpt-6-sol|gpt6sol-high
 codex|openai/gpt-6-luna|gpt6luna
@@ -125,7 +126,7 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
       echo "Usage: run-skills-30m.sh [-m model] [-s skill] [-k trials]"
       echo ""
-      echo "Models: opus47, opus, opus45, sonnet5, sonnet46, sonnet45, haiku, codex, codex53, gpt55, gpt6astra, gpt61sol, gpt6sol, gpt6luna, gpt56, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, gemini35flash, gemini35flash-high, glm, kimi, qwen35 (default: all)"
+      echo "Models: opus47, opus, opus45, sonnet5, sonnet46, sonnet45, haiku, codex, codex53, gpt55, gpt6astra, gpt61sol, gpt61terra, gpt6sol, gpt6luna, gpt56, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, gemini35flash, gemini35flash-high, glm, kimi, qwen35 (default: all)"
       echo "Skills: attack, defence, strength, hitpoints, ranged, prayer, magic,"
       echo "        woodcutting, fishing, mining, cooking, fletching, crafting,"
       echo "        smithing, firemaking, thieving (default: all sixteen)"
@@ -161,7 +162,7 @@ TOTAL_FAILED=0
 for model_name in $SELECTED_MODELS; do
   entry=$(lookup_model "$model_name" "$ALL_MODELS")
   if [ -z "$entry" ]; then
-    echo "Unknown model: $model_name (available: opus, opus45, sonnet46, sonnet45, haiku, codex, codex53, gpt55, gpt6astra, gpt61sol, gpt6sol, gpt6luna, gpt56, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, gemini35flash, gemini35flash-high, glm, kimi, qwen35)"
+    echo "Unknown model: $model_name (available: opus, opus45, sonnet46, sonnet45, haiku, codex, codex53, gpt55, gpt6astra, gpt61sol, gpt61terra, gpt6sol, gpt6luna, gpt56, gpt54, gpt54mini, gpt54nano, gemini, gemini31, geminiflash, gemini35flash, gemini35flash-high, glm, kimi, qwen35)"
     exit 1
   fi
 
@@ -205,6 +206,12 @@ for model_name in $SELECTED_MODELS; do
       # codex catalog default_reasoning_level is low; that condition lives in
       # gpt61sol-low.) Pin it explicitly — harbor's codex default is high.
       # Needs codex-cli >= 0.159: older CLIs don't list the slug.
+      MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900 --ak reasoning_effort=medium"
+      ;;
+    gpt61terra)
+      # GPT-6.1 Terra (2026-10-26): same convention as gpt61sol — base row is
+      # MEDIUM (codex catalog default_reasoning_level is low). Pinned
+      # explicitly since harbor's codex default is high.
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900 --ak reasoning_effort=medium"
       ;;
     gpt61sol-low)
@@ -258,7 +265,7 @@ for model_name in $SELECTED_MODELS; do
   # (check exp: it is NOT refreshed inside the sandbox).
   CODEX_AUTH_FILE=""
   case "$model_name" in
-    codex53|gpt6astra|gpt6astra-high|gpt61sol|gpt61sol-low|gpt61sol-high|gpt6sol|gpt6sol-high|gpt6luna|gpt6luna-high)
+    codex53|gpt6astra|gpt6astra-high|gpt61sol|gpt61sol-low|gpt61sol-high|gpt61terra|gpt6sol|gpt6sol-high|gpt6luna|gpt6luna-high)
       CODEX_AUTH_FILE="$HOME/.codex/auth.json" ;;
     gpt55)
       CODEX_AUTH_FILE="$REPO_ROOT/agents/auth.json" ;;
