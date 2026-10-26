@@ -310,6 +310,11 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // nvidia/nemotron-3.5-super-vl, OpenRouter pinned to Together 2026-10-20
   // ($0.15/$0.50, cache read $0.02). Keep in sync with agents/nemotron_adapter.py.
   nemotron35super: { input: 0.15e-6, cachedInput: 0.02e-6, cacheWrite: 0.15e-6, output: 0.5e-6 },
+  // tencent/hy4-preview, OpenRouter pinned to Tencent (fp8) 2026-10-26. Tencent
+  // bills by UTC hour: 16–24h $0.7506/$2.2509 (cache read $0.0378), 0–16h
+  // $0.834/$2.501 ($0.042). Stored at the 16–24h rate the first sweep ran in.
+  // Keep in sync with agents/hy4_adapter.py.
+  hy4preview:      { input: 0.7506e-6, cachedInput: 0.0378e-6, cacheWrite: 0.7506e-6, output: 2.2509e-6 },
 };
 
 /** By Harbor model ID (provider/name). Aliased to MODEL_PRICING entries. */
@@ -408,6 +413,7 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'openrouter/meta/muse-spark-open':   'musesparkopen',
   'openrouter/nvidia/nemotron-3-ultra-550b-a55b': 'nemotron3ultra',
   'openrouter/nvidia/nemotron-3.5-super-vl':      'nemotron35super',
+  'openrouter/tencent/hy4-preview':               'hy4preview',
 };
 
 /** Look up pricing by either internal label or Harbor model ID. */

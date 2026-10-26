@@ -129,6 +129,7 @@ const MODEL_CONFIG = {
   'musesparkopen': { displayName: 'Muse Spark Open', shortName: 'Muse Spark Open', color: '#00a3a3', order: 17.85, icon: VIEWS_BASE + 'model-icons/meta.svg', releaseDate: '2026-10-15' },
   'nemotron3ultra': { displayName: 'Nemotron 3 Ultra', shortName: 'Nemotron 3 Ultra', color: '#76b900', order: 19.2, icon: VIEWS_BASE + 'model-icons/nvidia.svg', releaseDate: '2026-06-04' },
   'nemotron35super': { displayName: 'Nemotron 3.5 Super', shortName: 'Nemotron 3.5 Super', color: '#4a7a00', order: 19.3, icon: VIEWS_BASE + 'model-icons/nvidia.svg', releaseDate: '2026-10-15' },
+  'hy4preview': { displayName: 'Hy4 preview', shortName: 'Hy4 preview', color: '#0052d9', order: 19.4, icon: VIEWS_BASE + 'model-icons/tencent.png', releaseDate: '2026-08-27' },
   'laguna':   { displayName: 'Laguna S 2.1',    shortName: 'Laguna S',    color: '#0891b2', order: 19, icon: VIEWS_BASE + 'model-icons/poolside.png', releaseDate: '2026-07-20' },
 };
 
