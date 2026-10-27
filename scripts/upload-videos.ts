@@ -392,7 +392,8 @@ async function processVideo(video: VideoEntry): Promise<void> {
     return;
   }
 
-  const publicUrl = `https://pub-fb337d00c92f4c07a222ccc24057a994.r2.dev/${r2Key}`;
+  // ?v= busts the Cloudflare edge cache (custom domain caches 4h) when a key is re-uploaded.
+  const publicUrl = `https://rs-videos.bjj.nyc/${r2Key}?v=${Math.floor(Date.now() / 1000)}`;
   manifest[manifestKey] = publicUrl;
   sources[manifestKey] = sourceId;
   uploaded++;

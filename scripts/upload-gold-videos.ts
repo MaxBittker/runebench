@@ -27,7 +27,7 @@ const R2_BUCKET = 'rs-videos';
 const CF_ACCOUNT_ID = process.env.CF_PERSONAL_ACCOUNT_ID ?? 'f4180fc950d4f7b314a000fbeb8af92a';
 const CF_ENV = { CLOUDFLARE_ACCOUNT_ID: CF_ACCOUNT_ID, CLOUDFLARE_API_TOKEN: process.env.CF_PERSONAL_API_TOKEN ?? '' };
 const CROP_FILTER = 'crop=367:240:17:32';
-const PUBLIC_BASE = 'https://pub-fb337d00c92f4c07a222ccc24057a994.r2.dev';
+const PUBLIC_BASE = 'https://rs-videos.bjj.nyc';
 
 // ── CLI args ────────────────────────────────────────────────────────
 let horizon = '30m';
@@ -166,7 +166,8 @@ async function processEntry(e: Entry) {
     return;
   }
 
-  manifest[e.manifestKey] = `${PUBLIC_BASE}/${e.r2Key}`;
+  // ?v= busts the Cloudflare edge cache (custom domain caches 4h) when a key is re-uploaded.
+  manifest[e.manifestKey] = `${PUBLIC_BASE}/${e.r2Key}?v=${Math.floor(Date.now() / 1000)}`;
   uploaded++;
   done++;
   if (done % 5 === 0 || done === entries.length) {
