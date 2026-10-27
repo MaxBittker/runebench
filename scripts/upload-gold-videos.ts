@@ -23,9 +23,11 @@ const COMBINED_PATH = join(ROOT, 'results', 'gold', '_combined.json');
 const MANIFEST_PATH = join(ROOT, 'results', 'video-urls.json');
 
 const R2_BUCKET = 'rs-videos';
-const CF_ACCOUNT_ID = '01ffb951a87113b20a7c43c34bad6e92';
+// Personal Cloudflare account (moved off websim's account 2026-10-26); token + id live in .env.
+const CF_ACCOUNT_ID = process.env.CF_PERSONAL_ACCOUNT_ID ?? 'f4180fc950d4f7b314a000fbeb8af92a';
+const CF_ENV = { CLOUDFLARE_ACCOUNT_ID: CF_ACCOUNT_ID, CLOUDFLARE_API_TOKEN: process.env.CF_PERSONAL_API_TOKEN ?? '' };
 const CROP_FILTER = 'crop=367:240:17:32';
-const PUBLIC_BASE = 'https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev';
+const PUBLIC_BASE = 'https://pub-fb337d00c92f4c07a222ccc24057a994.r2.dev';
 
 // ── CLI args ────────────────────────────────────────────────────────
 let horizon = '30m';
@@ -156,7 +158,7 @@ async function processEntry(e: Entry) {
 
   const up = await run(
     ['wrangler', 'r2', 'object', 'put', `${R2_BUCKET}/${e.r2Key}`, '--file', tmpFile, '--content-type', 'video/mp4'],
-    { CLOUDFLARE_ACCOUNT_ID: CF_ACCOUNT_ID },
+    CF_ENV,
   );
   if (!up.ok) {
     console.error(`  FAIL upload: ${label}\n${up.stderr}`);

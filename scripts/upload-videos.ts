@@ -29,7 +29,9 @@ function sourceIdOf(localPath: string): string {
 }
 
 const R2_BUCKET = "rs-videos";
-const CF_ACCOUNT_ID = "01ffb951a87113b20a7c43c34bad6e92";
+// Personal Cloudflare account (moved off websim's account 2026-10-26); token + id live in .env.
+const CF_ACCOUNT_ID = process.env.CF_PERSONAL_ACCOUNT_ID ?? "f4180fc950d4f7b314a000fbeb8af92a";
+const CF_ENV = { CLOUDFLARE_ACCOUNT_ID: CF_ACCOUNT_ID, CLOUDFLARE_API_TOKEN: process.env.CF_PERSONAL_API_TOKEN ?? "" };
 const CROP_FILTER = "crop=367:240:17:32";
 
 // ── CLI args ──────────────────────────────────────────────────────
@@ -288,7 +290,7 @@ async function run(cmd: string[], env?: Record<string, string>): Promise<{ ok: b
 async function r2Exists(key: string): Promise<boolean> {
   const result = await run(
     ["wrangler", "r2", "object", "head", `${R2_BUCKET}/${key}`],
-    { CLOUDFLARE_ACCOUNT_ID: CF_ACCOUNT_ID },
+    CF_ENV,
   );
   return result.ok;
 }
@@ -377,7 +379,7 @@ async function processVideo(video: VideoEntry): Promise<void> {
   for (let attempt = 1; attempt <= 3; attempt++) {
     uploadResult = await run(
       ["wrangler", "r2", "object", "put", `${R2_BUCKET}/${r2Key}`, "--file", tmpFile, "--content-type", "video/mp4"],
-      { CLOUDFLARE_ACCOUNT_ID: CF_ACCOUNT_ID },
+      CF_ENV,
     );
     if (uploadResult.ok) break;
     if (attempt < 3) await new Promise(r => setTimeout(r, 2000 * attempt));
@@ -390,7 +392,7 @@ async function processVideo(video: VideoEntry): Promise<void> {
     return;
   }
 
-  const publicUrl = `https://pub-f4a8dd0fc02f4f56943a5d84b3932d2f.r2.dev/${r2Key}`;
+  const publicUrl = `https://pub-fb337d00c92f4c07a222ccc24057a994.r2.dev/${r2Key}`;
   manifest[manifestKey] = publicUrl;
   sources[manifestKey] = sourceId;
   uploaded++;
