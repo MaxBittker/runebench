@@ -45,3 +45,6 @@ docker/agents.md
 analysis/
 
 export/
+
+# Local Python test environment
+.venv/
