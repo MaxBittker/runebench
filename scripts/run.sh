@@ -38,8 +38,7 @@ glm53flash-opencode|openrouter/z-ai/glm-5.3-flash|glm53flash
 glm53-prime-opencode|openrouter/z-ai/glm-5.3|glm53-prime
 gemini4argon-opencode|openrouter/google/gemini-4-argon|gemini4argon
 gemini38flash-opencode|openrouter/google/gemini-3.8-flash|gemini38flash
-mistrallarge4-opencode|openrouter/mistralai/mistral-large-4-0|mistrallarge4
-mistrallarge4-high-opencode|openrouter/mistralai/mistral-large-4-0|mistrallarge4-high
+mistrallarge4oss-opencode|openrouter/mistralai/mistral-large-4-0|mistrallarge4oss
 gpt4o-opencode|openrouter/openai/gpt-4o-2024-08-06|gpt4o
 
 "

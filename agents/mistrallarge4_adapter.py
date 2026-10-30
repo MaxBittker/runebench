@@ -3,32 +3,36 @@ Custom Harbor adapter for Mistral Large 4 via OpenCode + OpenRouter.
 
 Usage with Harbor:
     PYTHONPATH=. harbor run \
-        --agent-import-path 'mistrallarge4_adapter:MistralLarge4OpenCode' \
+        --agent-import-path 'mistrallarge4_adapter:MistralLarge4OSSOpenCode' \
         -m 'openrouter/mistralai/mistral-large-4-0' \
         -p tasks/woodcutting-xp-30m
 """
 
 from opencode_adapter import OpenCodeAdapter
 
-# Mistral first-party endpoint list rates per 1M tokens (OpenRouter endpoints API +
-# models.dev, 2026-10-06). A probe was billed exactly at these rates (the endpoint's
-# `discount: 0.5` field did not halve the bill). Reasoning left unset = OFF by default.
-# Keep in sync with the 'mistrallarge4' entry in shared/pricing.ts.
-_COST = {"input": 0.68, "output": 2.09, "cache_read": 0.07}
-_LIMIT = {"context": 524288, "output": 262144}
+# Mistral first-party endpoint list rates per 1M tokens (OpenRouter endpoints API,
+# 2026-10-30; the run was billed exactly at these rates).
+# Keep in sync with the 'mistrallarge4oss' entry in shared/pricing.ts.
+_COST = {"input": 0.70, "output": 2.10, "cache_read": 0.07}
+_LIMIT = {"context": 1048576, "output": 262144}
 
 
-class MistralLarge4OpenCode(OpenCodeAdapter):
-    """mistral-large-4-0 pinned to the Mistral first-party endpoint.
+class MistralLarge4OSSOpenCode(OpenCodeAdapter):
+    """Open-weight Mistral Large 4 (Mistral-Large-4-1T-A52B), pinned to Mistral.
 
-    Mistral is the only endpoint at launch (2026-10-06); pinning keeps a later
-    third-party host from silently entering the row. Cost/limit are declared in
-    opencode.json because the image's models.dev snapshot predates the release.
+    Mistral's open-weight release (2026-10-29) is the Oct-6 preview plus ~3 weeks
+    more RL, served under the unchanged `mistral-large-4-0` slug — the preview is
+    no longer reachable (its rows were archived). The endpoint changed with it:
+    reasoning is ON when unset (Mistral: High is default; probe 2026-10-30 → 173
+    reasoning tokens vs 0 on 2026-10-06), so reasoning is left unset per the
+    provider-default convention. Pinning keeps a later third-party host from
+    silently entering the row; cost/limit are declared because the image's
+    models.dev snapshot predates the release.
     """
 
     _default_model = "openrouter/mistralai/mistral-large-4-0"
-    _log_prefix = "mistrallarge4"
-    _log_file = "opencode-mistrallarge4.txt"
+    _log_prefix = "mistrallarge4oss"
+    _log_file = "opencode-mistrallarge4oss.txt"
     _model_options = {
         "provider": {
             "order": ["mistral"],
@@ -38,7 +42,7 @@ class MistralLarge4OpenCode(OpenCodeAdapter):
 
     @staticmethod
     def name() -> str:
-        return "mistrallarge4-opencode"
+        return "mistrallarge4oss-opencode"
 
     def _build_opencode_config(self) -> dict:
         config = super()._build_opencode_config()
@@ -49,24 +53,3 @@ class MistralLarge4OpenCode(OpenCodeAdapter):
             "limit": _LIMIT,
         }
         return config
-
-
-class MistralLarge4HighOpenCode(MistralLarge4OpenCode):
-    """Same pin, reasoning effort high.
-
-    Unset, Mistral serves Large 4 with reasoning OFF (0 reasoning tokens/step);
-    the base row scored Σ1562. Like inkling, this row checks whether turning
-    reasoning on changes the picture — verify post-run via step_finish
-    tokens.reasoning that it was honored.
-    """
-
-    _model_options = {
-        **MistralLarge4OpenCode._model_options,
-        "reasoning": {"effort": "high"},
-    }
-    _log_prefix = "mistrallarge4-high"
-    _log_file = "opencode-mistrallarge4-high.txt"
-
-    @staticmethod
-    def name() -> str:
-        return "mistrallarge4-high-opencode"

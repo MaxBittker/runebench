@@ -229,11 +229,10 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   deepseek41flash1017: { input: 0.15e-6, cachedInput: 0.003e-6, cacheWrite: 0.15e-6, output: 0.6e-6 },
   // GPT-4o 2024-08-06 snapshot, OpenAI first-party via OpenRouter (rates declared in gpt4o_adapter.py).
   gpt4o:        { input: 2.5e-6,  cachedInput: 1.25e-6,  cacheWrite: 2.5e-6,   output: 10e-6 },
-  // mistralai/mistral-large-4-0 via OpenRouter (Mistral endpoint), released 2026-10-06:
-  // $0.68/$2.09 per 1M, cache read $0.07 (probe billed exactly at list).
-  // OpenCode-native cost (rates declared in mistrallarge4_adapter.py).
-  mistrallarge4: { input: 0.68e-6, cachedInput: 0.07e-6, cacheWrite: 0.68e-6, output: 2.09e-6 },
-  'mistrallarge4-high': { input: 0.68e-6, cachedInput: 0.07e-6, cacheWrite: 0.68e-6, output: 2.09e-6 }, // same rate card, reasoning on
+  // mistralai/mistral-large-4-0 via OpenRouter (Mistral endpoint), open-weight release (2026-10-29;
+  // the slug's Oct-6 preview checkpoint is gone): $0.70/$2.10 per 1M, cache read $0.07, reasoning on by
+  // default. OpenCode-native cost (rates declared in mistrallarge4_adapter.py).
+  mistrallarge4oss: { input: 0.7e-6, cachedInput: 0.07e-6, cacheWrite: 0.7e-6, output: 2.1e-6 },
   kimi26:       { input: 0.68e-6,   cachedInput: 0.34e-6,  cacheWrite: 0.68e-6,   output: 3.41e-6 },
   kimi27:       { input: 0.75e-6,   cachedInput: 0.16e-6,  cacheWrite: 0.75e-6,   output: 3.5e-6 }, // kimi-k2.7-code, OpenRouter 2026-06-14
   kimi3:        { input: 3e-6,      cachedInput: 0.3e-6,   cacheWrite: 3e-6,      output: 15e-6 }, // kimi-k3, OpenRouter 2026-07-16 (no cache-write premium listed)
@@ -393,7 +392,7 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'openrouter/deepseek/deepseek-v4.1-flash': 'deepseek41flash',
   'openrouter/deepseek/deepseek-v4.1-flash-1017': 'deepseek41flash1017',
   'openrouter/openai/gpt-4o-2024-08-06': 'gpt4o',
-  'openrouter/mistralai/mistral-large-4-0': 'mistrallarge4',
+  'openrouter/mistralai/mistral-large-4-0': 'mistrallarge4oss',
   'openrouter/moonshotai/kimi-k2.6':   'kimi26',
   'openrouter/moonshotai/kimi-k2.7-code': 'kimi27',
   'openrouter/moonshotai/kimi-k3':     'kimi3',
