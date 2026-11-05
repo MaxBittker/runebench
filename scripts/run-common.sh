@@ -250,9 +250,9 @@ configure_model_env() {
       AGENT_FLAG="--agent-import-path 'kimi3_adapter:Kimi3LowOpenCode'"
       ;;
     kimi31pro-opencode)
-      # Kimi Code subscription direct (api.kimi.com/coding/v1) — needs KIMI_API_KEY.
-      if [ -z "${KIMI_API_KEY:-}" ]; then
-        echo "  WARNING: KIMI_API_KEY not found in .env, skipping $model_name"
+      # Kimi K3.1 Pro via OpenRouter, pinned to Modal → InferenceNet (fast mxfp4).
+      if [ -z "${OPENROUTER_API_KEY:-}" ]; then
+        echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"
         return 1
       fi
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
