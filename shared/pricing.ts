@@ -47,6 +47,10 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // Fable 5.1 (claude-fable-5-1, 2026-09-01): same $10/$50 tier as Fable 5; cache
   // reads dropped to $0.25/M (0.025×). 5-min cache write stays 1.25× input.
   fable51:      { input: 10e-6,   cachedInput: 0.25e-6,  cacheWrite: 12.5e-6,  output: 50e-6 },
+  // Fable 5.2 (claude-fable-5-2, GA 2026-11-09): $8/M input, $40/M output (20% below
+  // 5.1), cache read $0.20/M. The fable52 row runs via subscription OAuth, which uses
+  // the 1h cache bucket, so cacheWrite is the 1h rate $16/M (2×), not 5-min $10/M.
+  fable52:      { input: 8e-6,    cachedInput: 0.2e-6,   cacheWrite: 16e-6,    output: 40e-6 },
   // Opus 5.5 (claude-opus-5-5, GA 2026-09-22): $4/M input, $20/M output, cache
   // read $0.20/M (0.05×). The opus55 / opus55-xhigh rows are the 2026-09-18
   // pre-GA runs of the same model via subscription OAuth (1h cache bucket), so
@@ -318,6 +322,8 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
 
 /** By Harbor model ID (provider/name). Aliased to MODEL_PRICING entries. */
 export const HARBOR_MODEL_PRICING: Record<string, string> = {
+  'anthropic/claude-fable-5-2[1m]':    'fable52',
+  'anthropic/claude-fable-5-2':        'fable52',
   'anthropic/claude-fable-5-1[1m]':    'fable51',
   'anthropic/claude-fable-5-1':        'fable51',
   'anthropic/claude-fable-5[1m]':      'fable-5',
