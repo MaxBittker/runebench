@@ -287,6 +287,10 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // muse-wonder-1.0 via Meta Model API direct (api.meta.ai), same card.
   'musewonder-meta': { input: 4e-6, cachedInput: 0.2e-6,   cacheWrite: 4e-6,      output: 20e-6 },
   muse13:       { input: 1.25e-6,   cachedInput: 0.15e-6,  cacheWrite: 1.25e-6,   output: 4.25e-6 },
+  // muse-ember via OpenRouter (single Meta endpoint), 2026-11-09. $0.10/$0.50
+  // per 1M, cache read $0.004, cache write $0.125. Keep in sync with the
+  // per-1M `cost` block in agents/muse_adapter.py.
+  museember:    { input: 0.1e-6,    cachedInput: 0.004e-6, cacheWrite: 0.125e-6,  output: 0.5e-6 },
   // thinkingmachines/inkling, OpenRouter (Together endpoint, the model's only
   // provider) 2026-07-21. No cache-write premium → cacheWrite = input (inert).
   // Keep in sync with the per-1M `cost` block in agents/inkling_adapter.py —
@@ -411,6 +415,7 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'meta/muse-spark-1.2-contributor':   'muse12',
   'openrouter/meta/muse-spark-1.3-contributor': 'muse13',
   'openrouter/meta/muse-wonder': 'musewonder',
+  'openrouter/meta/muse-ember':  'museember',
   'meta/muse-wonder-1.0':      'musewonder-meta',
   'meta/muse-spark-1.1':               'muse',
   'openrouter/thinkingmachines/inkling': 'inkling',

@@ -7,6 +7,7 @@ Muse13ContributorOpenRouter — muse-spark-1.3-contributor via OpenRouter (Meta 
 MuseWonderOpenRouter     — muse-wonder via OpenRouter (Meta endpoint).
 MuseWonderMetaOpenCode   — muse-wonder-1.0 via the Meta Model API direct.
 MuseSparkOpenOpenRouter  — muse-spark-open (open weights) via OpenRouter third-party hosts.
+MuseEmberOpenRouter      — muse-ember via OpenRouter (Meta endpoint).
 
 The muse row originally ran via OpenCode + OpenRouter; the 2026-08-12 Meta-API
 run replaced it (old jobs in jobs/_archive-muse-openrouter-20260813).
@@ -194,5 +195,41 @@ class MuseSparkOpenOpenRouter(OpenCodeAdapter):
             **models.get("meta/muse-spark-open", {}),
             "cost": {"input": 1.25, "output": 4.25, "cache_read": 0.15},
             "limit": {"context": 1000000, "output": 131072},
+        }
+        return config
+
+
+class MuseEmberOpenRouter(OpenCodeAdapter):
+    """muse-ember via OpenRouter (listed 2026-11-09) — Meta's smallest Muse.
+
+    Single "Meta" endpoint on OpenRouter (tools supported, 1M ctx), pinned so a
+    future third-party host can't silently take over. Reasoning is on by
+    default (probed 2026-11-09: ~190 reasoning tokens on a trivial prompt with
+    no effort set), so no effort override. Card: $0.10/$0.50 per 1M, cache read
+    $0.004, cache write $0.125 — declared so OpenCode reports real cost_usd even
+    if its models.dev snapshot predates the listing. Needs the us-east sandbox
+    pin like the other Meta-served muse rows.
+    Keep in sync with 'museember' in shared/pricing.ts.
+    """
+    _default_model = "openrouter/meta/muse-ember"
+    _log_prefix = "museember"
+    _log_file = "opencode-museember.txt"
+    _model_options = {
+        "provider": {
+            "order": ["meta"],
+            "allow_fallbacks": False,
+        }
+    }
+
+    @staticmethod
+    def name() -> str:
+        return "museember-opencode"
+
+    def _build_opencode_config(self) -> dict:
+        config = super()._build_opencode_config()
+        models = config["provider"]["openrouter"]["models"]
+        models["meta/muse-ember"] = {
+            **models.get("meta/muse-ember", {}),
+            "cost": {"input": 0.10, "output": 0.50, "cache_read": 0.004, "cache_write": 0.125},
         }
         return config

@@ -34,6 +34,7 @@ muse12-opencode|meta/muse-spark-1.2-contributor|muse12
 muse13-opencode|openrouter/meta/muse-spark-1.3-contributor|muse13
 musewonder-opencode|openrouter/meta/muse-wonder|musewonder
 musewonder-meta-opencode|meta/muse-wonder-1.0|musewonder-meta
+museember-opencode|openrouter/meta/muse-ember|museember
 glm53flash-opencode|openrouter/z-ai/glm-5.3-flash|glm53flash
 glm53-prime-opencode|openrouter/z-ai/glm-5.3|glm53-prime
 gemini4argon-opencode|openrouter/google/gemini-4-argon|gemini4argon

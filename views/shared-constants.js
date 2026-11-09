@@ -125,6 +125,7 @@ const MODEL_CONFIG = {
   'muse12':   { displayName: 'Muse Spark 1.2', shortName: 'Muse Spark 1.2', color: '#003f8c', order: 17.9, icon: VIEWS_BASE + 'model-icons/meta.svg', releaseDate: '2026-08-05' },
   'musewonder': { displayName: 'Muse Wonder', shortName: 'Muse Wonder', color: '#2f6fe0', order: 17.9, icon: VIEWS_BASE + 'model-icons/meta.svg', releaseDate: '2026-10-12' },
   'musewonder-meta': { displayName: 'Muse Wonder (Meta API)', shortName: 'Muse Wonder (Meta)', color: '#1f4fb0', order: 17.9, icon: VIEWS_BASE + 'model-icons/meta.svg', releaseDate: '2026-10-12' },
+  'museember': { displayName: 'Muse Ember', shortName: 'Muse Ember', color: '#e0702f', order: 17.95, icon: VIEWS_BASE + 'model-icons/meta.svg', releaseDate: '2026-11-09' },
   'muse13':   { displayName: 'Muse Spark 1.3', shortName: 'Muse Spark 1.3', color: '#4c8ff0', order: 17.8, icon: VIEWS_BASE + 'model-icons/meta.svg', releaseDate: '2026-09-02' },
   'mistrallarge4oss': { displayName: 'Mistral Large 4 (open weights)', shortName: 'Mistral L4 OSS', color: '#ff8205', order: 16.52, icon: VIEWS_BASE + 'model-icons/mistral.svg', releaseDate: '2026-10-29' },
   'inkling':  { displayName: 'Inkling',         shortName: 'Inkling',     color: '#343a40', order: 17, icon: VIEWS_BASE + 'model-icons/thinkingmachines.png', releaseDate: '2026-07-15' },
