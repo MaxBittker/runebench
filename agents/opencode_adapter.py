@@ -306,6 +306,9 @@ class OpenCodeAdapter(BaseInstalledAgent):
         bash_timeout = self._run_timeout_sec or 1620
         bash_timeout_expr = f"{vp}_TIMEOUT=${{{vp}_TIMEOUT:-{bash_timeout}}}; "
 
+        # `--thinking`: opencode-ai 1.x drops reasoning parts from
+        # `run --format=json` unless asked, so without it trajectory.json has no
+        # reasoning_content and the viewer shows no thinking (kimi31pro 2026-11-05).
         run_command = (
             f"echo '[{prefix}-setup] Starting opencode'; "
             # Source NVM so the nvm-installed opencode binary is on PATH
@@ -322,7 +325,7 @@ class OpenCodeAdapter(BaseInstalledAgent):
             f"{vp}_RUN=1; "
             f"echo \"[{prefix}-loop] Run ${vp}_RUN starting (budget=${{{vp}_TIMEOUT}}s)\" | tee -a /logs/agent/{log_file}; "
             f"{vp}_RUN_START=$(date +%s); "
-            f"timeout ${{{vp}_TIMEOUT}}s opencode --model {escaped_model} run --format=json {escaped_instruction} "
+            f"timeout ${{{vp}_TIMEOUT}}s opencode --model {escaped_model} run --format=json --thinking {escaped_instruction} "
             f"2>&1 </dev/null | tee -a /logs/agent/{log_file}; "
             f"{vp}_RUN_DUR=$(( $(date +%s) - {vp}_RUN_START )); "
             f"echo \"[{prefix}-loop] opencode exited after ${{{vp}_RUN_DUR}}s\" | tee -a /logs/agent/{log_file}; "
@@ -343,7 +346,7 @@ class OpenCodeAdapter(BaseInstalledAgent):
             f"  {vp}_RUN=$(({vp}_RUN + 1)); "
             f"  echo \"[{prefix}-loop] Run ${vp}_RUN starting (${{{vp}_REMAINING}}s remaining)\" | tee -a /logs/agent/{log_file}; "
             f"  {vp}_RUN_START=$(date +%s); "
-            f"  timeout ${{{vp}_REMAINING}}s opencode --model {escaped_model} run --format=json {continue_instruction} "
+            f"  timeout ${{{vp}_REMAINING}}s opencode --model {escaped_model} run --format=json --thinking {continue_instruction} "
             f"  2>&1 </dev/null | tee -a /logs/agent/{log_file}; "
             f"  {vp}_RUN_DUR=$(( $(date +%s) - {vp}_RUN_START )); "
             f"  echo \"[{prefix}-loop] opencode exited after ${{{vp}_RUN_DUR}}s\" | tee -a /logs/agent/{log_file}; "
@@ -409,6 +412,7 @@ def _parse_opencode_log(
 
     # Group events by step: step_start → text/tool_use → step_finish
     current_texts: list[str] = []
+    current_reasoning: list[str] = []
     current_tool_calls: list[ToolCall] = []
     current_observations: list[ObservationResult] = []
     current_timestamp: str | None = None
@@ -417,6 +421,8 @@ def _parse_opencode_log(
     total_completion = 0
     total_cached = 0
     total_cost = 0.0
+    total_reasoning_tokens = 0
+    reasoning_events = 0
 
     for event in events:
         etype = event.get("type")
@@ -426,6 +432,7 @@ def _parse_opencode_log(
         if etype == "step_start":
             # Reset accumulators for new step
             current_texts = []
+            current_reasoning = []
             current_tool_calls = []
             current_observations = []
             ts_ms = event.get("timestamp")
@@ -440,6 +447,13 @@ def _parse_opencode_log(
             text = part.get("text", "")
             if text:
                 current_texts.append(text)
+
+        elif etype == "reasoning":
+            # Only emitted when opencode runs with --thinking.
+            text = event.get("part", {}).get("text", "")
+            if text and text.strip():
+                current_reasoning.append(text.strip())
+                reasoning_events += 1
 
         elif etype == "tool_use":
             part = event.get("part", {})
@@ -471,6 +485,7 @@ def _parse_opencode_log(
             total_tokens = tokens.get("total", 0)
             prompt_tokens = total_tokens - completion_tokens
             cached_tokens = cache.get("read", 0)
+            total_reasoning_tokens += tokens.get("reasoning", 0) or 0
 
             total_prompt += prompt_tokens
             total_completion += completion_tokens
@@ -485,6 +500,7 @@ def _parse_opencode_log(
                 timestamp=current_timestamp,
                 source="agent",
                 message=message,
+                reasoning_content="\n\n".join(current_reasoning) or None,
                 tool_calls=current_tool_calls if current_tool_calls else None,
                 observation=Observation(results=current_observations) if current_observations else None,
                 metrics=Metrics(
@@ -495,6 +511,16 @@ def _parse_opencode_log(
                 ),
             )
             steps.append(step)
+
+    # Guard: the model reasoned but no reasoning text reached the log, e.g.
+    # `--thinking` dropped from the run command or a provider that withholds
+    # reasoning text (encrypted/summarised-away). The viewer will show no thinking.
+    if total_reasoning_tokens > 0 and reasoning_events == 0:
+        logger.warning(
+            "OpenCode log %s: %d reasoning tokens but 0 reasoning events — "
+            "thinking text was not captured (is `--thinking` on the run command?)",
+            log_path, total_reasoning_tokens,
+        )
 
     if not steps:
         # Create a minimal step so the trajectory is valid

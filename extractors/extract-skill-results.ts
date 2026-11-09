@@ -78,6 +78,35 @@ interface TrajectoryStep {
   text: string;
   ts?: number; // seconds since first agent step (for video sync)
   detail?: string; // code content for Write/Edit tools
+  thinking?: true; // agent reasoning (shown dimmed; doesn't count toward the display cap)
+}
+
+const MAX_DISPLAY_STEPS = 200;
+const MAX_THINKING_CHARS = 2000;
+
+/** Display cap: keep the first MAX_DISPLAY_STEPS non-thinking steps, plus any
+ *  thinking steps interleaved before the cut, so surfacing reasoning doesn't
+ *  shrink how far into the run the viewer reaches. */
+function capSteps(steps: TrajectoryStep[]): TrajectoryStep[] {
+  const out: TrajectoryStep[] = [];
+  let n = 0;
+  for (const s of steps) {
+    if (!s.thinking) {
+      if (n >= MAX_DISPLAY_STEPS) break;
+      n++;
+    }
+    out.push(s);
+  }
+  return out;
+}
+
+function thinkingStep(raw: unknown, ts?: number): TrajectoryStep | null {
+  if (typeof raw !== 'string') return null;
+  const text = raw.trim();
+  // claude-code trajectories store encrypted thinking as the literal string "null"
+  if (!text || text === 'null') return null;
+  const clipped = text.length > MAX_THINKING_CHARS ? text.slice(0, MAX_THINKING_CHARS) + '…' : text;
+  return { source: 'agent', text: clipped, thinking: true, ...(ts !== undefined ? { ts } : {}) };
 }
 
 /** Tool-call count over the FULL step list (before the 200-step display cap). */
@@ -212,14 +241,19 @@ function parseClaudeTrajectory(traj: any): { steps: TrajectoryStep[]; firstStepA
     const msg = rawMsg === '(no text)' ? '' : rawMsg;
     const toolCalls: any[] = step.tool_calls || [];
 
-    // Skip steps with no message and no tool calls
-    if (!msg && toolCalls.length === 0) continue;
-
     // Compute seconds since first step
     let ts: number | undefined;
     if (firstTs !== null && step.timestamp) {
       ts = Math.round((new Date(step.timestamp).getTime() - firstTs) / 1000);
     }
+
+    // Reasoning (OpenCode/Gemini/etc. write it to reasoning_content) precedes
+    // the step's narration and tool calls. Skip it when it just repeats msg.
+    const think = thinkingStep(step.reasoning_content, ts);
+    if (think && think.text !== msg.trim()) steps.push(think);
+
+    // Skip steps with no message and no tool calls
+    if (!msg && toolCalls.length === 0) continue;
 
     if (msg.startsWith('Executed ')) {
       // Claude format: "Executed ToolName tool_call_id" — tool call is the step
@@ -239,7 +273,7 @@ function parseClaudeTrajectory(traj: any): { steps: TrajectoryStep[]; firstStepA
     }
   }
 
-  return { steps: steps.slice(0, 200), firstStepAt, toolCalls: countToolSteps(steps) };
+  return { steps: capSteps(steps), firstStepAt, toolCalls: countToolSteps(steps) };
 }
 
 function parseCodexLog(content: string): { steps: TrajectoryStep[]; toolCalls: number } {
@@ -254,7 +288,8 @@ function parseCodexLog(content: string): { steps: TrajectoryStep[]; toolCalls: n
         if (item.type === 'agent_message' && item.text) {
           steps.push({ source: 'agent', text: item.text });
         } else if (item.type === 'reasoning' && item.text) {
-          steps.push({ source: 'agent', text: item.text });
+          const think = thinkingStep(item.text);
+          if (think) steps.push(think);
         } else if (item.type === 'command_execution' && item.command) {
           // Strip /bin/bash -lc prefix to get actual command
           let cmd: string = item.command;
@@ -281,7 +316,7 @@ function parseCodexLog(content: string): { steps: TrajectoryStep[]; toolCalls: n
     } catch {}
   }
 
-  return { steps: steps.slice(0, 200), toolCalls: countToolSteps(steps) };
+  return { steps: capSteps(steps), toolCalls: countToolSteps(steps) };
 }
 
 function parseKimiLog(content: string): { steps: TrajectoryStep[]; toolCalls: number } {
@@ -295,7 +330,10 @@ function parseKimiLog(content: string): { steps: TrajectoryStep[]; toolCalls: nu
     }
     try {
       const entry = JSON.parse(line);
-      if (entry.type === 'text') {
+      if (entry.type === 'reasoning') {
+        const think = thinkingStep(entry.part?.text);
+        if (think) steps.push(think);
+      } else if (entry.type === 'text') {
         const text = entry.part?.content || entry.part?.text || '';
         if (text) {
           steps.push({ source: 'agent', text });
@@ -316,7 +354,7 @@ function parseKimiLog(content: string): { steps: TrajectoryStep[]; toolCalls: nu
     } catch {}
   }
 
-  return { steps: steps.slice(0, 200), toolCalls: countToolSteps(steps) };
+  return { steps: capSteps(steps), toolCalls: countToolSteps(steps) };
 }
 
 function parseGeminiCliLog(content: string): { steps: TrajectoryStep[]; toolCalls: number } {
@@ -385,7 +423,7 @@ function parseGeminiCliLog(content: string): { steps: TrajectoryStep[]; toolCall
   }
 
   flushBashBlock();
-  const trimmed = steps.slice(0, 200);
+  const trimmed = capSteps(steps);
   return { steps: trimmed, toolCalls: countToolSteps(steps) };
 }
 

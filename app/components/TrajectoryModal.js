@@ -129,7 +129,7 @@ function prepareSteps(trajectory) {
       }
     } else {
       flushTools();
-      result.push({ type: 'agent', text: step.text, ts: step.ts });
+      result.push({ type: 'agent', text: step.text, ts: step.ts, thinking: !!step.thinking });
     }
   }
   flushTools();
@@ -245,6 +245,17 @@ export function TrajectoryModal({ model, skill, data, seekTs }) {
   const videoSrc = trajData?.videoUrl || (trajData?.trialDir ? trajData.trialDir + '/verifier/recording.mp4' : null);
   const hasVideo = !!(trajData?.videoUrl || (trajData?.videoAvailable && trajData?.trialDir));
   const steps = useMemo(() => prepareSteps(trajData?.trajectory), [trajData]);
+  const hasThinking = useMemo(() => steps.some(s => s.thinking), [steps]);
+  const [showThinking, setShowThinking] = useState(() => {
+    try { return localStorage.getItem('traj-show-thinking') !== '0'; } catch { return true; }
+  });
+  const toggleThinking = useCallback((e) => {
+    e.stopPropagation();
+    setShowThinking(v => {
+      try { localStorage.setItem('traj-show-thinking', v ? '0' : '1'); } catch {}
+      return !v;
+    });
+  }, []);
 
   const { modelsForSkill, skillsForModel } = useMemo(
     () => getNavLists(data, model, skill), [data, model, skill]
@@ -996,13 +1007,20 @@ export function TrajectoryModal({ model, skill, data, seekTs }) {
                 ${headerIcon}
                 <span>${displayLabel} \u00b7 ${horizonMin}m \u00b7 ${config.shortName || config.displayName}</span>
                 ${dateStr && html`<span className="traj-transcript-header-date">\u00b7 ${dateStr}</span>`}
+                ${hasThinking && html`
+                  <button className=${`traj-thinking-toggle${showThinking ? ' on' : ''}`} onClick=${toggleThinking}
+                          title="Model reasoning is shown dimmed and italic">
+                    ${showThinking ? 'Hide reasoning' : 'Show reasoning'}
+                  </button>
+                `}
               </div>
               ${steps.length === 0
                 ? html`<div style=${{ color: '#999', textAlign: 'center', padding: '32px' }}>No trajectory data available for this run.</div>`
                 : steps.map((step, i) => {
                     if (step.type === 'agent') {
+                      if (step.thinking && !showThinking) return null;
                       return html`
-                        <div key=${i} className="traj-step agent" data-ts=${step.ts != null ? String(step.ts) : undefined}>
+                        <div key=${i} className=${`traj-step agent${step.thinking ? ' thinking' : ''}`} data-ts=${step.ts != null ? String(step.ts) : undefined}>
                           ${step.ts != null && html`
                             <span className="traj-timestamp">${formatTimestamp(step.ts)}</span>
                           `}

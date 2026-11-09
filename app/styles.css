@@ -486,6 +486,18 @@ body {
 .traj-step.agent + .traj-step.agent {
   border-top: 1px solid #f0f0f0;
 }
+.traj-step.agent.thinking {
+  color: #8a8a8a;
+  font-style: italic;
+  font-size: 13px;
+  line-height: 1.55;
+  border-left: 2px solid #e6e6e6;
+  padding-left: 10px;
+}
+.traj-step.agent.thinking + .traj-step.agent,
+.traj-step.agent + .traj-step.agent.thinking {
+  border-top: none;
+}
 .traj-tool-group {
   display: flex;
   flex-wrap: wrap;
@@ -640,6 +652,24 @@ body {
 .traj-transcript-header-date {
   color: #aaa;
   font-weight: 400;
+}
+.traj-thinking-toggle {
+  margin-left: auto;
+  flex-shrink: 0;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 400;
+  font-style: italic;
+  color: #8a8a8a;
+  background: none;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 1px 8px;
+  cursor: pointer;
+}
+.traj-thinking-toggle:hover {
+  color: #444;
+  border-color: #bbb;
 }
 .traj-step.active {
   background: #f0f7ff;
