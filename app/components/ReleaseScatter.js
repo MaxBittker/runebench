@@ -13,6 +13,7 @@ const XH_TO_BASE = {
   'gpt61sol-high': 'gpt61sol',
   'gpt6sol-high': 'gpt6sol',
   'gpt6luna-high': 'gpt6luna',
+  'fable52-xhigh': 'fable52',
   'fable51-xhigh': 'fable51',
   'fable-5-xhigh': 'fable-5',
   'opus48-max': 'opus48',

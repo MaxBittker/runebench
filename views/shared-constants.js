@@ -18,6 +18,7 @@ const MODEL_CONFIG = {
   // pre-÷200 task prompt) are archived under jobs/_archive-v40-fable.
   // Fable 5.2 (claude-fable-5-2, GA 2026-11-09) — subscription-OAuth run via scripts/run-claude-oauth-30m.sh.
   'fable52':   { displayName: 'Claude Fable 5.2', shortName: 'Fable 5.2',  color: '#e8955a', order: 0.03, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-11-09' },
+  'fable52-xhigh': { displayName: 'Claude Fable 5.2 xhigh', shortName: 'Fable 5.2 xh', color: '#b86a35', order: 0.04, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-11-09' },
   // Fable 5.1 (claude-fable-5-1) — API-key run via scripts/run-fable51-30m.sh.
   'fable51':   { displayName: 'Claude Fable 5.1', shortName: 'Fable 5.1',  color: '#d9843a', order: 0.05, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-09-01' },
   'fable51-xhigh': { displayName: 'Claude Fable 5.1 xhigh', shortName: 'Fable 5.1 xh', color: '#a8582a', order: 0.07, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2026-09-01' },
