@@ -10,6 +10,9 @@ import { makeLabelPlugin } from './scatter-labels.js';
 // variant dominates it.
 const THINKING_SUFFIX = /-(xhigh|high|medium|low|max)$/;
 const VARIANT_SCORE_TOL = 0.1; // ⟨ln⟩ units, ~10% XP/min
+// Rows exempt from the variant pruning above: always plotted alongside the
+// rest of their family (Opus 5.5 xhigh sits within VARIANT_SCORE_TOL of Opus 5.5).
+const KEEP_VARIANTS = new Set(['opus55', 'opus55-xhigh']);
 
 function familyOf(key) {
   return key.replace(THINKING_SUFFIX, '');
@@ -31,11 +34,11 @@ function dropDominatedVariants(rows) {
   for (const [f, members] of families) {
     const def = members.find((r) => r.key === f);
     const variants = members.filter((r) => r !== def);
-    const kept = variants.filter((v) =>
+    const kept = variants.filter((v) => KEEP_VARIANTS.has(v.key) || (
       !(def && Math.abs(v.logMean - def.logMean) < VARIANT_SCORE_TOL) &&
       !members.some((o) => o !== v && dominates(o, v))
-    );
-    if (def && !kept.some((v) => dominates(v, def))) out.push(def);
+    ));
+    if (def && (KEEP_VARIANTS.has(def.key) || !kept.some((v) => dominates(v, def)))) out.push(def);
     out.push(...kept);
   }
   return out;
