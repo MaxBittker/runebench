@@ -50,3 +50,10 @@ Agent (Claude, Gemini, Codex, etc.)
 ## License
 
 MIT
+
+## Codex with ChatGPT authentication
+
+To require ChatGPT sign-in and prevent API-key fallback, use the opt-in
+`codex_subscription_adapter:CodexSubscription` Harbor adapter. See the
+[setup, credential boundaries, usage limits and test instructions](docs/codex-subscription.md).
+The existing Codex adapter remains available for API-key benchmarks.
