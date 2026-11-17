@@ -129,6 +129,7 @@ const MODEL_CONFIG = {
   'muse13':   { displayName: 'Muse Spark 1.3', shortName: 'Muse Spark 1.3', color: '#4c8ff0', order: 17.8, icon: VIEWS_BASE + 'model-icons/meta.svg', releaseDate: '2026-09-02' },
   'mistrallarge4oss': { displayName: 'Mistral Large 4 (open weights)', shortName: 'Mistral L4 OSS', color: '#ff8205', order: 16.52, icon: VIEWS_BASE + 'model-icons/mistral.svg', releaseDate: '2026-10-29' },
   'inkling':  { displayName: 'Inkling',         shortName: 'Inkling',     color: '#343a40', order: 17, icon: VIEWS_BASE + 'model-icons/thinkingmachines.png', releaseDate: '2026-07-15' },
+  'inkling2small': { displayName: 'Inkling 2 Small', shortName: 'Inkling 2 S', color: '#6c757d', order: 17.1, icon: VIEWS_BASE + 'model-icons/thinkingmachines.png', releaseDate: '2026-11-11' },
   'musesparkopen': { displayName: 'Muse Spark Open', shortName: 'Muse Spark Open', color: '#00a3a3', order: 17.85, icon: VIEWS_BASE + 'model-icons/meta.svg', releaseDate: '2026-10-15' },
   'nemotron3ultra': { displayName: 'Nemotron 3 Ultra', shortName: 'Nemotron 3 Ultra', color: '#76b900', order: 19.2, icon: VIEWS_BASE + 'model-icons/nvidia.svg', releaseDate: '2026-06-04' },
   'nemotron35super': { displayName: 'Nemotron 3.5 Super', shortName: 'Nemotron 3.5 Super', color: '#4a7a00', order: 19.3, icon: VIEWS_BASE + 'model-icons/nvidia.svg', releaseDate: '2026-10-15' },

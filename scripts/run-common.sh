@@ -438,6 +438,15 @@ configure_model_env() {
       ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
       AGENT_FLAG="--agent-import-path 'laguna_adapter:LagunaOpenCode'"
       ;;
+    inkling2small-opencode)
+      # Inkling 2 Small — Tinker serverless inference direct (TINKER_API_KEY).
+      if [ -z "${TINKER_API_KEY:-}" ]; then
+        echo "  WARNING: TINKER_API_KEY not found in .env, skipping $model_name"
+        return 1
+      fi
+      ENV_PREFIX="PYTHONPATH=$agents_dir:\${PYTHONPATH:-}"
+      AGENT_FLAG="--agent-import-path 'inkling2small_adapter:Inkling2SmallOpenCode'"
+      ;;
     inkling-opencode)
       if [ -z "${OPENROUTER_API_KEY:-}" ]; then
         echo "  WARNING: OPENROUTER_API_KEY not found in .env, skipping $model_name"

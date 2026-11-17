@@ -101,6 +101,7 @@ musewonder-opencode|openrouter/meta/muse-wonder|musewonder
 musewonder-meta-opencode|meta/muse-wonder-1.0|musewonder-meta
 museember-opencode|openrouter/meta/muse-ember|museember
 inkling-opencode|openrouter/thinkingmachines/inkling|inkling
+inkling2small-opencode|tinker/thinkingmachines/Inkling-2-Small:peft:262144|inkling2small
 laguna-opencode|openrouter/poolside/laguna-s-2.1|laguna
 musesparkopen-opencode|openrouter/meta/muse-spark-open|musesparkopen
 nemotron3ultra-opencode|openrouter/nvidia/nemotron-3-ultra-550b-a55b|nemotron3ultra
@@ -238,7 +239,7 @@ for model_name in $SELECTED_MODELS; do
       #   grep -l 'service_tier="fast"' jobs/<job>/*/trial.log | wc -l   # want 16
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1900 --ak fast_mode=true"
       ;;
-    glm|glm52|glm52-wandb|glm53|glm53-prime|glm53flash|gemma4|gptoss120b|kimi|kimi26|kimi27|kimi3|kimi3-low|kimi31pro|qwen35|qwen3max|qwen37max|qwen38max|qwen38|deepseek|deepseekflash|deepseekflash0731|deepseek41flash|deepseek41flash1017|mistrallarge4oss|gpt4o|inkling|laguna|beam|musesparkopen|nemotron3ultra|nemotron35super|hy4preview|gemini4argon|gemini38flash|gemini37flash|gemini36flash|gemini35flashlite)
+    glm|glm52|glm52-wandb|glm53|glm53-prime|glm53flash|gemma4|gptoss120b|kimi|kimi26|kimi27|kimi3|kimi3-low|kimi31pro|qwen35|qwen3max|qwen37max|qwen38max|qwen38|deepseek|deepseekflash|deepseekflash0731|deepseek41flash|deepseek41flash1017|mistrallarge4oss|gpt4o|inkling|inkling2small|laguna|beam|musesparkopen|nemotron3ultra|nemotron35super|hy4preview|gemini4argon|gemini38flash|gemini37flash|gemini36flash|gemini35flashlite)
       MODEL_EXTRA_ARGS="--ak run_timeout_sec=1800"
       ;;
     grok47|grok47-xhigh|grok46|grok46-medium|grok46-xhigh|grok45|grok45-medium|grok43|muse|muse12|muse13|musewonder|musewonder-meta|museember)

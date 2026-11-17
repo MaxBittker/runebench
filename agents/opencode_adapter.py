@@ -96,6 +96,9 @@ _PROVIDER_KEY_MAP = {
     # Kimi Code subscription (api.kimi.com/coding/v1) — native models.dev
     # provider used by kimi31pro_adapter.
     "kimi-code-plan-cn": "KIMI_API_KEY",
+    # Tinker (Thinking Machines) OAI-compatible endpoint — custom provider
+    # declared by inkling2small_adapter; referenced as {env:TINKER_API_KEY}.
+    "tinker": "TINKER_API_KEY",
 }
 
 
@@ -234,6 +237,7 @@ class OpenCodeAdapter(BaseInstalledAgent):
             "ZHIPU_API_KEY",
             "REFLECTION_API_KEY",
             "KIMI_API_KEY",
+            "TINKER_API_KEY",
         ]
     }
 

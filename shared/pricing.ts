@@ -298,6 +298,11 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // postprocess-costs needs --force to override it. (Earlier Tinker-direct runs
   // at $3.74/$9.36 were deleted and re-benchmarked on OpenRouter.)
   inkling:      { input: 1.0e-6,    cachedInput: 0.17e-6,  cacheWrite: 1.0e-6,    output: 4.05e-6 },
+  // thinkingmachines/Inkling-2-Small:peft:262144, Tinker serverless inference
+  // direct, 2026-11-11: $0.30/$1.00 per 1M, cached prefill $0.03. No
+  // cache-write premium → cacheWrite = input (inert). Keep in sync with the
+  // per-1M `cost` block in agents/inkling2small_adapter.py.
+  inkling2small: { input: 0.3e-6,   cachedInput: 0.03e-6,  cacheWrite: 0.3e-6,    output: 1.0e-6 },
   // poolside/laguna-s-2.1, OpenRouter (Poolside bf16, the model's only provider)
   // 2026-07-22. $0.10/$0.20 per 1M; cache read $0.01/1M. No cache-write premium
   // → cacheWrite = input (inert). Keep in sync with the per-1M `cost` block in
@@ -419,6 +424,7 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'meta/muse-wonder-1.0':      'musewonder-meta',
   'meta/muse-spark-1.1':               'muse',
   'openrouter/thinkingmachines/inkling': 'inkling',
+  'tinker/thinkingmachines/Inkling-2-Small:peft:262144': 'inkling2small',
   'openrouter/poolside/laguna-s-2.1':  'laguna',
   'openrouter/meta/muse-spark-open':   'musesparkopen',
   'openrouter/nvidia/nemotron-3-ultra-550b-a55b': 'nemotron3ultra',
