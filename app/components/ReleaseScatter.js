@@ -8,6 +8,10 @@ import { makeLabelPlugin } from './scatter-labels.js';
 // no "xh" text appears. (Release date is shared between base and xh.)
 const XH_TO_BASE = {
   'opus5-xhigh': 'opus5',
+  'gpt62astra-high': 'gpt62astra',
+  'gpt62astra-xhigh': 'gpt62astra',
+  'gpt62sol-high': 'gpt62sol',
+  'gpt62sol-xhigh': 'gpt62sol',
   'gpt6astra-high': 'gpt6astra',
   'gpt61sol-low': 'gpt61sol',
   'gpt61sol-high': 'gpt61sol',

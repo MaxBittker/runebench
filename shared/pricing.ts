@@ -129,6 +129,13 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // gpt-6.1-terra, released 2026-10-26 (openai.com/index/introducing-gpt-6-1-terra):
   // $1 in / $0.05 cache read / $1.25 cache write / $5 out — half of 5.6 Terra.
   gpt61terra:   { input: 1e-6,    cachedInput: 0.05e-6,  cacheWrite: 1.25e-6,  output: 5e-6 },
+  // gpt-6.2-astra / gpt-6.2-sol, released 2026-11-17 (openai.com/index/
+  // introducing-gpt-6-2-astra-sol; developers.openai.com/api/docs/pricing).
+  // Astra $8/$40 (20% below 6 Astra), cache read $0.40 (0.05x); Sol unchanged
+  // from 6.1 Sol. Cache write 1.25x (30m tier). Long-context (>272K) 2x/1.5x
+  // not modelled.
+  gpt62astra:   { input: 8e-6,    cachedInput: 0.4e-6,   cacheWrite: 10e-6,    output: 40e-6 },
+  gpt62sol:     { input: 2e-6,    cachedInput: 0.1e-6,   cacheWrite: 2.5e-6,   output: 10e-6 },
   gpt56:        { input: 5e-6,    cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,  output: 30e-6 },
   'gpt56-xhigh': { input: 5e-6,   cachedInput: 0.5e-6,   cacheWrite: 6.25e-6,  output: 30e-6 },
   gpt56terra:   { input: 2e-6,    cachedInput: 0.2e-6,   cacheWrite: 2.5e-6,   output: 12e-6 },
@@ -363,6 +370,8 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   // gpt6astra (medium, the CLI default) and gpt6astra-high share this model id
   // and bill at identical rates, so one entry covers both rows.
   'openai/gpt-6-astra':                'gpt6astra',
+  'openai/gpt-6.2-astra':              'gpt62astra',
+  'openai/gpt-6.2-sol':                'gpt62sol',
   'openai/gpt-6.1-sol':                'gpt61sol',
   'openai/gpt-6.1-terra':              'gpt61terra',
   'openai/gpt-6-sol':                  'gpt6sol',
