@@ -176,6 +176,9 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   // ($4/$20, cache read $0.20, cache write $0.375). Launch billing is an
   // introductory half-price promo ($2/$10); the row displays the regular price,
   // like muse12/13. Keep in sync with Gemini4ArgonOpenCode._build_opencode_config.
+  // Gemini 4 Neon (gemini-4-neon, GA 2026-11-18; ran pre-GA as gemini-4-cobalt-eap): standard paid
+  // tier $3/$15, cached input $0.15, implicit caching only (no cache-write charge).
+  'gemini4neon-agy': { input: 3e-6, cachedInput: 0.15e-6, cacheWrite: 3e-6, output: 15e-6 },
   gemini4argon:      { input: 4e-6, cachedInput: 0.2e-6, cacheWrite: 0.375e-6, output: 20e-6 },
   // Reflection Beam-1.0-501B-A23B, run direct on api.reflection.ai (no public
   // rate card). Priced at OpenRouter's default route, 2026-10-19
@@ -387,6 +390,8 @@ export const HARBOR_MODEL_PRICING: Record<string, string> = {
   'google/gemini-3.6-flash':           'gemini36flash',
   'google/gemini-3.7-flash':           'gemini37flash',
   'openrouter/google/gemini-3.8-flash': 'gemini38flash',
+  'google/gemini-4-cobalt-eap':         'gemini4neon-agy',
+  'google/gemini-4-neon':               'gemini4neon-agy',
   'openrouter/google/gemini-4-argon':   'gemini4argon',
   'reflection/Beam-1.0-501B-A23B':     'beam',
   'google/gemini-3.5-flash-lite':      'gemini35flashlite',

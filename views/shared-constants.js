@@ -48,6 +48,7 @@ const MODEL_CONFIG = {
   'sonnet4':  { displayName: 'Claude Sonnet 4',   shortName: 'Sonnet 4',    color: '#eb9a78', order: 4.1, icon: VIEWS_BASE + 'model-icons/anthropic.svg', releaseDate: '2025-05-22' },
   'gemini':   { displayName: 'Gemini 3 Pro',      shortName: 'Gemini 3 Pro',    color: '#4285f4', order: 5, icon: VIEWS_BASE + 'model-icons/gemini.webp', releaseDate: '2025-11-18' },
   'gemini31': { displayName: 'Gemini 3.1 Pro',    shortName: 'Gemini 3.1 Pro',  color: '#1a57c4', order: 6, icon: VIEWS_BASE + 'model-icons/gemini.webp', releaseDate: '2026-02-19' },
+  'gemini4neon-agy': { displayName: 'Gemini 4 Neon', shortName: 'Gemini 4 Neon', color: '#3d63c9', order: 6.63, icon: VIEWS_BASE + 'model-icons/gemini.webp', releaseDate: '2026-11-18' },
   'gemini4argon': { displayName: 'Gemini 4 Argon', shortName: 'Gemini 4 Argon', color: '#0b2f8a', order: 6.1, icon: VIEWS_BASE + 'model-icons/gemini.webp', releaseDate: '2026-10-13' },
   // Reflection API created=2026-10-04. 30m run 2026-10-20 (rs-bench2, v71) after the org moved to 150k req/min — 1 × 429 total (the 2026-10-19 bench3 run was throttled at 60 req/min). Cost uses OpenRouter's default-route card (shared/pricing.ts).
   'beam': { displayName: 'Beam 1.0 501B', shortName: 'Beam 1.0', color: '#5fa83a', order: 19.5, icon: VIEWS_BASE + 'model-icons/reflection.svg', releaseDate: '2026-10-04' },
