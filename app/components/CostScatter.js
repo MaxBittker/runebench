@@ -124,15 +124,20 @@ function paretoKeys(rows) {
 // Icons are shared across chart rebuilds (hiding a model or toggling older
 // ones tears the chart down and back up): a fresh Image per rebuild starts
 // !complete even when the file is in the HTTP cache. One Image per src, kept
-// for the page's life.
+// for the page's life. Chart.js draws nothing for an icon that hasn't loaded
+// yet and never revisits it, so icons still loading repaint the chart once
+// they land.
 const iconCache = new Map();
 
-function iconFor(src) {
+function iconFor(src, repaint) {
   let img = iconCache.get(src);
   if (!img) {
     img = new Image(20, 20);
     img.src = src;
     iconCache.set(src, img);
+  }
+  if (!(img.complete && img.naturalWidth)) {
+    img.addEventListener('load', repaint, { once: true });
   }
   return img;
 }
@@ -226,6 +231,8 @@ export function CostScatter({ data }) {
       return;
     }
 
+    const repaint = () => chartInstance.current && chartInstance.current.update('none');
+
     // Preload model icons so points can be drawn as logos.
     const points = rows.map((r) => {
       const cfg = MODEL_CONFIG[r.key];
@@ -235,7 +242,7 @@ export function CostScatter({ data }) {
         key: r.key,
         label: cfg.shortName,
         color: cfg.color,
-        img: iconFor(cfg.icon),
+        img: iconFor(cfg.icon, repaint),
       };
     });
     // Log cost axis: pad out to the 1-2-5 steps just past the cheapest and
