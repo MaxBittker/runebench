@@ -57,6 +57,17 @@ class SaveReader {
         return val;
     }
 
+    // Same as engine Packet.gVarInt (7 bits per byte, high bit = more bytes follow).
+    gVarInt(): number {
+        let byte = this.g1();
+        let result = 0;
+        while ((byte & 0x80) !== 0) {
+            result = (result | (byte & 0x7f)) << 7;
+            byte = this.g1();
+        }
+        return (result | byte) >>> 0;
+    }
+
     g8(): bigint {
         const val = this.view.getBigInt64(this.pos, false);
         this.pos += 8;
@@ -108,10 +119,15 @@ function parseSave(data: Uint8Array): ParsedSave {
         skills.push({ xp, level: currentLevel });
     }
 
-    // Varps
+    // Varps. Version 7+ writes only the non-zero perm varps, as (id, varint) pairs.
     const varpCount = reader.g2();
     for (let i = 0; i < varpCount; i++) {
-        reader.g4s();
+        if (version >= 7) {
+            reader.g2();
+            reader.gVarInt();
+        } else {
+            reader.g4s();
+        }
     }
 
     // Inventories
